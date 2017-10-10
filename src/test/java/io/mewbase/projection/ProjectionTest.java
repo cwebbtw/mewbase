@@ -12,7 +12,7 @@ import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 
-import io.vertx.ext.unit.junit.Repeat;
+
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.After;
@@ -80,7 +80,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
 
     @Test
-    //@Repeat(10)
+    // @Repeat(50)
     public void testSimpleProjectionRuns() throws Exception {
 
         ProjectionFactory factory = ProjectionFactory.instance(source,store);
@@ -111,6 +111,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(TEST_CHANNEL, evt);
 
         latch.await();
+
         Thread.sleep(10);
 
         // try to recover the new document
@@ -118,6 +119,7 @@ public class ProjectionTest extends MewbaseTestBase {
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
         assertNotNull(basketDoc);
         assertEquals(RESULT,basketDoc.getInteger("output"));
+
 
         projection.stop();
     }
