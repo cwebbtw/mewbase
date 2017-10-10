@@ -1,7 +1,7 @@
 package io.mewbase.binders;
 
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 
@@ -20,7 +20,7 @@ public interface BinderStore {
      * @param name of the Binder to open or create and open
      * @return succesfull  if Binder is created otherwise complet
      */
-    CompletableFuture<Binder> open(String name);
+    Binder open(String name);
 
     /**
      * Get a Binder with the given name
@@ -28,7 +28,7 @@ public interface BinderStore {
      * @param  name of the document within the binder
      * @return a CompleteableFuture of the binder or a failed future if the binder doesnt exist.
      */
-    CompletableFuture<Binder> get(String name);
+    Optional<Binder> get(String name);
 
     /**
      * Return a stream of the Binders so that maps / filters can be applied.
@@ -50,7 +50,7 @@ public interface BinderStore {
      * @param  name of  binder
      * @return a CompleteableFuture with a Boolean set to true if successful
      */
-    CompletableFuture<Void> delete(String name);
+    Boolean delete(String name);
 
 
     /**
@@ -58,6 +58,6 @@ public interface BinderStore {
      *
      * @return
      */
-    CompletableFuture<Boolean> close();
+    Boolean close();
 
 }

@@ -12,7 +12,6 @@ import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 
-
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
@@ -20,7 +19,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.IntStream;
@@ -81,9 +79,8 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
 
-
     @Test
-    // @Repeat(50)
+    //@Repeat(10)
     public void testSimpleProjectionRuns() throws Exception {
 
         ProjectionFactory factory = ProjectionFactory.instance(source,store);
@@ -94,7 +91,6 @@ public class ProjectionTest extends MewbaseTestBase {
         final Integer RESULT = new Integer(27);
 
         final CountDownLatch latch = new CountDownLatch(1);
-
 
         Projection projection = builder
                 .named(TEST_PROJECTION_NAME)
@@ -115,14 +111,15 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(TEST_CHANNEL, evt);
 
         latch.await();
+        Thread.sleep(10);
 
         // try to recover the new document
-        Binder binder = store.open(TEST_BINDER).get();
+        Binder binder = store.open(TEST_BINDER);
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
         assertNotNull(basketDoc);
         assertEquals(RESULT,basketDoc.getInteger("output"));
 
-       projection.stop();
+        projection.stop();
     }
 
 
@@ -176,7 +173,7 @@ public class ProjectionTest extends MewbaseTestBase {
         latch.await();
 
         // Recover the new document
-        Binder binder = store.open(TEST_BINDER).get();
+        Binder binder = store.open(TEST_BINDER);
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
         assertNotNull(basketDoc);
         assertEquals(RESULT,basketDoc.getInteger("output"));

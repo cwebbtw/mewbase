@@ -40,7 +40,7 @@ public class ProjectionFactoryImpl implements ProjectionFactory {
     public ProjectionFactoryImpl(EventSource source, BinderStore store) throws Exception {
         this.source = source;
         this.store = store;
-        this.stateBinder = store.open(PROJ_STATE_BINDER_NAME).join();
+        this.stateBinder = store.open(PROJ_STATE_BINDER_NAME);
     }
 
     @Override
@@ -68,35 +68,26 @@ public class ProjectionFactoryImpl implements ProjectionFactory {
 
         EventHandler eventHandler =  event -> {
             if (eventFilter.apply(event)) {
-                // at the races if the event passes the filter.
+
                 String docID = docIDSelector.apply(event);
-                store.open(binderName).whenComplete((binder, exp) -> {
-                    if (exp != null) {
-                        log.error("Failed to open Binder " + binderName + " running projection " + projectionName, exp);
+                Binder binder = store.open(binderName);
+
+                binder.get(docID).whenComplete((inputDoc, innerExp) -> {
+                        // Case 1 - Something broke in the store/binder
+                    if (innerExp != null) {
+                        log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
                     }
-                    if (binder != null) {
-                        binder.get(docID).whenComplete((inputDoc, innerExp) -> {
-                            // Case 1 - Something broke in the store/binder
-                            if (innerExp != null) {
-                                log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
-                            }
-                            // case 2 - Nothing broke but the document doesnt exists
-                            if (inputDoc == null && innerExp == null) {
-                                inputDoc = new BsonObject();
-                            }
-                            // case 3 - We now have the doc
-                            if (inputDoc != null && innerExp == null) {
-                                BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
-                                binder.put(docID, outputDoc).join();
-                                // write the number of this projections most recent event into the store.
-                                BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
-                                stateBinder.put(projectionName, projStateDoc).join();
-                            }
-                        });
+                    // case 2 - Nothing broke but the document doesnt exists
+                    if (inputDoc == null && innerExp == null) {
+                        inputDoc = new BsonObject();
                     }
-                    // this should never be the case unless something goes badly wrong in the store
-                    if (exp == null && binder == null) {
-                        log.error("Store failed without reporting an error");
+                    // case 3 - We now have the doc
+                    if (inputDoc != null && innerExp == null) {
+                        BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
+                        binder.put(docID, outputDoc);
+                        // write the number of this projections most recent event into the store.
+                        BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
+                        stateBinder.put(projectionName, projStateDoc);
                     }
                 });
             }
@@ -120,7 +111,6 @@ public class ProjectionFactoryImpl implements ProjectionFactory {
     public Stream<String> projectionNames() {
         return projections.keySet().stream() ;
     }
-
 
 
     private Subscription subscribeFromMostRecentEvent(String projectionName, String channelName, EventHandler eventHandler) {

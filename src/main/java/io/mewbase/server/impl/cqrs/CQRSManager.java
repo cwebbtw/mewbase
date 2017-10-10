@@ -123,7 +123,7 @@ public class CQRSManager {
         if (queries.containsKey(query.getName())) {
             throw new IllegalArgumentException("Query " + query.getName() + " already registered");
         }
-        Binder binder = store.open(query.getBinderName()).get();
+        Binder binder = store.open(query.getBinderName());
         if (binder == null) {
             throw new IllegalArgumentException("No such binder " + query.getBinderName());
         }

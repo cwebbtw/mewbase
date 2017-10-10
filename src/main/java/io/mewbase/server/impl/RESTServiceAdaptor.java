@@ -84,7 +84,7 @@ public class RESTServiceAdaptor {
     }
 
     public void exposeFindByID(String binderName, String uri) throws ExecutionException, InterruptedException {
-        Binder binder = store.open(binderName).get();
+        Binder binder = store.open(binderName);
         if (binder == null) {
             throw new IllegalArgumentException("No such binder " + binder);
         }

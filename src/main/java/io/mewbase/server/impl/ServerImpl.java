@@ -53,7 +53,7 @@ public class ServerImpl implements Server {
         this.cqrsManager = new CQRSManager(this);
 
         this.restServiceAdaptor = new RESTServiceAdaptor(this);
-        this.binderStore = new LmdbBinderStore(mewbaseOptions, vertx);
+        this.binderStore = new LmdbBinderStore(mewbaseOptions);
     }
 
     ServerImpl(MewbaseOptions mewbaseOptions) {
