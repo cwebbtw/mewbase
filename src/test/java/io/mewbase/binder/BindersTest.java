@@ -226,5 +226,4 @@ public class BindersTest extends MewbaseTestBase {
     }
 
 
-
 }
