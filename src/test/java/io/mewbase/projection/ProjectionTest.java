@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tim on 30/09/16.
  */
-@RunWith(VertxUnitRunner.class)
+//@RunWith(VertxUnitRunner.class)
 public class ProjectionTest extends MewbaseTestBase {
 
     private static final String TEST_CHANNEL = "ProjectionTestChannel";
@@ -49,7 +49,7 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
     @After
-    public void after() {
+    public void after() throws Exception {
         store.close();
         source.close();
     }

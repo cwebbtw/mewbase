@@ -148,13 +148,11 @@ public class LmdbBinder implements Binder {
     }
 
 
-    public CompletableFuture<Void> close() {
-        CompletableFuture fut = CompletableFuture.runAsync( () -> {
-            dbi.close();
-            env.sync(true);
-            stexec.shutdown();
-        }, stexec);
-        return fut;
+    public Void close() {
+        dbi.close();
+        env.sync(true);
+        stexec.shutdown();
+        return null;
     }
 
 
