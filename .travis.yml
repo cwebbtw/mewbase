@@ -11,11 +11,13 @@ before_install:
 jdk:
 - oraclejdk8
 
+
 script:
 - mvn clean package
 
 branches:
   only:
     - master
-    - nats
-    
+
+after_failure:
+- cat  /home/travis/build/Tesco/mewbase/*.log
