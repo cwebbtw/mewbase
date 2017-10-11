@@ -149,8 +149,8 @@ public class LmdbBinder implements Binder {
 
 
     public Void close() {
-        dbi.close();
         env.sync(true);
+        dbi.close();
         stexec.shutdown();
         return null;
     }

@@ -68,8 +68,8 @@ public class LmdbBinderStore implements BinderStore {
     @Override
     public Binder open(String name) {
         return binders.computeIfAbsent(name, k -> new LmdbBinder(k,env)) ;
-
     }
+
 
     @Override
     public Optional<Binder> get(String name) {
@@ -107,6 +107,7 @@ public class LmdbBinderStore implements BinderStore {
         return true;
     }
 
+
     private void createIfDoesntExists(File dir) {
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -114,5 +115,6 @@ public class LmdbBinderStore implements BinderStore {
             }
         }
     }
+
 
 }
