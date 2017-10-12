@@ -119,7 +119,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         latch.await();
 
-        Thread.sleep(10);
+        Thread.sleep(200);
 
         // try to recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -217,12 +217,13 @@ public class ProjectionTest extends MewbaseTestBase {
         // and wait for the result
         newLatch.await();
         Thread.sleep(200);
-        
+
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();
         assertNotNull(newBasketDoc);
         assertEquals(RESULT+RESULT,(long)newBasketDoc.getInteger("output"));
 
+        newProjection.stop();
     }
 
 
