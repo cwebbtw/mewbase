@@ -31,8 +31,6 @@ import static org.junit.Assert.*;
 @RunWith(VertxUnitRunner.class)
 public class BindersTest extends MewbaseTestBase {
 
-    private final static Logger logger = LoggerFactory.getLogger(BindersTest.class);
-
     private final static String BINDER_NAME = "TestBinderName";
 
 

@@ -1,5 +1,6 @@
 package io.mewbase.binders.impl.lmdb;
 
+import com.sun.tools.doclets.formats.html.SourceToHTMLConverter;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
@@ -34,7 +35,7 @@ import static org.lmdbjava.DbiFlags.MDB_CREATE;
  */
 public class LmdbBinder implements Binder {
 
-    private final static Logger logger = LoggerFactory.getLogger(LmdbBinder.class);
+    private final static Logger log = LoggerFactory.getLogger(LmdbBinder.class);
 
     private final String name;
 
@@ -53,7 +54,7 @@ public class LmdbBinder implements Binder {
 
         // create the db if it doesnt exists
         this.dbi =  env.openDbi(name,MDB_CREATE);
-        logger.trace("Opened Binder named " + name);
+        log.trace("Opened Binder named " + name);
     }
 
 
@@ -131,7 +132,9 @@ public class LmdbBinder implements Binder {
             byte[] valBytes = doc.encode().getBytes();
             final ByteBuffer val = allocateDirect(valBytes.length);
             val.put(valBytes).flip();
-            dbi.put(key, val);
+            synchronized (this) {
+                dbi.put(key, val);
+            }
         }, stexec);
         return fut;
     }

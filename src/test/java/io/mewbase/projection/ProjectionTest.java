@@ -2,6 +2,7 @@ package io.mewbase.projection;
 
 import io.mewbase.MewbaseTestBase;
 
+import io.mewbase.binder.BindersTest;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
@@ -19,6 +20,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.IntStream;
@@ -34,6 +37,8 @@ import static org.junit.Assert.assertEquals;
  */
 //@RunWith(VertxUnitRunner.class)
 public class ProjectionTest extends MewbaseTestBase {
+
+    private final static Logger log = LoggerFactory.getLogger(ProjectionTest.class);
 
     private static final String TEST_CHANNEL = "ProjectionTestChannel";
     private static final String TEST_BINDER = "ProjectionTestBinder";
@@ -82,6 +87,8 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     // @Repeat(50)
     public void testSimpleProjectionRuns() throws Exception {
+
+        log.info("testSimpleProjectionRuns");
 
         ProjectionFactory factory = ProjectionFactory.instance(source,store);
         ProjectionBuilder builder = factory.builder();
@@ -142,6 +149,8 @@ public class ProjectionTest extends MewbaseTestBase {
 
     @Test
     public void testProjectionRecoversFromEventNumber() throws Exception {
+
+        log.info("testProjectionRecoversFromEventNumber");
 
         ProjectionFactory factory = ProjectionFactory.instance(source,store);
         ProjectionBuilder builder = factory.builder();
