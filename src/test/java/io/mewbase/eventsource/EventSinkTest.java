@@ -45,13 +45,13 @@ public class EventSinkTest extends ServerTestBase {
         final CountDownLatch latch = new CountDownLatch(1);
         EventSource eSource = new NatsEventSource();
         Subscription subs = eSource.subscribe(testChannelName,  event ->  {
-                        BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+                        BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
                         latch.countDown();
                         }
                     );
 
-        eSink.publish(testChannelName,bsonEvent.encode().getBytes());
+        eSink.publish(testChannelName,bsonEvent);
 
         latch.await();
 
@@ -76,7 +76,7 @@ public class EventSinkTest extends ServerTestBase {
 
         EventSource eSource = new NatsEventSource();
         eSource.subscribe(testChannelName, event -> {
-                BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+                BsonObject bson  = event.getBson();
                 long thisEventNum = END_EVENT_NUMBER - latch.getCount();
                 assert(bson.getLong("num") == thisEventNum);
                 latch.countDown();
@@ -85,9 +85,8 @@ public class EventSinkTest extends ServerTestBase {
 
         LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).forEach(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
-            eSink.publish(testChannelName,bsonEvent.encode().getBytes());
+            eSink.publish(testChannelName,bsonEvent);
         } );
-
 
 
         latch.await();

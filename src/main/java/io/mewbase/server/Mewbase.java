@@ -1,6 +1,8 @@
 package io.mewbase.server;
 
 import io.mewbase.binders.Binder;
+import io.mewbase.projection.Projection;
+import io.mewbase.projection.ProjectionBuilder;
 import io.vertx.core.http.HttpMethod;
 
 import java.util.List;
@@ -14,20 +16,20 @@ public interface Mewbase {
 
     // Binder related operations
 
-    CompletableFuture<Binder> createBinder(String binderName);
+    // CompletableFuture<Binder> createBinder(String binderName);
 
-    CompletableFuture<Binder> getBinder(String name);
+    // CompletableFuture<Binder> getBinder(String name);
 
-    Stream<String> listBinders();
+    // Stream<String> listBinders();
 
 
     // Projection related operations
 
-    ProjectionBuilder buildProjection(String projectionName);
+    // ProjectionBuilder buildProjection(String projectionName);
 
-    List<String> listProjections();
+    // List<String> listProjections();
 
-    Projection getProjection(String projectionName);
+    // Projection getProjection(String projectionName);
 
 
     // Command handler related operations

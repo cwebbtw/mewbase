@@ -24,10 +24,6 @@ public class MewbaseTestBase {
     @Rule
     public RepeatRule repeatRule = new RepeatRule();
 
-    @After
-    public void after(TestContext context) throws Exception {
-        Thread.sleep(500);
-    }
 
 
     protected void waitUntil(BooleanSupplier supplier) {

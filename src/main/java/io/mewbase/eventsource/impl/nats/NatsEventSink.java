@@ -1,7 +1,7 @@
 package io.mewbase.eventsource.impl.nats;
 
 
-
+import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
 import io.mewbase.server.MewbaseOptions;
@@ -52,9 +52,9 @@ public class NatsEventSink implements EventSink {
 
 
     @Override
-    public void publish(String channelName, byte [] bytes) {
+    public void publish(String channelName, BsonObject event) {
         try {
-            nats.publish(channelName, bytes);
+            nats.publish(channelName, event.encode().getBytes());
         } catch (Exception exp) {
             logger.error("Error attempting publish event to Nats Event Sink", exp);
         }

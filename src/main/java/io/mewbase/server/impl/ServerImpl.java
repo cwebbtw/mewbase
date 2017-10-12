@@ -1,14 +1,11 @@
 package io.mewbase.server.impl;
 
-import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.server.*;
 import io.mewbase.server.impl.cqrs.CQRSManager;
 import io.mewbase.server.impl.cqrs.QueryBuilderImpl;
 import io.mewbase.server.impl.file.af.AFFileAccess;
-
-import io.mewbase.server.impl.proj.ProjectionManager;
 
 import io.mewbase.util.AsyncResCF;
 import io.vertx.core.Vertx;
@@ -17,10 +14,7 @@ import io.vertx.core.http.HttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Stream;
 
 /**
  * Created by tim on 22/09/16.
@@ -33,7 +27,7 @@ public class ServerImpl implements Server {
     private final boolean ownVertx;
     private final Vertx vertx;
 
-    private final ProjectionManager projectionManager;
+    //private final ProjectionManager projectionManager;
 
     private final CQRSManager cqrsManager;
 
@@ -55,11 +49,11 @@ public class ServerImpl implements Server {
 
         this.faf = new AFFileAccess(vertx);
 
-        this.projectionManager = new ProjectionManager(this);
+        // this.projectionManager = new ProjectionManager(this);
         this.cqrsManager = new CQRSManager(this);
 
         this.restServiceAdaptor = new RESTServiceAdaptor(this);
-        this.binderStore = new LmdbBinderStore(mewbaseOptions, vertx);
+        this.binderStore = new LmdbBinderStore(mewbaseOptions);
     }
 
     ServerImpl(MewbaseOptions mewbaseOptions) {
@@ -98,37 +92,38 @@ public class ServerImpl implements Server {
     // Binder related API
 
 
-    @Override
-    public CompletableFuture<Binder> createBinder(String name) {
-        return binderStore.open(name);
-    }
+//    @Override
+//    public CompletableFuture<Binder> createBinder(String name) {
+//        return binderStore.open(name);
+//    }
+//
+//    @Override
+//    public CompletableFuture<Binder> getBinder(String name) {
+//        return binderStore.get(name);
+//    }
+//
+//    @Override
+//    public Stream<String> listBinders() {
+//        return binderStore.binderNames();
+//    }
+//
 
-    @Override
-    public CompletableFuture<Binder> getBinder(String name) {
-        return binderStore.get(name);
-    }
 
-    @Override
-    public Stream<String> listBinders() {
-        return binderStore.binderNames();
-    }
+//    @Override
+//    public ProjectionBuilder buildProjection(String projectionName) {
+//        return projectionManager.buildProjection(projectionName);
+//    }
 
+//    @Override
+//    public List<String> listProjections() {
+//        return projectionManager.listProjectionNames();
+//    }
+//
 
-
-    @Override
-    public ProjectionBuilder buildProjection(String projectionName) {
-        return projectionManager.buildProjection(projectionName);
-    }
-
-    @Override
-    public List<String> listProjections() {
-        return projectionManager.listProjectionNames();
-    }
-
-    @Override
-    public Projection getProjection(String projectionName) {
-        return projectionManager.getProjection(projectionName);
-    }
+//    @Override
+//    public Projection getProjection(String projectionName) {
+//        return projectionManager.getProjection(projectionName);
+//    }
 
     // CQRS related API
     @Override

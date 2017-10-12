@@ -1,5 +1,6 @@
 package io.mewbase.eventsource;
 
+import io.mewbase.MewbaseTestBase;
 import io.mewbase.ServerTestBase;
 
 import io.mewbase.bson.BsonObject;
@@ -16,17 +17,13 @@ import org.junit.runner.RunWith;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Created by Nige on 7/9/2017.
  */
 @RunWith(VertxUnitRunner.class)
-public class EventSourceTest extends ServerTestBase {
-
-//    @Override
-//    protected void setup(TestContext context) throws Exception {
-//        super.setup(context);
-//
-//    }
+public class EventSourceTest extends MewbaseTestBase {
 
 
     @Test
@@ -50,8 +47,11 @@ public class EventSourceTest extends ServerTestBase {
         final CountDownLatch latch = new CountDownLatch(1);
         EventSource es = new NatsEventSource(new MewbaseOptions());
         Subscription subs = es.subscribe(testChannelName,  event ->  {
-                        BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+                        BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
+                        long evtNum = event.getEventNumber();
+                        Instant evtTime = event.getInstant();
+                        int evtHashc = event.getCrc32();
                         latch.countDown();
                         }
                     );
@@ -84,7 +84,7 @@ public class EventSourceTest extends ServerTestBase {
 
         EventSource es = new NatsEventSource();
         es.subscribe(testChannelName, event -> {
-                BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+                BsonObject bson =  event.getBson();
                 long thisEventNum = END_EVENT_NUMBER - latch.getCount();
                 assert(bson.getLong("num") == thisEventNum);
                 latch.countDown();
@@ -117,7 +117,7 @@ public class EventSourceTest extends ServerTestBase {
 
         EventSource es = new NatsEventSource(new MewbaseOptions());
         es.subscribeFromMostRecent(testChannelName, event -> {
-            BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+            BsonObject bson = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
             assert(bson.getLong("num") == thisEventNum);
             latch.countDown();
@@ -150,7 +150,7 @@ public class EventSourceTest extends ServerTestBase {
 
         EventSource es = new NatsEventSource();
         es.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
-            BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+            BsonObject bson = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
             assert(bson.getLong("num") == thisEventNum);
             latch.countDown();
@@ -189,7 +189,7 @@ public class EventSourceTest extends ServerTestBase {
 
         EventSource es = new NatsEventSource();
         es.subscribeFromInstant(testChannelName, then, event -> {
-            BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+            BsonObject bson  = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + 1 + (eventsToTest - latch.getCount());
             assert(bson.getLong("num") == thisEventNum);
             latch.countDown();
@@ -220,7 +220,7 @@ public class EventSourceTest extends ServerTestBase {
 
         EventSource es = new NatsEventSource();
         es.subscribeAll(testChannelName,  event -> {
-            BsonObject bson  = new BsonObject(Buffer.buffer(event.getData()));
+            BsonObject bson = event.getBson();
             long thisEventNum = START_EVENT_NUMBER + eventsToTest - latch.getCount();
             assert(bson.getLong("num") == thisEventNum);
             latch.countDown();

@@ -1,11 +1,14 @@
 package io.mewbase.eventsource;
 
+import io.mewbase.bson.BsonObject;
+import io.vertx.core.buffer.Buffer;
+
 import java.time.Instant;
 
 
 public interface Event {
 
-    byte[] getData() ;
+    BsonObject getBson();
 
     Instant getInstant();
 
