@@ -24,6 +24,7 @@ import java.util.concurrent.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static java.nio.ByteBuffer.allocate;
 import static java.nio.ByteBuffer.allocateDirect;
 import static org.lmdbjava.CursorIterator.IteratorType.FORWARD;
 import static org.lmdbjava.DbiFlags.MDB_CREATE;
@@ -126,7 +127,7 @@ public class LmdbBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<Void> put(String id, BsonObject doc) {
+    public CompletableFuture<Void> put(final String id, final BsonObject doc) {
         CompletableFuture fut = CompletableFuture.runAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
             byte[] valBytes = doc.encode().getBytes();
