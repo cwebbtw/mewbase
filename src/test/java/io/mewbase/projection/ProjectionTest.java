@@ -216,7 +216,8 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
         // and wait for the result
         newLatch.await();
-
+        Thread.sleep(200);
+        
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();
         assertNotNull(newBasketDoc);
