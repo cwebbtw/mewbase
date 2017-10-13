@@ -2,7 +2,6 @@ package io.mewbase.projection;
 
 import io.mewbase.MewbaseTestBase;
 
-import io.mewbase.binder.BindersTest;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
