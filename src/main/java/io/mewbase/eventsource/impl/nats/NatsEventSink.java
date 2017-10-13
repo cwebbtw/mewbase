@@ -5,13 +5,16 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
 import io.mewbase.server.MewbaseOptions;
+import io.nats.stan.AckHandler;
 import io.nats.stan.Connection;
 import io.nats.stan.ConnectionFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 
 /**
@@ -58,6 +61,24 @@ public class NatsEventSink implements EventSink {
         } catch (Exception exp) {
             logger.error("Error attempting publish event to Nats Event Sink", exp);
         }
+    }
+
+    @Override
+    public CompletableFuture<BsonObject> publishAsync(final String channelName, final BsonObject event) {
+        CompletableFuture<BsonObject> fut = new CompletableFuture<>();
+        AckHandler ackHandler = (String ackedNuid, Exception err) -> {
+            if (err != null) {
+                fut.completeExceptionally(err);
+            } else {
+                fut.complete(event);
+            }
+        };
+        try {
+            nats.publish(channelName, event.encode().getBytes(), ackHandler);
+        } catch (IOException exp) {
+            fut.completeExceptionally(exp);
+        }
+        return fut;
     }
 
 
