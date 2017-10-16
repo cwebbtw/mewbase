@@ -1,4 +1,4 @@
-package io.mewbase.server;
+package io.mewbase.cqrs;
 
 /**
  * Created by tim on 10/01/17.

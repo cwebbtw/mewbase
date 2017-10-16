@@ -1,14 +1,12 @@
-package io.mewbase.server.impl.cqrs;
+package io.mewbase.cqrs.impl;
 
 import io.mewbase.bson.BsonObject;
-import io.mewbase.server.Query;
-import io.mewbase.server.QueryBuilder;
-import io.mewbase.server.QueryContext;
-import io.mewbase.server.impl.ServerImpl;
+import io.mewbase.cqrs.Query;
+import io.mewbase.cqrs.QueryBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 
 /**
@@ -18,12 +16,13 @@ public class QueryBuilderImpl implements QueryBuilder {
 
     private final static Logger logger = LoggerFactory.getLogger(QueryBuilderImpl.class);
 
-    private final CQRSManager cqrsManager;
-    private final QueryImpl query;
+    private final QueryManagerImpl queryManager;
 
-    public QueryBuilderImpl(CQRSManager cqrsManager, String name) {
-        this.cqrsManager = cqrsManager;
-        this.query = new QueryImpl(name);
+    private  QueryImpl query;
+
+    public QueryBuilderImpl(QueryManagerImpl queryManager) {
+        this.queryManager = queryManager;
+
     }
 
     @Override
@@ -33,7 +32,7 @@ public class QueryBuilderImpl implements QueryBuilder {
     }
 
     @Override
-    public QueryBuilder documentFilter(BiFunction<BsonObject, QueryContext, Boolean> documentFilter) {
+    public QueryBuilder documentFilter(BiFunction<BsonObject, BsonObject, Boolean> documentFilter) {
         query.setDocumentFilter(documentFilter);
         return this;
     }
@@ -50,7 +49,7 @@ public class QueryBuilderImpl implements QueryBuilder {
             throw new IllegalStateException("Can't set both document filter and id selector");
         }
         try {
-            cqrsManager.registerQuery(query);
+            queryManager.registerQuery(query);
         } catch (Exception e) {
             logger.error("Failed to register query");
         }

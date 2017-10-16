@@ -1,4 +1,4 @@
-package io.mewbase.server;
+package io.mewbase.cqrs;
 
 import io.mewbase.bson.BsonObject;
 
@@ -11,9 +11,7 @@ public interface QueryBuilder {
 
     QueryBuilder from(String binderName);
 
-    // Will be called with every doc in the binder
-    // (params, context) -> boolean
-    QueryBuilder documentFilter(BiFunction<BsonObject, QueryContext, Boolean> documentFilter);
+    QueryBuilder documentFilter(BiFunction<BsonObject, BsonObject, Boolean> documentFilter);
 
     Query create();
 }

@@ -42,14 +42,14 @@ public class ServerTestBase extends MewbaseTestBase {
 
     protected void startServer() throws Exception {
         MewbaseOptions mewbaseOptions = createMewbaseOptions();
-        server = Server.newServer(vertx, mewbaseOptions);
-        server.start().get();
+     //   server = Server.newServer(vertx, mewbaseOptions);
+     //   server.start().get();
     }
 
     protected void stopServer() throws Exception {
-        if ( server != null) {
-             server.stop().get();
-        }
+      //  if ( server != null) {
+       //      server.stop().get();
+       // }
     }
 
     protected void restart() throws Exception {

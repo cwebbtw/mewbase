@@ -1,9 +1,9 @@
-package io.mewbase.server.impl.cqrs;
+package io.mewbase.cqrs.impl;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
-import io.mewbase.server.Query;
-import io.mewbase.server.QueryContext;
+import io.mewbase.cqrs.Query;
+
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -18,7 +18,8 @@ public class QueryImpl implements Query {
     private String binderName;
     private Binder binder;
 
-    private BiFunction<BsonObject, QueryContext, Boolean> documentFilter;
+    private BiFunction<BsonObject, BsonObject, Boolean> documentFilter;
+
     private Function<BsonObject, String> idSelector;
 
     public QueryImpl(String name) {
@@ -33,11 +34,11 @@ public class QueryImpl implements Query {
         this.binderName = binderName;
     }
 
-    public BiFunction<BsonObject, QueryContext, Boolean> getDocumentFilter() {
+    public BiFunction<BsonObject, BsonObject, Boolean> getDocumentFilter() {
         return documentFilter;
     }
 
-    public void setDocumentFilter(BiFunction<BsonObject, QueryContext, Boolean> documentFilter) {
+    public void setDocumentFilter(BiFunction<BsonObject, BsonObject, Boolean> documentFilter) {
         this.documentFilter = documentFilter;
     }
 

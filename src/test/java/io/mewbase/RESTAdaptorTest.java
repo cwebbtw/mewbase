@@ -3,7 +3,6 @@ package io.mewbase;
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.server.CommandHandler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
@@ -16,8 +15,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -73,7 +70,7 @@ public class RESTAdaptorTest extends ServerTestBase {
 
         //client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_1), subHandler).get();
 
-        server.exposeCommand(commandName, "/orders/:customerID", HttpMethod.POST);
+  //      server.exposeCommand(commandName, "/orders/:customerID", HttpMethod.POST);
 
         BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
 
@@ -111,7 +108,7 @@ public class RESTAdaptorTest extends ServerTestBase {
 
         //client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_1), subHandler).get();
 
-        server.exposeCommand(commandName, "/orders", HttpMethod.POST);
+//        server.exposeCommand(commandName, "/orders", HttpMethod.POST);
 
         BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
 
@@ -145,7 +142,7 @@ public class RESTAdaptorTest extends ServerTestBase {
 //            return true;
 //        }).from(TEST_BINDER1).create();
 
-        server.exposeQuery(queryName, "/orders/");
+//        server.exposeQuery(queryName, "/orders/");
 
         Async async = testContext.async();
 

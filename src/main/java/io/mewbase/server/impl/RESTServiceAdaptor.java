@@ -4,8 +4,9 @@ import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
-import io.mewbase.server.impl.cqrs.CQRSManager;
-import io.mewbase.server.impl.cqrs.QueryImpl;
+
+import io.mewbase.cqrs.QueryManager;
+import io.mewbase.cqrs.impl.QueryImpl;
 import io.mewbase.util.AsyncResCF;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -34,13 +35,13 @@ public class RESTServiceAdaptor {
     private final ServerImpl server;
     private HttpServer httpServer;
     private Router router;
-    private CQRSManager cqrsManager;
+    private QueryManager queryManager;
 
     private BinderStore store = new LmdbBinderStore();
 
     public RESTServiceAdaptor(ServerImpl server) {
         this.server = server;
-        this.cqrsManager = server.getCqrsManager();
+        //this.queryManager = server.getQueryManager();
         this.httpServer = server.getVertx().createHttpServer(new HttpServerOptions().setHost(host).setPort(port));
         router = Router.router(server.getVertx());
         router.route().handler(BodyHandler.create());
@@ -55,32 +56,26 @@ public class RESTServiceAdaptor {
             if (!pathParams.isEmpty()) {
                 command.put("pathParams", pathParams);
             }
-            CompletableFuture<Void> cf = cqrsManager.callCommandHandler(commandName, command);
-            cf.whenComplete((v, t) -> {
-                if (t == null) {
-                    rc.response().end(); // 200-OK
-                } else {
-                    rc.response().setStatusCode(500).end();
-                }
-            });
+           // CompletableFuture<Void> cf = queryManager.callCommandHandler(commandName, command);
+           //
         });
     }
 
     public void exposeQuery(String queryName, String uri) {
 
-        QueryImpl query = server.getCqrsManager().getQuery(queryName);
-        if (query == null) {
-            throw new IllegalArgumentException("No such query " + queryName);
-        }
-
-        router.route(HttpMethod.GET, uri).handler(rc -> {
-            BsonObject params = new BsonObject(rc.pathParams());
-            RESTServiceAdaptorQueryExecution qe = new RESTServiceAdaptorQueryExecution(query, params, rc.response(),
-                    256);
-            rc.response(); // qe.close());
-            // TODO Query execution over a vanilla Java 8 Stream
-           // qe.start();
-        });
+//        QueryImpl query = server.getQueryManager().getQuery(queryName);
+//        if (query == null) {
+//            throw new IllegalArgumentException("No such query " + queryName);
+//        }
+//
+//        router.route(HttpMethod.GET, uri).handler(rc -> {
+//            BsonObject params = new BsonObject(rc.pathParams());
+//            RESTServiceAdaptorQueryExecution qe = new RESTServiceAdaptorQueryExecution(query, params, rc.response(),
+//                    256);
+//            rc.response(); // qe.close());
+//            // TODO Query execution over a vanilla Java 8 Stream
+//           // qe.start();
+//        });
     }
 
     public void exposeFindByID(String binderName, String uri) throws ExecutionException, InterruptedException {
@@ -120,23 +115,21 @@ public class RESTServiceAdaptor {
         return ar;
     }
 
-    private class RESTServiceAdaptorQueryExecution extends QueryExecution {
+    private class RESTServiceAdaptorQueryExecution  {
 
         private final HttpServerResponse response;
 
         public RESTServiceAdaptorQueryExecution(QueryImpl query, BsonObject params,
                                                 HttpServerResponse response, int maxUnackedBytes) {
-            super(query, params, maxUnackedBytes);
+           // super(query, params, maxUnackedBytes);
             response.setChunked(true);
             this.response = response;
             response.write("[");
         }
 
 
-
-        @Override
         protected Buffer writeQueryResult(BsonObject document, boolean last) {
-            checkContext();
+            //checkContext();
             Buffer buff = Buffer.buffer(document.encodeToString());
             response.write(buff);
             if (!last) {

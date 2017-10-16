@@ -2,7 +2,7 @@ package io.mewbase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.server.CommandHandler;
+import io.mewbase.cqrs.CommandManager;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -144,30 +144,29 @@ public class CQRSTest extends ServerTestBase {
 
         String commandName1 = "testcommand1";
 
-        CommandHandler handler1 = server.buildCommandHandler(commandName1)
+//        CommandManager handler1 = server.buildCommandHandler(commandName1)
 //                .emittingTo(TEST_CHANNEL_1)
 //                .as((command, context) -> {
 //                    context.publishEvent(new BsonObject().put("eventField", command.getString("commandField")));
 //                    context.complete();
 //                })
-                .create();
+//                .create();
 
-        assertNotNull(handler1);
-        assertEquals(commandName1, handler1.getName());
+//        assertNotNull(handler1);
+//        assertEquals(commandName1, handler1.getName());
 
         String commandName2 = "testcommand2";
 
-        CommandHandler handler2 = server.buildCommandHandler(commandName2)
+//        CommandManager handler2 = server.buildCommandHandler(commandName2)
 //                .emittingTo(TEST_CHANNEL_2)
 //                .as((command, context) -> {
 //                    context.publishEvent(new BsonObject().put("eventField", command.getString("commandField")));
 //                    context.complete();
 //                })
-                .create();
+//                .create();
 
-        assertNotNull(handler2);
-        assertEquals(commandName2, handler2.getName());
-
+//        assertNotNull(handler2);
+ //       assertEquals(commandName2, handler2.getName());
 
         Async async1 = testContext.async();
 

@@ -2,9 +2,8 @@ package io.mewbase.server.impl;
 
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
+
 import io.mewbase.server.*;
-import io.mewbase.server.impl.cqrs.CQRSManager;
-import io.mewbase.server.impl.cqrs.QueryBuilderImpl;
 import io.mewbase.server.impl.file.af.AFFileAccess;
 
 import io.mewbase.util.AsyncResCF;
@@ -27,9 +26,8 @@ public class ServerImpl implements Server {
     private final boolean ownVertx;
     private final Vertx vertx;
 
-    //private final ProjectionManager projectionManager;
 
-    private final CQRSManager cqrsManager;
+   // private final QueryManager queryManager;
 
     private final RESTServiceAdaptor restServiceAdaptor;
 
@@ -50,7 +48,7 @@ public class ServerImpl implements Server {
         this.faf = new AFFileAccess(vertx);
 
         // this.projectionManager = new ProjectionManager(this);
-        this.cqrsManager = new CQRSManager(this);
+        //this.queryManager = new QueryManager(this);
 
         this.restServiceAdaptor = new RESTServiceAdaptor(this);
         this.binderStore = new LmdbBinderStore(mewbaseOptions);
@@ -60,13 +58,13 @@ public class ServerImpl implements Server {
         this(Vertx.vertx(), true, mewbaseOptions);
     }
 
-    @Override
+
     public synchronized CompletableFuture<Void> start() {
         Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
         return restServiceAdaptor.start();
     }
 
-    @Override
+
     public synchronized CompletableFuture<Void> stop() {
         this.binderStore.close();
         CompletableFuture<Void> cf = restServiceAdaptor.stop();
@@ -126,32 +124,30 @@ public class ServerImpl implements Server {
 //    }
 
     // CQRS related API
-    @Override
-    public CommandHandlerBuilder buildCommandHandler(String commandName) {
-        return cqrsManager.buildCommandHandler(commandName);
-    }
-
-    @Override
-    public QueryBuilder buildQuery(String queryName) {
-        return new QueryBuilderImpl(cqrsManager, queryName);
-    }
-
+//    @Override
+//    public CommandBuilder buildCommandHandler(String commandName) {
+//        return queryManager.buildCommandHandler(commandName);
+//    }
+//
+//    @Override
+//    public QueryBuilder buildQuery(String queryName) {
+//        return new QueryBuilderImpl(queryManager, queryName);
+//    }
+//
 
     // REST Adaptor API
 
-    @Override
+
     public Mewbase exposeCommand(String commandName, String uri, HttpMethod httpMethod) {
         restServiceAdaptor.exposeCommand(commandName, uri, httpMethod);
         return this;
     }
 
-    @Override
     public Mewbase exposeQuery(String queryName, String uri) {
         restServiceAdaptor.exposeQuery(queryName, uri);
         return this;
     }
 
-    @Override
     public Mewbase exposeFindByID(String binderName, String uri) {
         try {
             restServiceAdaptor.exposeFindByID(binderName, uri);
@@ -160,13 +156,6 @@ public class ServerImpl implements Server {
         }
         return this;
     }
-
-    // Impl
-    CQRSManager getCqrsManager() {
-        return cqrsManager;
-    }
-
-
 
 
 }
