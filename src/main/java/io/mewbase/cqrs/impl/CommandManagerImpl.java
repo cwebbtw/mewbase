@@ -9,9 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -29,9 +32,19 @@ public class CommandManagerImpl implements CommandManager {
         this.eventSink = eventSink;
     }
 
+
     @Override
     public CommandBuilder commandBuilder() {
-        return null;
+        return new CommandBuilderImpl(this);
+    }
+
+    @Override
+    public Optional<Command> getCommand(String commandName) {
+        if (commands.containsKey(commandName)) {
+            return Optional.of(commands.get(commandName));
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -40,8 +53,14 @@ public class CommandManagerImpl implements CommandManager {
     }
 
     @Override
-    public CompletableFuture<BsonObject> execute(String commandName, BsonObject context) {
-        return null;
+    public CompletableFuture<BsonObject> execute(final String commandName, final BsonObject context) {
+
+        CompletableFuture fut = new CompletableFuture();
+        Optional<Command> command = getCommand(commandName);
+        // TODO Execution Path
+        command.ifPresentOrElse(cmd -> fut.complete(new BsonObject()) ,
+                () -> fut.completeExceptionally(new NoSuchElementException("No Command for key "+commandName )));
+        return fut;
     }
 
 

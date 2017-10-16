@@ -1,17 +1,14 @@
-package io.mewbase;
+package io.mewbase.cqrs;
 
+import io.mewbase.ServerTestBase;
 import io.mewbase.bson.BsonObject;
 
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;

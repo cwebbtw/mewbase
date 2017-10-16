@@ -1,8 +1,12 @@
-package io.mewbase;
+package io.mewbase.cqrs;
+
+import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.cqrs.CommandManager;
+import io.mewbase.cqrs.impl.CommandManagerImpl;
+import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -11,28 +15,34 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
 /**
- * Created by tim on 26/09/16.
+ * Created by Nige on 16/10/17.
  */
 @RunWith(VertxUnitRunner.class)
-public class CQRSTest extends ServerTestBase {
+public class CommandTest extends MewbaseTestBase {
 
-    private final static Logger logger = LoggerFactory.getLogger(CQRSTest.class);
+    private final static Logger logger = LoggerFactory.getLogger(CommandTest.class);
 
+    private final EventSink TEST_EVENT_SINK = new NatsEventSink();
 
-    protected void setupChannelsAndBinders() throws Exception {
-       // server.createChannel(TEST_CHANNEL_1).get();
-       // server.createChannel(TEST_CHANNEL_2).get();
+    @Test
+    public void testCommandManager() {
+
+        CommandManager mgr = new CommandManagerImpl(TEST_EVENT_SINK);
+        assertNotNull(mgr.commandBuilder());
+        assertEquals(0, mgr.getCommands().count()); // no commands registered
+        CompletableFuture<BsonObject> futEvt = mgr.execute("NotACommand", new BsonObject() );
+         // Todo - check futEvt completes exceptionally;
     }
 
+
     //@Test
-    public void testCommandOK(TestContext testContext) throws Exception {
+    public void testCommandOK() throws Exception {
 
         String commandName = "testcommand";
 
@@ -63,7 +73,7 @@ public class CQRSTest extends ServerTestBase {
 
 
     @Test
-    public void testCommandFail(TestContext testContext) throws Exception {
+    public void testCommandFail() throws Exception {
 
         String commandName = "testcommand";
 

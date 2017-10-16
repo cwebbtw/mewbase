@@ -11,7 +11,6 @@ public interface QueryManager  {
 
     public BsonObject queryBuilder();
 
-
     public CompletableFuture<BsonObject> execute(BsonObject context);
 
 }

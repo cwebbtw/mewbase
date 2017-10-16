@@ -14,7 +14,7 @@ import java.util.function.Function;
 public class CommandBuilderImpl implements CommandBuilder {
 
     // need to attach the build command back to the hander once constructed
-    private final CommandManagerImpl commandHandler;
+    private final CommandManagerImpl commandManager;
 
     // The Command parameters that can be built fluidly
     private String name;
@@ -22,8 +22,8 @@ public class CommandBuilderImpl implements CommandBuilder {
     private Function <BsonObject, BsonObject> function;
 
 
-    CommandBuilderImpl(CommandManagerImpl commandHandler) {
-        this.commandHandler = commandHandler;
+    CommandBuilderImpl(CommandManagerImpl commandManager) {
+        this.commandManager = commandManager;
     }
 
     @Override
@@ -51,13 +51,13 @@ public class CommandBuilderImpl implements CommandBuilder {
             throw new IllegalStateException("Please specify a command name");
         }
         if (this.outputChannelName == null) {
-            throw new IllegalStateException("Please specify a channel name");
+            throw new IllegalStateException("Please specify an output channel name");
         }
         if (this.function == null) {
             throw new IllegalStateException("Please specify an input function");
         }
         Command command = new CommandImpl(name,outputChannelName,function);
-        commandHandler.registerCommand(command);
+        commandManager.registerCommand(command);
         return command;
     }
 }

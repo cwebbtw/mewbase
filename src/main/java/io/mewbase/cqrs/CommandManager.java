@@ -2,8 +2,10 @@ package io.mewbase.cqrs;
 
 import io.mewbase.bson.BsonObject;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+
 
 /**
  * A CommandManager is responsible for providing client code with a CommandBuilder.
@@ -21,6 +23,13 @@ public interface CommandManager {
     CommandBuilder commandBuilder();
 
     /**
+     * Attempt to get a command given it's name.
+     * @param commandName
+     * @return an Optional of command or Empty.
+     */
+    Optional<Command> getCommand(String commandName);
+
+    /**
      * List all of the current commands in the Handler
      * @return A stream of all of the current commands
      */
@@ -32,6 +41,5 @@ public interface CommandManager {
      * EventSink's outputChannel.
      */
     CompletableFuture<BsonObject> execute(String commandName, BsonObject context);
-
 
 }
