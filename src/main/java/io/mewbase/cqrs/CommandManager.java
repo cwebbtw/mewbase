@@ -25,9 +25,9 @@ public interface CommandManager {
     /**
      * Attempt to get a command given it's name.
      * @param commandName
-     * @return an Optional of command or Empty.
+     * @return a CompletableFuture of command or exception
      */
-    Optional<Command> getCommand(String commandName);
+    CompletableFuture<Command> getCommand(String commandName);
 
     /**
      * List all of the current commands in the Handler

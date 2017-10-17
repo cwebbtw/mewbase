@@ -45,10 +45,14 @@ public class CommandImpl implements Command {
 
     @Override
     public CompletableFuture<BsonObject> execute(BsonObject context) {
-        return null;
+        CompletableFuture<BsonObject> fut = new CompletableFuture<>();
+        try {
+            fut.complete(function.apply(context));
+        } catch (Exception exp) {
+            fut.completeExceptionally(exp);
+        }
+        return fut;
     }
-
-
 
 
 }

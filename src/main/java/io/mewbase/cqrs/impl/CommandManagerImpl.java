@@ -1,3 +1,4 @@
+
 package io.mewbase.cqrs.impl;
 
 import io.mewbase.bson.BsonObject;
@@ -10,15 +11,15 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+
 /**
- * Created by tim on 10/01/17.
+ * Command manager implementation.
  */
 public class CommandManagerImpl implements CommandManager {
 
@@ -38,13 +39,16 @@ public class CommandManagerImpl implements CommandManager {
         return new CommandBuilderImpl(this);
     }
 
+
     @Override
-    public Optional<Command> getCommand(String commandName) {
+    public CompletableFuture<Command> getCommand(String commandName) {
+        CompletableFuture fut = new CompletableFuture();
         if (commands.containsKey(commandName)) {
-            return Optional.of(commands.get(commandName));
+            fut.complete(commands.get(commandName));
         } else {
-            return Optional.empty();
+            fut.completeExceptionally(new NoSuchElementException("No command matching " + commandName));
         }
+        return fut;
     }
 
     @Override
@@ -55,14 +59,10 @@ public class CommandManagerImpl implements CommandManager {
     @Override
     public CompletableFuture<BsonObject> execute(final String commandName, final BsonObject context) {
 
-        CompletableFuture fut = new CompletableFuture();
-        Optional<Command> command = getCommand(commandName);
-        // TODO Execution Path
-        command.ifPresentOrElse(cmd -> fut.complete(new BsonObject()) ,
-                () -> fut.completeExceptionally(new NoSuchElementException("No Command for key "+commandName )));
-        return fut;
+        return  getCommand(commandName).thenCompose( cmd ->
+                    cmd.execute(context).thenCompose( outputEvt ->
+                        eventSink.publishAsync(cmd.getOutputChannel(), outputEvt)));
     }
-
 
     /**
      * On completion of a newly built command the CommandBuilder  registers the command with

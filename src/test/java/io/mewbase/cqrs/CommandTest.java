@@ -5,8 +5,11 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.bson.BsonObject;
 
 import io.mewbase.cqrs.impl.CommandManagerImpl;
+import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
+import io.mewbase.eventsource.impl.nats.NatsEventSource;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -16,8 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 
 import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -54,40 +60,56 @@ public class CommandTest extends MewbaseTestBase {
     @Test
     public void testCommandOK() throws Exception {
 
-        final String COMMAND_NAME  = "TestCommand";
+        final String COMMAND_NAME = "TestCommand";
         final String CHANNEL_NAME = "CommandTestChannel";
 
         final String COMMAND_INPUT_KEY = "InputKey";
         final String EVENT_OUTPUT_KEY = "OutputKey";
 
+        final String INPUT_VALUE = "input";
+        final String POST_SCRIPT = "+output";
+        final String OUTPUT_VALUE = INPUT_VALUE + POST_SCRIPT;
+
         CommandManager mgr = new CommandManagerImpl(TEST_EVENT_SINK);
+
+        Function<BsonObject, BsonObject> handler = (params) -> {
+            assertNotNull( "Params should be non null", params);
+            final String cmdInput = params.getString(COMMAND_INPUT_KEY);
+            final BsonObject event = new BsonObject();
+            event.put(EVENT_OUTPUT_KEY, cmdInput + POST_SCRIPT);
+            return event;
+        };
 
         CommandBuilder cBuilder = mgr.commandBuilder();
         Command cmd = cBuilder.named(COMMAND_NAME)
                         .emittingTo(CHANNEL_NAME)
-                        .as( (params) -> {
-                            assertNotNull( "Params should be non null", params);
-                            final String cmdInput = params.getString(COMMAND_INPUT_KEY);
-                            final BsonObject event = new BsonObject();
-                            event.put(EVENT_OUTPUT_KEY, cmdInput + "out");
-                            return event;
-                })
-                .create();
+                        .as(handler)
+                        .create();
 
+        // Command construction and getters.
         assertNotNull(cmd);
         assertEquals(COMMAND_NAME, cmd.getName());
+        assertEquals(CHANNEL_NAME, cmd.getOutputChannel());
+        assertEquals(handler, cmd.getFunction());
 
+        //Subscribe to the EventSource
+        CountDownLatch cdl = new CountDownLatch(1);
+        EventSource evtSrc = new NatsEventSource();
+        EventHandler evtHandler = evt -> {
+            BsonObject event = evt.getBson();
+            assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));
+            cdl.countDown();
+        };
+        evtSrc.subscribe(CHANNEL_NAME,evtHandler);
 
+        // Execute the command and wait for the magic to happen
+        BsonObject inputParams = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
+        BsonObject event = mgr.execute(COMMAND_NAME, inputParams).join();
+        assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));
 
-//        Consumer<ClientDelivery> subHandler = del -> {
-//            BsonObject event = del.event();
-//            testContext.assertEquals("foobar", event.getString("eventField"));
-//            async.complete();
-//        };
-
-       // client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_1), subHandler).get();
-        BsonObject inputParams = new BsonObject().put("commandField", "foobar");
-        mgr.execute(COMMAND_NAME, inputParams).get();
+        // wait for the evtHandler to receive the event and check that the event was placed on
+        // the correct channel and was in hte correct transformed state.
+        cdl.await();
 
     }
 
@@ -95,79 +117,43 @@ public class CommandTest extends MewbaseTestBase {
     @Test
     public void testCommandFail() throws Exception {
 
-        String commandName = "testcommand";
+        final String COMMAND_NAME = "TestCommand";
+        final String CHANNEL_NAME = "CommandTestChannel";
 
-//        CommandHandler handler = server.buildCommandHandler(commandName)
-//                .emittingTo(TEST_CHANNEL_1)
-//                .as((command, context) -> {
-//                    context.completeExceptionally(new Exception("rejected"));
-//                })
-//                .create();
-//
-//        assertNotNull(handler);
-//        assertEquals(commandName, handler.getName());
-//
-//        BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
+        final String COMMAND_INPUT_KEY = "InputKey";
 
-//        try {
-//            client.sendCommand(commandName, sentCommand).get();
-//            fail("Should throw exception");
-//        } catch (ExecutionException e) {
-//            MewException me = (MewException)e.getCause();
-//            // OK
-//            testContext.assertEquals("rejected", me.getMessage());
-//            testContext.assertEquals(Client.ERR_COMMAND_NOT_PROCESSED, me.getErrorCode());
-//        }
+        final String INPUT_VALUE = "input";
 
-    }
 
-    @Test
-    public void testCommandHandlerThrowsException(TestContext testContext) throws Exception {
+        CommandManager mgr = new CommandManagerImpl(TEST_EVENT_SINK);
 
-        String commandName = "testcommand";
+        Function<BsonObject, BsonObject> handler = (params) -> {
+            String empty = params.getString("duffKey");
+            empty.length();
+            return new BsonObject();
+        };
 
-//        CommandHandler handler = server.buildCommandHandler(commandName)
-////                .emittingTo(TEST_CHANNEL_1)
-////                .as((command, context) -> {
-////                    //throw new Exception("oops!");
-////                })
-//                .create();
-//
-//        assertNotNull(handler);
-//        assertEquals(commandName, handler.getName());
-//
-//        BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
+        CommandBuilder cBuilder = mgr.commandBuilder();
+        Command cmd = cBuilder.named(COMMAND_NAME)
+                .emittingTo(CHANNEL_NAME)
+                .as(handler)
+                .create();
 
-//        try {
-//           // client.sendCommand(commandName, sentCommand).get();
-//            fail("Should throw exception");
-//        } catch (ExecutionException e) {
-//            //MewException me = (MewException)e.getCause();
-//            // OK
-//            //testContext.assertEquals("oops!", me.getMessage());
-//            //testContext.assertEquals(Client.ERR_COMMAND_NOT_PROCESSED, me.getErrorCode());
-//        }
+        BsonObject inputParams = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
+
+        CountDownLatch cdl = new CountDownLatch(1);
+        mgr.execute(COMMAND_NAME, inputParams).handle( (worked, exp) -> {
+            assertNull("Command throwing exception succeeded",worked);
+            assertNotNull(exp);
+            cdl.countDown();
+            return null;
+        } );
+
+        cdl.await();
 
     }
 
-    @Test
-    public void testNoSuchCommandhandler(TestContext testContext) throws Exception {
 
-        String commandName = "nocommand";
-
-        BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
-
-//        try {
-//            //client.sendCommand(commandName, sentCommand).get();
-//            fail("Should throw exception");
-//        } catch (ExecutionException e) {
-            //MewException me = (MewException)e.getCause();
-            // OK
-            //testContext.assertEquals("No handler for nocommand", me.getMessage());
-            //testContext.assertEquals(Client.ERR_COMMAND_NOT_PROCESSED, me.getErrorCode());
-       // }
-
-    }
 
    // @Test
     public void testMultipleCommandHandlers(TestContext testContext) throws Exception {
