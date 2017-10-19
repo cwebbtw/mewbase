@@ -16,7 +16,7 @@ These events often need to be persisted fast and in high volume and potentially 
 Storing logs of events provides many advantages including:
 
 * Complete audit trail of everything that happened
-* Events can be replayed to for back-testing or debugging
+* Events can be replayed for back-testing or debugging
 * Analytics can be run on the events to extract business value
 * Machine learning models can be trained in the events to do all sorts of funky stuff
 * Events can be used to co-ordinate busines processes between different services
