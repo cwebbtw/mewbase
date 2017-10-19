@@ -13,12 +13,9 @@ import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 
 
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +58,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
     @Test
     public void testProjectionFactory() throws Exception {
-        ProjectionFactory factory = ProjectionFactory.instance(source,store);
+        ProjectionManager factory = ProjectionManager.instance(source,store);
         assertNotNull(factory);
         ProjectionBuilder builder = factory.builder();
         assertNotNull(builder);
@@ -71,7 +68,7 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     public void testProjectionBuilder() throws Exception {
 
-        ProjectionFactory factory = ProjectionFactory.instance(source,store);
+        ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
         Projection projection = createProjection(builder, TEST_PROJECTION_NAME);
@@ -89,7 +86,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         log.info("testSimpleProjectionRuns");
 
-        ProjectionFactory factory = ProjectionFactory.instance(source,store);
+        ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
         final String BASKET_ID_FIELD = "BasketID";
@@ -134,7 +131,7 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     public void testProjectionNames() throws Exception {
 
-        ProjectionFactory factory = ProjectionFactory.instance(source,store);
+        ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
         Stream<String> names = IntStream.range(1,10).mapToObj( i -> {
@@ -151,7 +148,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         log.info("testProjectionRecoversFromEventNumber");
 
-        ProjectionFactory factory = ProjectionFactory.instance(source,store);
+        ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
         final String BASKET_ID_FIELD = "BasketID";
@@ -191,7 +188,7 @@ public class ProjectionTest extends MewbaseTestBase {
         projection.stop();
 
         // binder now has offset event and valid current document
-        ProjectionFactory newFactory = ProjectionFactory.instance(source,store);
+        ProjectionManager newFactory = ProjectionManager.instance(source,store);
         ProjectionBuilder newBuilder = newFactory.builder();
 
         final CountDownLatch newLatch = new CountDownLatch(1);

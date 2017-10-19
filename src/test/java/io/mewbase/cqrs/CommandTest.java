@@ -1,5 +1,6 @@
 package io.mewbase.cqrs;
 
+
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
@@ -10,7 +11,7 @@ import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
-import io.vertx.ext.unit.Async;
+
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
@@ -18,15 +19,22 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 
 import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.fail;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
 
 /**
  * Created by Nige on 16/10/17.
@@ -36,13 +44,23 @@ public class CommandTest extends MewbaseTestBase {
 
     private final static Logger logger = LoggerFactory.getLogger(CommandTest.class);
 
-    private final EventSink TEST_EVENT_SINK = new NatsEventSink();
+    final EventSink TEST_EVENT_SINK = new NatsEventSink();
+
+    final String COMMAND_NAME = "TestCommand";
+    final String CHANNEL_NAME = "CommandTestChannel";
+
+    final String COMMAND_INPUT_KEY = "InputKey";
+    final String EVENT_OUTPUT_KEY = "OutputKey";
+
+    final String INPUT_VALUE = "input";
+    final String POST_SCRIPT = "+output";
+    final String OUTPUT_VALUE = INPUT_VALUE + POST_SCRIPT;
 
 
     @Test
     public void testCommandManager() {
 
-        CommandManager mgr = new CommandManagerImpl(TEST_EVENT_SINK);
+        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
         final String COMMAND_NAME = "NotACommand";
         assertNotNull(mgr.commandBuilder());
         assertEquals(0, mgr.getCommands().count()); // no commands registered
@@ -60,17 +78,7 @@ public class CommandTest extends MewbaseTestBase {
     @Test
     public void testCommandOK() throws Exception {
 
-        final String COMMAND_NAME = "TestCommand";
-        final String CHANNEL_NAME = "CommandTestChannel";
-
-        final String COMMAND_INPUT_KEY = "InputKey";
-        final String EVENT_OUTPUT_KEY = "OutputKey";
-
-        final String INPUT_VALUE = "input";
-        final String POST_SCRIPT = "+output";
-        final String OUTPUT_VALUE = INPUT_VALUE + POST_SCRIPT;
-
-        CommandManager mgr = new CommandManagerImpl(TEST_EVENT_SINK);
+        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
 
         Function<BsonObject, BsonObject> handler = (params) -> {
             assertNotNull( "Params should be non null", params);
@@ -102,34 +110,25 @@ public class CommandTest extends MewbaseTestBase {
         };
         evtSrc.subscribe(CHANNEL_NAME,evtHandler);
 
-        // Execute the command and wait for the magic to happen
-        BsonObject inputParams = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
-        BsonObject event = mgr.execute(COMMAND_NAME, inputParams).join();
+        // Execute the command
+        BsonObject params = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
+        BsonObject event = mgr.execute(COMMAND_NAME, params).join();
         assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));
 
         // wait for the evtHandler to receive the event and check that the event was placed on
         // the correct channel and was in hte correct transformed state.
         cdl.await();
-
     }
 
 
     @Test
     public void testCommandFail() throws Exception {
 
-        final String COMMAND_NAME = "TestCommand";
-        final String CHANNEL_NAME = "CommandTestChannel";
-
-        final String COMMAND_INPUT_KEY = "InputKey";
-
-        final String INPUT_VALUE = "input";
-
-
-        CommandManager mgr = new CommandManagerImpl(TEST_EVENT_SINK);
+        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
 
         Function<BsonObject, BsonObject> handler = (params) -> {
-            String empty = params.getString("duffKey");
-            empty.length();
+            String empty = params.getString("NoExistentKey");
+            empty.length();     // **** provokes an NPE ****
             return new BsonObject();
         };
 
@@ -139,10 +138,10 @@ public class CommandTest extends MewbaseTestBase {
                 .as(handler)
                 .create();
 
-        BsonObject inputParams = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
+        BsonObject params = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
 
         CountDownLatch cdl = new CountDownLatch(1);
-        mgr.execute(COMMAND_NAME, inputParams).handle( (worked, exp) -> {
+        mgr.execute(COMMAND_NAME, params).handle( (worked, exp) -> {
             assertNull("Command throwing exception succeeded",worked);
             assertNotNull(exp);
             cdl.countDown();
@@ -150,66 +149,46 @@ public class CommandTest extends MewbaseTestBase {
         } );
 
         cdl.await();
-
     }
 
 
 
-   // @Test
-    public void testMultipleCommandHandlers(TestContext testContext) throws Exception {
+    @Test
+    public void testMultipleCommands(TestContext testContext) throws Exception {
 
-        String commandName1 = "testcommand1";
+        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
+        CommandBuilder builder = mgr.commandBuilder();
 
-//        CommandManager handler1 = server.buildCommandHandler(commandName1)
-//                .emittingTo(TEST_CHANNEL_1)
-//                .as((command, context) -> {
-//                    context.publishEvent(new BsonObject().put("eventField", command.getString("commandField")));
-//                    context.complete();
-//                })
-//                .create();
+        Stream<String> names = IntStream.rangeClosed(1,16).mapToObj( (index) -> {
+            final String commandName = COMMAND_NAME + index;
+            Command cmd = builder.emittingTo(CHANNEL_NAME)
+                .named(commandName)
+                .as((params) -> {
+                    assertNotNull("Params should be non null", params);
+                    final String cmdInput = params.getString(COMMAND_INPUT_KEY);
+                    final BsonObject event = new BsonObject();
+                    event.put(EVENT_OUTPUT_KEY, cmdInput + POST_SCRIPT);
+                    return event;
+                    })
+                .create();
+            return commandName;
+        } );
 
-//        assertNotNull(handler1);
-//        assertEquals(commandName1, handler1.getName());
+        // check that all of the commands names match
+        Set<String> generatedNames = names.collect(Collectors.toSet());
+        Set<String> storedNames = mgr.getCommands().map( cmd -> cmd.getName()).collect(Collectors.toSet());
 
-        String commandName2 = "testcommand2";
+        // assert they are exactly the same
+        assertTrue(generatedNames.containsAll(storedNames));
+        assertTrue(storedNames.containsAll(generatedNames));
 
-//        CommandManager handler2 = server.buildCommandHandler(commandName2)
-//                .emittingTo(TEST_CHANNEL_2)
-//                .as((command, context) -> {
-//                    context.publishEvent(new BsonObject().put("eventField", command.getString("commandField")));
-//                    context.complete();
-//                })
-//                .create();
+        BsonObject params = new BsonObject();
+        Stream<CompletableFuture<BsonObject>> futs = generatedNames.stream().map(name ->
+            mgr.execute(name, params.put(COMMAND_INPUT_KEY,name))
+        );
 
-//        assertNotNull(handler2);
- //       assertEquals(commandName2, handler2.getName());
-
-        Async async1 = testContext.async();
-
-//        Consumer<ClientDelivery> subHandler1 = del -> {
-//            BsonObject event = del.event();
-//            testContext.assertEquals(commandName1, event.getString("eventField"));
-//            async1.complete();
-//        };
-
-        //client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_1), subHandler1).get();
-
-        Async async2 = testContext.async();
-
-//        Consumer<ClientDelivery> subHandler2 = del -> {
-//            BsonObject event = del.event();
-//            testContext.assertEquals(commandName2, event.getString("eventField"));
-//            async2.complete();
-//        };
-
-       // client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_2), subHandler2).get();
-
-        BsonObject sentCommand1 = new BsonObject().put("commandField", commandName1);
-//        client.sendCommand(commandName1, sentCommand1).get();
-
-        BsonObject sentCommand2 = new BsonObject().put("commandField", commandName2);
-//        client.sendCommand(commandName2, sentCommand2).get();
-
+        // check each future executed and returned a result.
+        futs.forEach(fut -> fut.thenAccept( event -> assertNotNull(event)));
     }
-
 }
+

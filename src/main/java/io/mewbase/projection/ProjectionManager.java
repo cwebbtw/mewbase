@@ -1,23 +1,19 @@
 package io.mewbase.projection;
 
 import io.mewbase.binders.BinderStore;
-import io.mewbase.bson.BsonObject;
-import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.projection.impl.ProjectionFactoryImpl;
+import io.mewbase.projection.impl.ProjectionManagerImpl;
 
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * ProjectionFactory can be used to get projection builders and wires them to the enclosed
  * event source and binder store
  */
-public interface ProjectionFactory {
+public interface ProjectionManager {
 
     /**
+     * Factory method for Projection Manager.
      * Given an EventSource and a BinderStore return the ability to to make ProjectionBuilders
      *
      * @param source - The EventSource
@@ -25,8 +21,8 @@ public interface ProjectionFactory {
      * @return
      * @throws Exception
      */
-    static ProjectionFactory instance(EventSource source, BinderStore store) throws Exception {
-        return new ProjectionFactoryImpl(source,store);
+    static ProjectionManager instance(EventSource source, BinderStore store) throws Exception {
+        return new ProjectionManagerImpl(source,store);
     }
 
 
@@ -46,7 +42,7 @@ public interface ProjectionFactory {
 
 
     /**
-     * Return as a stream the lit of projection names.
+     * Return as a stream the list of projection names.
      * @return
      */
     Stream<String> projectionNames();

@@ -6,6 +6,7 @@ import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.Binder;
 
 import io.mewbase.bson.BsonObject;
+import io.mewbase.cqrs.QueryBuilder;
 import io.mewbase.cqrs.QueryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +57,7 @@ class QueryManagerImpl implements QueryManager {
     }
 
     @Override
-    public BsonObject queryBuilder() {
+    public QueryBuilder queryBuilder() {
         return null;
     }
 

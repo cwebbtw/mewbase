@@ -4,7 +4,6 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
-import io.mewbase.projection.ProjectionFactory;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -14,7 +13,7 @@ import java.util.function.Function;
  */
 public class ProjectionBuilderImpl implements ProjectionBuilder {
 
-    private final ProjectionFactoryImpl factory;
+    private final ProjectionManagerImpl factory;
 
     private String projectionName;
     private String channelName;
@@ -25,7 +24,7 @@ public class ProjectionBuilderImpl implements ProjectionBuilder {
     private BiFunction<BsonObject, Event, BsonObject> projectionFunction;
 
 
-    ProjectionBuilderImpl(ProjectionFactoryImpl factory) {
+    ProjectionBuilderImpl(ProjectionManagerImpl factory) {
         this.factory = factory;
     }
 

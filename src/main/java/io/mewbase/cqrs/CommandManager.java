@@ -1,8 +1,10 @@
 package io.mewbase.cqrs;
 
-import io.mewbase.bson.BsonObject;
 
-import java.util.Optional;
+import io.mewbase.bson.BsonObject;
+import io.mewbase.cqrs.impl.CommandManagerImpl;
+import io.mewbase.eventsource.EventSink;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -15,6 +17,20 @@ import java.util.stream.Stream;
  * based versions of the Commands.
  */
 public interface CommandManager {
+
+    /**
+     * Factory method for CommandManager.
+     * Given an EventSink return a new Instance of a CommandManger
+     *
+     * @param sink - The EventSink on which to emmit command events.
+     * @return
+     */
+    static CommandManager instance(EventSink sink)  {
+        return new CommandManagerImpl(sink);
+    }
+
+
+
 
     /**
      * The way to construct commands is to use a fuilent CommandBuilder to build
