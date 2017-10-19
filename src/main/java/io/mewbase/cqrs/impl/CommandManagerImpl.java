@@ -6,8 +6,7 @@ import io.mewbase.cqrs.Command;
 import io.mewbase.cqrs.CommandBuilder;
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.eventsource.EventSink;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -23,8 +22,6 @@ import java.util.stream.Stream;
  */
 public class CommandManagerImpl implements CommandManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(CommandManager.class);
-
     private final EventSink eventSink;
 
     private final Map<String, Command> commands = new ConcurrentHashMap<>();
@@ -33,6 +30,12 @@ public class CommandManagerImpl implements CommandManager {
         this.eventSink = eventSink;
     }
 
+    synchronized void registerCommand(Command command) {
+        if (commands.containsKey(command.getName())) {
+            throw new IllegalArgumentException("Command " + command.getName() + " already registered");
+        }
+        commands.put(command.getName(),command);
+    }
 
     @Override
     public CommandBuilder commandBuilder() {
@@ -63,18 +66,5 @@ public class CommandManagerImpl implements CommandManager {
                     cmd.execute(context).thenCompose( outputEvt ->
                         eventSink.publishAsync(cmd.getOutputChannel(), outputEvt)));
     }
-
-    /**
-     * On completion of a newly built command the CommandBuilder  registers the command with
-     * CommandManger
-     * @param command
-     * @return
-     */
-    Command registerCommand(Command command) {
-        // TODO check for duplicate names.
-        commands.put(command.getName(),command);
-        return null;
-    }
-
 
 }

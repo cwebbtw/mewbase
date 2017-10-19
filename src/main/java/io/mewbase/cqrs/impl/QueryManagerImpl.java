@@ -3,67 +3,67 @@ package io.mewbase.cqrs.impl;
 import io.mewbase.binders.BinderStore;
 
 
-import io.mewbase.binders.Binder;
-
 import io.mewbase.bson.BsonObject;
+
+import io.mewbase.cqrs.Query;
 import io.mewbase.cqrs.QueryBuilder;
 import io.mewbase.cqrs.QueryManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 import java.util.Map;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.stream.Stream;
 
 
 /**
  * Created by tim on 10/01/17 as CQRSManager
  */
-class QueryManagerImpl implements QueryManager {
-
-    private final static Logger logger = LoggerFactory.getLogger(QueryManager.class);
+public class QueryManagerImpl implements QueryManager {
 
     private final BinderStore store;
 
-    private final Map<String, QueryImpl> queries = new ConcurrentHashMap<>();
-
+    private final Map<String, Query> queries = new ConcurrentHashMap<>();
 
     public QueryManagerImpl(BinderStore store) {
         this.store = store;
     }
 
-    /**
-     *
-     * @param query
-     */
-    synchronized void registerQuery(QueryImpl query)  {
+    synchronized void registerQuery(Query query)  {
         if (queries.containsKey(query.getName())) {
             throw new IllegalArgumentException("Query " + query.getName() + " already registered");
         }
-
-        Binder binder = store.open(query.getBinderName());
-        if (binder == null) {
-            throw new IllegalArgumentException("No such binder " + query.getBinderName());
-        }
-        query.setBinder(binder);
         queries.put(query.getName(), query);
     }
 
-
-    public QueryImpl getQuery(String queryName) {
-        return queries.get(queryName);
-    }
+    BinderStore getStore() { return store; }
 
     @Override
     public QueryBuilder queryBuilder() {
-        return null;
+        return new QueryBuilderImpl(this);
     }
 
+    @Override
+    public CompletableFuture<Query> getQuery(String queryName)  {
+        CompletableFuture fut = new CompletableFuture();
+        if (queries.containsKey(queryName)) {
+            fut.complete(queries.get(queryName));
+        } else {
+            fut.completeExceptionally(new NoSuchElementException("No query matching " + queryName));
+        }
+        return fut;
+    }
 
     @Override
-    public CompletableFuture<BsonObject> execute(BsonObject context) {
+    public Stream<Query> getQueries() {
+        return queries.values().stream();
+    }
+
+    @Override
+    public CompletableFuture<BsonObject> execute(String queryName, BsonObject context) {
+        // TODO with Streams
         return null;
     }
 

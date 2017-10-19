@@ -5,7 +5,6 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.cqrs.impl.CommandManagerImpl;
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
@@ -42,8 +41,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(VertxUnitRunner.class)
 public class CommandTest extends MewbaseTestBase {
 
-    private final static Logger logger = LoggerFactory.getLogger(CommandTest.class);
-
     final EventSink TEST_EVENT_SINK = new NatsEventSink();
 
     final String COMMAND_NAME = "TestCommand";
@@ -61,6 +58,7 @@ public class CommandTest extends MewbaseTestBase {
     public void testCommandManager() {
 
         CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
+        assertNotNull(mgr);
         final String COMMAND_NAME = "NotACommand";
         assertNotNull(mgr.commandBuilder());
         assertEquals(0, mgr.getCommands().count()); // no commands registered

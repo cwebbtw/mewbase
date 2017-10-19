@@ -1,17 +1,25 @@
 package io.mewbase.cqrs;
 
 import io.mewbase.ServerTestBase;
+import io.mewbase.binders.Binder;
+import io.mewbase.binders.BinderStore;
+import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 
-import io.vertx.ext.unit.TestContext;
+
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import static junit.framework.TestCase.fail;
+
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.function.Predicate;
+
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Jamie on 14/10/2016.
@@ -19,54 +27,110 @@ import static org.junit.Assert.assertEquals;
 @RunWith(VertxUnitRunner.class)
 public class QueryTest extends ServerTestBase {
 
-    private final static Logger logger = LoggerFactory.getLogger(QueryTest.class);
+    final BinderStore TEST_BINDER_STORE = new LmdbBinderStore();
+    final String TEST_BINDER_NAME = "TestBinder";
+    final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
+
+    final String TEST_QUERY_NAME = "TestQuery";
+    final String TEST_DOCUMENT_ID = "TestId";
 
 
-    // protected Producer prod;
+    @Test
+    public void testQueryManager() throws Exception {
 
-    @Override
-    protected void setup(TestContext context) throws Exception {
-        super.setup(context);
-        installInsertProjection();
-       // prod = client.createProducer(TEST_CHANNEL_1);
-    }
-
-
-    protected void setupBinders() throws Exception {
-       // server.createBinder(TEST_BINDER1).get();
+        QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
+        assertNotNull(mgr);
+        final String QUERY_NAME = "NotAQuery";
+        assertNotNull(mgr.queryBuilder());
+        assertEquals(0, mgr.getQueries().count()); // no commands registered
+        // TODO
+//        CompletableFuture<BsonObject> futEvt = mgr.execute(QUERY_NAME, new BsonObject() );
+//        futEvt.handle( (good, bad) -> {
+//            assertNull("Executing a non query should fail.", good);
+//            assertNotNull("Executing a non query should not result in a doc", bad);
+//            final String msg = bad.getMessage();
+//            assertTrue(msg.contains(QUERY_NAME));
+//            return null;
+//        });
     }
 
     @Test
-    public void testGetById() throws Exception {
-        String docID = getID(123);
-        BsonObject doc = new BsonObject().put("id", docID).put("foo", "bar");
-        //prod.publish(doc).get();
+    public void testQueryBuilder() throws Exception {
 
-//        BsonObject received = waitForDoc(123);
-//
-//        assertEquals(docID, received.getString("id"));
-//        assertEquals("bar", received.getString("foo"));
+        QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
+
+        Predicate<BsonObject> identity = document -> true;
+
+        mgr.queryBuilder().
+                named(TEST_QUERY_NAME).
+                from(TEST_BINDER_NAME).
+                filteredBy(identity).
+                create();
+
+        Optional<Query> qOpt = mgr.getQueries().findFirst();
+        assert(qOpt.isPresent());
+        Query query = qOpt.get();
+        assertEquals(query.getName(),TEST_QUERY_NAME);
+        assertEquals(query.getBinder(),TEST_BINDER);
+        assertEquals(query.getDocumentFilter(),identity);
+        assertNull(query.getIdSelector());
     }
 
-    @Test
+
+    @Test(expected = NoSuchElementException.class)
     public void testNoSuchBinder() throws Exception {
-//        try {
-//           // BsonObject doc = client.findByID("nobinder", "xgcxgcxgc").get();
-//            fail("Should throw exception");
-//        } catch (ExecutionException e) {
-            // OK
-//            Exception me = (MewException)e.getCause();
-//            assertEquals("No such binder nobinder", me.getMessage());
-//        }
+
+        final String NON_EXISTENT_BINDER = "Junk";
+        QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
+
+        Predicate<BsonObject> identity = document -> true;
+
+        mgr.queryBuilder().
+                named(TEST_QUERY_NAME).
+                from(NON_EXISTENT_BINDER).
+                filteredBy(identity).
+                create();
     }
 
+
     @Test
-    //@Repeat(value = 1000)
-    public void testExecuteQuery(TestContext context) throws Exception {
-        int numDocs = 100;
-        for (int i = 0; i < numDocs; i++) {
-            String docID = getID(i);
-            BsonObject doc = new BsonObject().put("id", docID).put("foo", "bar");
+    public void testFiltered() throws Exception {
+
+        // Set up the binder
+        BsonObject doc = new BsonObject().put("Val", "Doc");
+        TEST_BINDER.put(TEST_DOCUMENT_ID, doc);
+
+        QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
+
+        Predicate<BsonObject> identity = document -> true;
+
+        mgr.queryBuilder().
+                named(TEST_QUERY_NAME).
+                from(TEST_BINDER_NAME).
+                filteredBy(identity).
+                create();
+
+
+        Optional<Query> qOpt = mgr.getQueries().findFirst();
+        assert (qOpt.isPresent());
+        Query query = qOpt.get();
+        assertEquals(query.getName(), TEST_QUERY_NAME);
+        assertEquals(query.getBinder(), TEST_BINDER);
+        assertEquals(query.getDocumentFilter(), identity);
+        assertNull(query.getIdSelector());
+
+//    assertEquals(docID, received.getString("id"));
+//   assertEquals("bar", received.getString("foo"));
+    }
+
+
+
+    @Test
+    public void testId() throws Exception {
+        final int TOTAL_DOCS = 100;
+//        for (int i = 0; i < numDocs; i++) {
+            //String docID = getID(i);
+            //BsonObject doc = new BsonObject().put("id", docID).put("foo", "bar");
          //   prod.publish(doc).get();
         }
 
@@ -91,40 +155,5 @@ public class QueryTest extends ServerTestBase {
 //        }, t -> context.fail("Exception shouldn't be received"));
 //
 
-       // Thread.sleep(100);
-        // TODO
-        assert(true);
-    }
-
-
-    // TODO more query tests
-
-    @Test
-    public void testGetByIdReturnsNullForNonExistentDocument(TestContext context) throws Exception {
-//        BsonObject doc = client.findByID(TEST_BINDER1, "non-existent-document").get();
-//        assertEquals(null, doc);
-    }
-
-//    protected BsonObject waitForDoc(int docID) {
-        // Wait until docs are inserted
-//        return waitForNonNull(() -> {
-//            try {
-//                return client.findByID(TEST_BINDER1, getID(docID)).get();
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//        });
-//    }
-
-
-    protected void installInsertProjection() {
-//        server.buildProjection("testproj").projecting(TEST_CHANNEL_1).onto(TEST_BINDER1).filteredBy(ev -> true)
-//                .identifiedBy(ev -> ev.getString("id"))
-//                .as((basket, del) -> del.event()).create();
-    }
-
-    protected String getID(int id) {
-        return String.format("id-%05d", id);
-    }
 
 }

@@ -25,7 +25,7 @@ public class Main {
         new Main().start();
     }
 
-    private Server server;
+
 
     private void start() {
 

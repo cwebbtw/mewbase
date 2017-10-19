@@ -1,12 +1,13 @@
 package io.mewbase.cqrs;
 
-import io.mewbase.binders.Binder;
+
+import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonObject;
-import io.mewbase.cqrs.impl.CommandManagerImpl;
-import io.mewbase.eventsource.EventSink;
-import io.mewbase.eventsource.EventSource;
+import io.mewbase.cqrs.impl.QueryManagerImpl;
+
 
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 /**
  * Created by Tim on 10/01/17.
@@ -17,18 +18,19 @@ public interface QueryManager  {
      * Factory method for QueryManager.
      * Given a Binder return a new Instance of a QueryManger
      *
-     * @param binder - The Binder on which to execute Query
+     * @param BinderStore - The BinderStore on which to execute Query
      * @return
      */
-    static QueryManager instance(Binder binder)  {
-        // Todo 
-        return null; //new QueryManagerImpl(binder);
+    static QueryManager instance(BinderStore store)  {
+        return new QueryManagerImpl(store);
     }
-    
 
-    public QueryBuilder queryBuilder();
+    QueryBuilder queryBuilder();
 
-    public CompletableFuture<BsonObject> execute(BsonObject context);
+    CompletableFuture<Query> getQuery(String queryName);
 
+    Stream<Query> getQueries();
+
+    CompletableFuture<BsonObject> execute(String queryName, BsonObject context);
 
 }

@@ -1,12 +1,13 @@
 package io.mewbase.cqrs.impl;
 
-import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
+import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.Query;
 
-
-import java.util.function.BiFunction;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 
 /**
@@ -15,51 +16,43 @@ import java.util.function.Function;
 public class QueryImpl implements Query {
 
     private final String name;
-    private String binderName;
-    private Binder binder;
+    private final Binder binder;
+    private final Predicate<BsonObject> documentFilter;
+    private final Function<BsonObject, String> idSelector;
 
-    private BiFunction<BsonObject, BsonObject, Boolean> documentFilter;
 
-    private Function<BsonObject, String> idSelector;
-
-    public QueryImpl(String name) {
+    QueryImpl(String name,
+              Binder binder,
+              Predicate<BsonObject> documentFilter,
+              Function<BsonObject, String> idSelector) {
         this.name = name;
-    }
-
-    public String getBinderName() {
-        return binderName;
-    }
-
-    public void setBinderName(String binderName) {
-        this.binderName = binderName;
-    }
-
-    public BiFunction<BsonObject, BsonObject, Boolean> getDocumentFilter() {
-        return documentFilter;
-    }
-
-    public void setDocumentFilter(BiFunction<BsonObject, BsonObject, Boolean> documentFilter) {
+        this.binder = binder;
         this.documentFilter = documentFilter;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Function<BsonObject, String> getIdSelector() {
-        return idSelector;
-    }
-
-    public void setIdSelector(Function<BsonObject, String> idSelector) {
         this.idSelector = idSelector;
     }
 
+    @Override
+    public String getName() { return name; }
+
+    @Override
     public Binder getBinder() {
         return binder;
     }
 
-    public void setBinder(Binder binder) {
-        this.binder = binder;
+    @Override
+    public Predicate<BsonObject> getDocumentFilter() {
+        return documentFilter;
+    }
+
+    @Override
+    public Function<BsonObject, String> getIdSelector() {
+        return idSelector;
+    }
+
+    @Override
+    public Stream<CompletableFuture<Query.Result>> execute(BsonObject params) {
+        // Todo create the stream
+        return null;
     }
 
 }

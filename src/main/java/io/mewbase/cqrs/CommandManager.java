@@ -29,9 +29,6 @@ public interface CommandManager {
         return new CommandManagerImpl(sink);
     }
 
-
-
-
     /**
      * The way to construct commands is to use a fuilent CommandBuilder to build
      * and register the new command with the manager.
