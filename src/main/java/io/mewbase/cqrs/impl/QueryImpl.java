@@ -1,5 +1,6 @@
 package io.mewbase.cqrs.impl;
 
+
 import io.mewbase.binders.Binder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.Query;
@@ -14,6 +15,24 @@ import java.util.stream.Stream;
  * Created by tim on 10/01/17.
  */
 public class QueryImpl implements Query {
+
+    // Inner immutable class for getting results back.
+    class ResultImpl implements Result {
+
+        final String id;
+        final BsonObject document;
+
+        ResultImpl(String id, BsonObject document) {
+            this.id = id;
+            this.document = document;
+        }
+
+        @Override
+        public String getId() { return id; }
+
+        @Override
+        public BsonObject getDocument() { return document; }
+    }
 
     private final String name;
     private final Binder binder;
@@ -50,9 +69,21 @@ public class QueryImpl implements Query {
     }
 
     @Override
-    public Stream<CompletableFuture<Query.Result>> execute(BsonObject params) {
-        // Todo create the stream
-        return null;
+    public Stream<Result> execute(BsonObject params) {
+        if ( documentFilter != null) {
+            return resultStream( binder.getIdsWithFilter(documentFilter).join() );
+        } else {
+            // run the id selector on the params
+            return resultStream( Stream.of(idSelector.apply(params)));
+        }
     }
+
+    private Stream<Result> resultStream( Stream<String> ids) {
+        return ids.map(id -> {
+            BsonObject doc = binder.get(id).join();
+            return new ResultImpl(id, doc);
+        });
+    }
+
 
 }

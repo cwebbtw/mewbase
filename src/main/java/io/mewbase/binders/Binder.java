@@ -27,7 +27,7 @@ public interface Binder {
     /**
      * Get all of the IDs of documents in this Binder that match the filter over the Bson document
      *
-     * @return the IDs of all of the documents in the binder mathcing the filter (predicate)
+     * @return the IDs of all of the documents in the binder matchcing the filter (predicate)
      */
     CompletableFuture<Stream<String>> getIdsWithFilter(Predicate<BsonObject> filter);
 

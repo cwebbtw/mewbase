@@ -6,7 +6,7 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.impl.QueryManagerImpl;
 
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -27,10 +27,10 @@ public interface QueryManager  {
 
     QueryBuilder queryBuilder();
 
-    CompletableFuture<Query> getQuery(String queryName);
+    Optional<Query> getQuery(String queryName);
 
     Stream<Query> getQueries();
 
-    CompletableFuture<BsonObject> execute(String queryName, BsonObject context);
+    Stream<Query.Result> execute(String queryName, BsonObject context);
 
 }

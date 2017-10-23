@@ -30,7 +30,6 @@ import static org.lmdbjava.CursorIterator.IteratorType.FORWARD;
 import static org.lmdbjava.DbiFlags.MDB_CREATE;
 
 
-
 /**
  * Created by tim on 29/12/16.
  */
@@ -41,7 +40,7 @@ public class LmdbBinder implements Binder {
     private final String name;
 
     // In LMDB all transactional ops have thread affinity so they must be executed on the same thread.
-    private final ExecutorService stexec;
+    private final ExecutorService stexec = Executors.newSingleThreadExecutor();
 
     private final Env<ByteBuffer> env;
     private Dbi<ByteBuffer> dbi;
@@ -49,9 +48,6 @@ public class LmdbBinder implements Binder {
     public LmdbBinder(String name, Env<ByteBuffer> env) {
         this.env = env;
         this.name = name;
-
-        // Each Binder has a thread on which it executes blocking calls to the particular dbi
-        this.stexec = Executors.newSingleThreadExecutor();
 
         // create the db if it doesnt exists
         this.dbi =  env.openDbi(name,MDB_CREATE);

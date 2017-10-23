@@ -3,7 +3,6 @@ package io.mewbase.cqrs;
 import io.mewbase.binders.Binder;
 import io.mewbase.bson.BsonObject;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -28,6 +27,6 @@ public interface Query {
         BsonObject getDocument();
     }
 
-    Stream<CompletableFuture<Result>> execute(BsonObject params);
+    Stream<Result> execute(BsonObject params);
 
 }

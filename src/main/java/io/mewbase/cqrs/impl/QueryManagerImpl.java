@@ -12,8 +12,10 @@ import io.mewbase.cqrs.QueryManager;
 
 import java.util.Map;
 
+
 import java.util.NoSuchElementException;
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -46,14 +48,12 @@ public class QueryManagerImpl implements QueryManager {
     }
 
     @Override
-    public CompletableFuture<Query> getQuery(String queryName)  {
-        CompletableFuture fut = new CompletableFuture();
+    public Optional<Query> getQuery(String queryName)  {
         if (queries.containsKey(queryName)) {
-            fut.complete(queries.get(queryName));
+            return Optional.of(queries.get(queryName));
         } else {
-            fut.completeExceptionally(new NoSuchElementException("No query matching " + queryName));
+            return Optional.empty();
         }
-        return fut;
     }
 
     @Override
@@ -62,9 +62,13 @@ public class QueryManagerImpl implements QueryManager {
     }
 
     @Override
-    public CompletableFuture<BsonObject> execute(String queryName, BsonObject context) {
-        // TODO with Streams
-        return null;
-    }
+    public Stream<Query.Result> execute(String queryName, BsonObject params) {
 
+        Optional<Query> queryOpt = getQuery(queryName);
+        if (queryOpt.isPresent()) {
+            return queryOpt.get().execute(params);
+        } else {
+            throw new NoSuchElementException("No query matching query name " + queryName);
+        }
+    }
 }
