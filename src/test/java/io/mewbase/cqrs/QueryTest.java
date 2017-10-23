@@ -16,15 +16,15 @@ import org.junit.runner.RunWith;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Created by Jamie on 14/10/2016.
@@ -41,7 +41,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test
     public void testQueryManager() throws Exception {
         final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
-        
+
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
         assertNotNull(mgr);
         assertNotNull(mgr.queryBuilder());
@@ -98,34 +98,45 @@ public class QueryTest extends MewbaseTestBase {
         final String KEY_TO_MATCH = "Key";
         final long VAL_TO_MATCH = 27;
 
+        final String DOC_ID_NOT_TO_MATCH = "NoMatchingDocID";
+        final long VAL_TO_NOT_MATCH = 34;
+
         // Set up the binder with a document
         final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
         final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
+
+        // Matching record
         BsonObject doc = new BsonObject().put(KEY_TO_MATCH, VAL_TO_MATCH);
         TEST_BINDER.put(TEST_DOCUMENT_ID, doc);
 
+        // Non Matching record
+        BsonObject anotherDoc  = new BsonObject().put(KEY_TO_MATCH, VAL_TO_NOT_MATCH);
+        TEST_BINDER.put(DOC_ID_NOT_TO_MATCH, anotherDoc);
+
+
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
-        Predicate<BsonObject> identity = params -> true;
+        Predicate<BsonObject> filter = document -> document.getInteger(KEY_TO_MATCH) == VAL_TO_MATCH;
 
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
                 from(TEST_BINDER_NAME).
-                filteredBy(identity).
+                filteredBy(filter).
                 create();
 
         BsonObject params = new BsonObject(); // no params for identity
         Stream<Query.Result> resultStream = mgr.execute(TEST_QUERY_NAME, params);
 
-        CountDownLatch latch = new CountDownLatch(1);
-        resultStream.forEach( result -> {
+        Set<Query.Result> resultSet = resultStream.map(result -> {
                 assertEquals(TEST_DOCUMENT_ID, result.getId());
                 assertEquals((Long)VAL_TO_MATCH, result.getDocument().getLong(KEY_TO_MATCH));
-                latch.countDown();
+                assertNotEquals(DOC_ID_NOT_TO_MATCH, result.getId());
+                assertNotEquals((Long)VAL_TO_NOT_MATCH, result.getDocument().getLong(KEY_TO_MATCH));
+                return result;
                 }
-            );
+            ).collect(Collectors.toSet());
 
-        latch.await();
+        assertEquals(1, resultSet.size());
     }
 
 

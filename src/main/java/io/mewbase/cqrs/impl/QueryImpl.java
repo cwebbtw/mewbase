@@ -5,7 +5,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.Query;
 
-import java.util.concurrent.CompletableFuture;
+
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
