@@ -62,7 +62,7 @@ public class QueryManagerImpl implements QueryManager {
     }
 
     @Override
-    public Stream<Query.Result> execute(String queryName, BsonObject params) {
+    public Stream<Map.Entry<String, BsonObject>> execute(String queryName, BsonObject params) {
 
         Optional<Query> queryOpt = getQuery(queryName);
         if (queryOpt.isPresent()) {

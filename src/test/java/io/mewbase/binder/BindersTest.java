@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -104,6 +105,7 @@ public class BindersTest extends MewbaseTestBase {
         store.close();
     }
 
+
     @Test
     public void testDelete() throws Exception {
         BinderStore store = new LmdbBinderStore(createMewbaseOptions());
@@ -121,7 +123,7 @@ public class BindersTest extends MewbaseTestBase {
 
 
     @Test
-    public void testGetIds() throws Exception {
+    public void testGetAll() throws Exception {
 
         BinderStore store = new LmdbBinderStore(createMewbaseOptions());
         Binder binder = store.open(BINDER_NAME);
@@ -136,32 +138,35 @@ public class BindersTest extends MewbaseTestBase {
             binder.put(String.valueOf(i), docPut.put(DOC_ID_KEY, i));
         });
 
-        Consumer<String> checker = (String id) -> {
+        Consumer<Map.Entry<String,BsonObject>> checker = (entry) -> {
             try {
-                BsonObject b = binder.get(id).get();
-                assertNotNull(b);
-                assertEquals((int)b.getInteger(DOC_ID_KEY) , (int)Integer.parseInt(id));
+                assertNotNull(entry);
+                String id = entry.getKey();
+                BsonObject doc = entry.getValue();
+                assertNotNull(id);
+                assertNotNull(doc);
+                assertEquals((int)doc.getInteger(DOC_ID_KEY),Integer.parseInt(id));
             } catch (Exception e) {
                 fail(e.getMessage());
             }
         };
 
         // get all
-        Stream<String> ids = binder.getIds().get();
-        ids.forEach(checker);
+        Stream<Map.Entry<String, BsonObject>> docs = binder.getDocuments();
+        docs.forEach(checker);
 
-        // get some of the docs
-        final int HALF_THE_DOCS = MANY_DOCS / 2;
-        Stream<String> some = binder.getIdsWithFilter(bson -> {
-            try {
-                return bson.getInteger(DOC_ID_KEY) <= HALF_THE_DOCS;
-            } catch (Exception e) {
-                fail(e.getMessage());
-            }
-            return false;
-        }).get();
-
-        assertEquals(some.collect(toSet()).size(), HALF_THE_DOCS);
+//        // get some of the docs
+//        final int HALF_THE_DOCS = MANY_DOCS / 2;
+//        Stream<String> some = binder.getIdsWithFilter(bson -> {
+//            try {
+//                return bson.getInteger(DOC_ID_KEY) <= HALF_THE_DOCS;
+//            } catch (Exception e) {
+//                fail(e.getMessage());
+//            }
+//            return false;
+//        }).get();
+//
+//        assertEquals(some.collect(toSet()).size(), HALF_THE_DOCS);
         store.close();
     }
 
@@ -211,11 +216,6 @@ public class BindersTest extends MewbaseTestBase {
         store2.close();
     }
 
-
-
-    private String getID(int id) {
-        return String.format("id-%05d", id);
-    }
 
     protected BsonObject createObject() {
         BsonObject obj = new BsonObject();

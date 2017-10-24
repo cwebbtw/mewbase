@@ -2,7 +2,7 @@ package io.mewbase.cqrs;
 
 import io.mewbase.bson.BsonObject;
 
-import java.util.function.BiFunction;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -15,9 +15,9 @@ public interface QueryBuilder {
 
     QueryBuilder from(String binderName);
 
-    QueryBuilder filteredBy(Predicate<BsonObject> documentFilter);
+    QueryBuilder selectedBy(Function<BsonObject, Set<String>> idSelector);
 
-    QueryBuilder selectedBy(Function<BsonObject, String> idSelector);
+    QueryBuilder filteredBy(Predicate<BsonObject> documentFilter);
 
     Query create();
 }

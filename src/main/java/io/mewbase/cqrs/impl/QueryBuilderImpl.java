@@ -1,13 +1,17 @@
 package io.mewbase.cqrs.impl;
 
 import io.mewbase.binders.Binder;
+import io.mewbase.binders.impl.lmdb.LmdbBinder;
 import io.mewbase.bson.BsonObject;
 
 import io.mewbase.cqrs.Query;
 import io.mewbase.cqrs.QueryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -16,15 +20,24 @@ import java.util.function.Predicate;
  */
 public class QueryBuilderImpl implements QueryBuilder {
 
+    private final static Logger log = LoggerFactory.getLogger(QueryBuilderImpl.class);
+
     private final QueryManagerImpl queryManager;
 
     private String queryName;
     private String binderName;
-    private Predicate<BsonObject> documentFilter = null;
-    private Function<BsonObject, String> idSelector = null;
+
+    private final Function<BsonObject, Set<String>>  DEFAULT_ID_SELECTOR = null;
+    private final Predicate<BsonObject> DEFAULT_DOC_FILTER = document -> true;
+
+    private Function<BsonObject, Set<String>> idSelector;
+    private Predicate<BsonObject> documentFilter;
+
 
     QueryBuilderImpl(QueryManagerImpl queryManager) {
         this.queryManager = queryManager;
+        documentFilter = DEFAULT_DOC_FILTER;
+        idSelector = DEFAULT_ID_SELECTOR;
     }
 
     @Override
@@ -46,7 +59,7 @@ public class QueryBuilderImpl implements QueryBuilder {
     }
 
     @Override
-    public  QueryBuilder selectedBy(Function<BsonObject, String> idSelector) {
+    public  QueryBuilder selectedBy(Function<BsonObject, Set<String>> idSelector) {
         this.idSelector = idSelector;
         return this;
     }
@@ -59,14 +72,12 @@ public class QueryBuilderImpl implements QueryBuilder {
         if (binderName == null) {
             throw new IllegalStateException("Please specify a binder name");
         }
-        if (documentFilter == null && idSelector == null) {
-            throw new IllegalStateException("Please specify either a document filter or id selector");
+        if ( idSelector == DEFAULT_ID_SELECTOR && documentFilter == DEFAULT_DOC_FILTER ) {
+            log.info("Query created with default id selector and doc filter");
         }
-        if (documentFilter != null && idSelector != null) {
-            throw new IllegalStateException("Can't set both document filter and id selector");
-        }
+
         Binder binder = queryManager.getStore().get(binderName).get();
-        Query query = new QueryImpl(queryName,binder,documentFilter,idSelector);
+        Query query = new QueryImpl(queryName,binder,idSelector,documentFilter);
         queryManager.registerQuery(query);
         return query;
     }

@@ -6,6 +6,7 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.impl.QueryManagerImpl;
 
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -31,6 +32,6 @@ public interface QueryManager  {
 
     Stream<Query> getQueries();
 
-    Stream<Query.Result> execute(String queryName, BsonObject context);
+    Stream<Map.Entry<String, BsonObject>> execute(String queryName, BsonObject context);
 
 }

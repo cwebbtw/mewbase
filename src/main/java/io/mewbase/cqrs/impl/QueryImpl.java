@@ -6,6 +6,9 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.Query;
 
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -16,38 +19,22 @@ import java.util.stream.Stream;
  */
 public class QueryImpl implements Query {
 
-    // Inner immutable class for getting results back.
-    class ResultImpl implements Result {
-
-        final String id;
-        final BsonObject document;
-
-        ResultImpl(String id, BsonObject document) {
-            this.id = id;
-            this.document = document;
-        }
-
-        @Override
-        public String getId() { return id; }
-
-        @Override
-        public BsonObject getDocument() { return document; }
-    }
-
     private final String name;
     private final Binder binder;
     private final Predicate<BsonObject> documentFilter;
-    private final Function<BsonObject, String> idSelector;
+    private final Function<BsonObject, Set<String>> idSelector;
 
 
     QueryImpl(String name,
               Binder binder,
-              Predicate<BsonObject> documentFilter,
-              Function<BsonObject, String> idSelector) {
+              Function<BsonObject, Set<String>> idSelector,
+              Predicate<BsonObject> documentFilter
+              ) {
         this.name = name;
         this.binder = binder;
-        this.documentFilter = documentFilter;
         this.idSelector = idSelector;
+        this.documentFilter = documentFilter;
+
     }
 
     @Override
@@ -64,26 +51,16 @@ public class QueryImpl implements Query {
     }
 
     @Override
-    public Function<BsonObject, String> getIdSelector() {
+    public Function<BsonObject, Set<String>> getIdSelector() {
         return idSelector;
     }
 
     @Override
-    public Stream<Result> execute(BsonObject params) {
-        if ( documentFilter != null) {
-            return resultStream( binder.getIdsWithFilter(documentFilter).join() );
-        } else {
-            // run the id selector on the params
-            return resultStream( Stream.of(idSelector.apply(params)));
-        }
+    public Stream<Map.Entry<String, BsonObject>> execute(BsonObject params) {
+        // Emtpy is match all or apply the
+        Set<String> keySet = new HashSet();
+        if (idSelector != null) keySet = idSelector.apply(params);
+        return  binder.getDocuments(keySet,documentFilter);
     }
-
-    private Stream<Result> resultStream( Stream<String> ids) {
-        return ids.map(id -> {
-            BsonObject doc = binder.get(id).join();
-            return new ResultImpl(id, doc);
-        });
-    }
-
 
 }

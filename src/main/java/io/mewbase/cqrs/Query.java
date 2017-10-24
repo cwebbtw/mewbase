@@ -3,6 +3,8 @@ package io.mewbase.cqrs;
 import io.mewbase.binders.Binder;
 import io.mewbase.bson.BsonObject;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -20,13 +22,13 @@ public interface Query {
 
     Predicate<BsonObject> getDocumentFilter();
 
-    Function<BsonObject, String> getIdSelector();
+    Function<BsonObject, Set<String>> getIdSelector();
 
     interface Result {
         String getId();
         BsonObject getDocument();
     }
 
-    Stream<Result> execute(BsonObject params);
+    Stream<Map.Entry<String, BsonObject>> execute(BsonObject params);
 
 }
