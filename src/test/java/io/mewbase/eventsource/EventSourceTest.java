@@ -76,7 +76,7 @@ public class EventSourceTest extends MewbaseTestBase {
         TestEventProducer prod = new NatsEventProducer(testChannelName);
 
         final int START_EVENT_NUMBER = 1;
-        final int END_EVENT_NUMBER = 512;
+        final int END_EVENT_NUMBER = 128;
 
         final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER;
 
@@ -107,10 +107,10 @@ public class EventSourceTest extends MewbaseTestBase {
         TestEventProducer prod = new NatsEventProducer(testChannelName);
 
         final int START_EVENT_NUMBER = 1;
-        final long MID_EVENT_NUMBER = 256;
-        final int END_EVENT_NUMBER = 512;
+        final long MID_EVENT_NUMBER = 64;
+        final int END_EVENT_NUMBER = 128;
 
-        final int eventsToTest = 100;
+        final int eventsToTest = 63;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
 
         prod.sendNumberedEvents((long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
@@ -140,10 +140,10 @@ public class EventSourceTest extends MewbaseTestBase {
         TestEventProducer prod = new NatsEventProducer(testChannelName);
 
         final int START_EVENT_NUMBER = 1;
-        final long MID_EVENT_NUMBER = 256;
-        final int END_EVENT_NUMBER = 512;
+        final long MID_EVENT_NUMBER = 64;
+        final int END_EVENT_NUMBER = 128;
 
-        final int eventsToTest = 100;
+        final int eventsToTest = 63;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
 
         prod.sendNumberedEvents((long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
@@ -170,10 +170,10 @@ public class EventSourceTest extends MewbaseTestBase {
         TestEventProducer prod = new NatsEventProducer(testChannelName);
 
         final int START_EVENT_NUMBER = 1;
-        final long MID_EVENT_NUMBER = 256;
-        final int END_EVENT_NUMBER = 512;
+        final long MID_EVENT_NUMBER = 64;
+        final int END_EVENT_NUMBER = 128;
 
-        final int eventsToTest = 100;
+        final int eventsToTest = 63;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
 
 
@@ -210,8 +210,8 @@ public class EventSourceTest extends MewbaseTestBase {
         TestEventProducer prod = new NatsEventProducer(testChannelName);
 
         final int START_EVENT_NUMBER = 1;
-        final long MID_EVENT_NUMBER = 256;
-        final int END_EVENT_NUMBER = 512;
+        final long MID_EVENT_NUMBER = 64;
+        final int END_EVENT_NUMBER = 128;
 
         final int eventsToTest = END_EVENT_NUMBER;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);

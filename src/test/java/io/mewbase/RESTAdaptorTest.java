@@ -17,31 +17,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+
 
 /**
  *
  */
 @RunWith(VertxUnitRunner.class)
-public class RESTAdaptorTest extends ServerTestBase {
+public class RESTAdaptorTest extends MewbaseTestBase {
 
     private final static Logger logger = LoggerFactory.getLogger(RESTAdaptorTest.class);
 
-    // TODO - Use new Event Source
-    // protected Producer prod;
-
-    @Override
-    protected void setup(TestContext context) throws Exception {
-        super.setup(context);
-        installInsertProjection();
-        //prod = client.createProducer(TEST_CHANNEL_1);
-    }
 
 
-    protected void setupChannelsAndBinders() throws Exception {
-       // server.createChannel(TEST_CHANNEL_1).get();
-       // server.createBinder(TEST_BINDER1).get();
-    }
+
 
     @Test
     public void testCommandWithPathParam(TestContext testContext) throws Exception {
@@ -74,13 +62,13 @@ public class RESTAdaptorTest extends ServerTestBase {
 
         BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
 
-        HttpClient httpClient = vertx.createHttpClient();
-        HttpClientRequest req = httpClient.request(HttpMethod.POST, 8080, "localhost", "/orders/" + customerID, resp -> {
-            assertEquals(200, resp.statusCode());
-           // async.complete();
-        });
-        req.putHeader("content-type", "text/json");
-        req.end(sentCommand.encode());
+//        HttpClient httpClient = vertx.createHttpClient();
+//        HttpClientRequest req = httpClient.request(HttpMethod.POST, 8080, "localhost", "/orders/" + customerID, resp -> {
+//            assertEquals(200, resp.statusCode());
+//           // async.complete();
+//        });
+//        req.putHeader("content-type", "text/json");
+//        req.end(sentCommand.encode());
     }
 
     @Test
@@ -112,13 +100,13 @@ public class RESTAdaptorTest extends ServerTestBase {
 
         BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
 
-        HttpClient httpClient = vertx.createHttpClient();
-        HttpClientRequest req = httpClient.request(HttpMethod.POST, 8080, "localhost", "/orders", resp -> {
-            assertEquals(200, resp.statusCode());
-           // async.complete();
-        });
-        req.putHeader("content-type", "text/json");
-        req.end(sentCommand.encode());
+//        HttpClient httpClient = vertx.createHttpClient();
+//        HttpClientRequest req = httpClient.request(HttpMethod.POST, 8080, "localhost", "/orders", resp -> {
+//            assertEquals(200, resp.statusCode());
+//           // async.complete();
+//        });
+//        req.putHeader("content-type", "text/json");
+//        req.end(sentCommand.encode());
     }
 
     //@Test
@@ -146,22 +134,22 @@ public class RESTAdaptorTest extends ServerTestBase {
 
         Async async = testContext.async();
 
-        HttpClient httpClient = vertx.createHttpClient();
-        HttpClientRequest req = httpClient.request(HttpMethod.GET, 8080, "localhost", "/orders/", resp -> {
-            assertEquals(200, resp.statusCode());
-            resp.bodyHandler(body -> {
-                BsonArray arr = new BsonArray(new JsonArray(body.toString()));
-                assertEquals(bsonArray, arr);
-                async.complete();
-            });
-            resp.exceptionHandler(t -> t.printStackTrace());
-        });
-        req.exceptionHandler(t -> {
-            t.printStackTrace();
-        });
+//        HttpClient httpClient = vertx.createHttpClient();
+//        HttpClientRequest req = httpClient.request(HttpMethod.GET, 8080, "localhost", "/orders/", resp -> {
+//            assertEquals(200, resp.statusCode());
+//            resp.bodyHandler(body -> {
+//                BsonArray arr = new BsonArray(new JsonArray(body.toString()));
+//                assertEquals(bsonArray, arr);
+//                async.complete();
+//            });
+//            resp.exceptionHandler(t -> t.printStackTrace());
+//        });
+//        req.exceptionHandler(t -> {
+//            t.printStackTrace();
+//        });
 
-        req.putHeader("content-type", "text/json");
-        req.end();
+//        req.putHeader("content-type", "text/json");
+//        req.end();
 
     }
 
@@ -176,36 +164,26 @@ public class RESTAdaptorTest extends ServerTestBase {
 
         Async async = testContext.async();
 
-        HttpClient httpClient = vertx.createHttpClient();
-        HttpClientRequest req = httpClient.request(HttpMethod.GET, 8080, "localhost",
-                "/orders/" + getID(0), resp -> {
-                    assertEquals(200, resp.statusCode());
-                    resp.bodyHandler(body -> {
-                        BsonObject received = new BsonObject(new JsonObject(body.toString()));
-                        assertEquals(doc, received);
-                        async.complete();
-                    });
-                    resp.exceptionHandler(t -> t.printStackTrace());
-                });
-        req.exceptionHandler(t -> {
-            t.printStackTrace();
-        });
+//        HttpClient httpClient = vertx.createHttpClient();
+//        HttpClientRequest req = httpClient.request(HttpMethod.GET, 8080, "localhost",
+//                "/orders/" + getID(0), resp -> {
+//                    assertEquals(200, resp.statusCode());
+//                    resp.bodyHandler(body -> {
+//                        BsonObject received = new BsonObject(new JsonObject(body.toString()));
+//                        assertEquals(doc, received);
+//                        async.complete();
+//                    });
+//                    resp.exceptionHandler(t -> t.printStackTrace());
+//                });
+//        req.exceptionHandler(t -> {
+//            t.printStackTrace();
+//        });
 
-        req.putHeader("content-type", "text/json");
-        req.end();
+//        req.putHeader("content-type", "text/json");
+//        req.end();
     }
 
-//    protected BsonObject waitForDoc(int docID) {
-//        // Wait until docs are inserted
-////        return waitForNonNull(() -> {
-////            try {
-////                return client.findByID(TEST_BINDER1, getID(docID)).get();
-////            } catch (Exception e) {
-////                throw new RuntimeException(e);
-////            }
-////        });
-//        assert
-//    }
+
 
     protected void installInsertProjection() {
 //        server.buildProjection("testproj").projecting(TEST_CHANNEL_1).onto(TEST_BINDER1).filteredBy(ev -> true)
