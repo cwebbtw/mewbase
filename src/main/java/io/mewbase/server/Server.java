@@ -12,18 +12,18 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface Server extends Mewbase {
 
-    static Server newServer(MewbaseOptions mewbaseOptions) {
-        return factory.newServer(mewbaseOptions);
-    }
+//    static Server newServer(MewbaseOptions mewbaseOptions) {
+//        return factory.newServer(mewbaseOptions);
+//    }
+//
+//    static Server newServer(Vertx vertx, MewbaseOptions mewbaseOptions) {
+//        return factory.newServer(vertx, mewbaseOptions);
+//    }
 
-    static Server newServer(Vertx vertx, MewbaseOptions mewbaseOptions) {
-        return factory.newServer(vertx, mewbaseOptions);
-    }
-
-    CompletableFuture<Void> start();
-
-    CompletableFuture<Void> stop();
-
-    ServerFactory factory = ServiceHelper.loadFactory(ServerFactory.class);
+//    CompletableFuture<Void> start();
+//
+//    CompletableFuture<Void> stop();
+//
+//    ServerFactory factory = ServiceHelper.loadFactory(ServerFactory.class);
 
 }

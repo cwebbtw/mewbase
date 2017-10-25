@@ -25,7 +25,7 @@ public class Main {
         new Main().start();
     }
 
-    private Server server;
+
 
     private void start() {
 
@@ -68,8 +68,8 @@ public class Main {
             options.setDocsDir(adjustDir(installDir, options.getDocsDir()));
             //options.setLogsDir(adjustDir(installDir, options.getLogsDir()));
 
-            server = Server.newServer(options);
-            server.start().get();
+         //   server = Server.newServer(options);
+         //   server.start().get();
             while (true) {
                 // Stop main exiting
                 try {

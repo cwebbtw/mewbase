@@ -3,7 +3,6 @@ package io.mewbase.projection.impl;
 
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
-import io.mewbase.binders.impl.lmdb.LmdbBinder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventHandler;
@@ -11,7 +10,7 @@ import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
-import io.mewbase.projection.ProjectionFactory;
+import io.mewbase.projection.ProjectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +22,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 
-public class ProjectionFactoryImpl implements ProjectionFactory {
+public class ProjectionManagerImpl implements ProjectionManager {
 
-    private final static Logger log = LoggerFactory.getLogger(ProjectionFactory.class);
+    private final static Logger log = LoggerFactory.getLogger(ProjectionManager.class);
 
     private final EventSource source;
     private final BinderStore store;
@@ -37,7 +36,7 @@ public class ProjectionFactoryImpl implements ProjectionFactory {
 
     private final Map<String, ProjectionImpl> projections = new ConcurrentHashMap<>();
 
-    public ProjectionFactoryImpl(EventSource source, BinderStore store) throws Exception {
+    public ProjectionManagerImpl(EventSource source, BinderStore store) throws Exception {
         this.source = source;
         this.store = store;
         this.stateBinder = store.open(PROJ_STATE_BINDER_NAME);

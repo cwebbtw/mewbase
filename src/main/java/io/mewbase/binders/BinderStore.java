@@ -15,8 +15,6 @@ public interface BinderStore {
      *
      * If the binder doesnt already exist the binder wil be created.
      *
-     * The return future will complete exceptionally if the store fails to create the new binder on the backing store
-     *
      * @param name of the Binder to open or create and open
      * @return succesfull  if Binder is created otherwise complet
      */
@@ -26,7 +24,7 @@ public interface BinderStore {
      * Get a Binder with the given name
      *
      * @param  name of the document within the binder
-     * @return a CompleteableFuture of the binder or a failed future if the binder doesnt exist.
+     * @return a CompletableFuture of the binder or a failed future if the binder doesnt exist.
      */
     Optional<Binder> get(String name);
 

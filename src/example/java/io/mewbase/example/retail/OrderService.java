@@ -186,49 +186,49 @@ public class OrderService  {
 //                .create();
 
 
-        mewbase.buildCommandHandler("addItem")
-                .emittingTo(ORDERS_CHANNEL_NAME)
-                .as((c, ctx) -> {
-                    AddItemCommand command = new AddItemCommand(c);
-                    AddItemEvent ev = new AddItemEvent();
-                    ev.setCustomerID(command.getCustomerID());
-                    ev.setProductID(command.getProductID());
-                    ev.setQuantity(command.getQuantity());
-                    ctx.publishEvent(ev.getBsonObject()).complete();
-                })
-                .create();
+//        mewbase.buildCommandHandler("addItem")
+//                .emittingTo(ORDERS_CHANNEL_NAME)
+//                .as((c, ctx) -> {
+//                    AddItemCommand command = new AddItemCommand(c);
+//                    AddItemEvent ev = new AddItemEvent();
+//                    ev.setCustomerID(command.getCustomerID());
+//                    ev.setProductID(command.getProductID());
+//                    ev.setQuantity(command.getQuantity());
+//                    ctx.publishEvent(ev.getBsonObject()).complete();
+//                })
+//                .create();
 
-        mewbase.buildCommandHandler("placeOrder")
-                .emittingTo(ORDERS_CHANNEL_NAME)
-                .as((c, ctx) -> {
-                    PlaceOrderCommand command = new PlaceOrderCommand(c);
-                    OrderPlacedEvent event = new OrderPlacedEvent();
-                    event.setCustomerID(command.getCustomerID());
-                    //CommandContext.putFields(command, event, "customerID");
-                    // Retrieve the basket and add it to the event
-//                    basketsBinder.get("customerID").whenComplete((basket, t) -> {
-//                        if (t == null) {
-//                            String orderID = UUID.randomUUID().toString();
-//                            event.setOrderID(orderID);
-//                            event.setOrder(basket);
-//                            ctx.publishEvent(event.getBsonObject()).complete();
-//                        } else {
-//                            // TODO fail context
-//                        }
-//                    });
-                })
-                .create();
+//        mewbase.buildCommandHandler("placeOrder")
+//                .emittingTo(ORDERS_CHANNEL_NAME)
+//                .as((c, ctx) -> {
+//                    PlaceOrderCommand command = new PlaceOrderCommand(c);
+//                    OrderPlacedEvent event = new OrderPlacedEvent();
+//                    event.setCustomerID(command.getCustomerID());
+//                    //CommandContext.putFields(command, event, "customerID");
+//                    // Retrieve the basket and add it to the event
+////                    basketsBinder.get("customerID").whenComplete((basket, t) -> {
+////                        if (t == null) {
+////                            String orderID = UUID.randomUUID().toString();
+////                            event.setOrderID(orderID);
+////                            event.setOrder(basket);
+////                            ctx.publishEvent(event.getBsonObject()).complete();
+////                        } else {
+////                            // TODO fail context
+////                        }
+////                    });
+//                })
+//                .create();
 
-        mewbase.buildQuery("allBaskets")
-                .from("baskets")
-                .documentFilter((doc, ctx) -> true)
-                .create();
-
-        mewbase
-                .exposeCommand("addItem", "/baskets/:customerID/", HttpMethod.PATCH)
-                .exposeCommand("placeOrder", "/orders/:customerID/", HttpMethod.POST)
-                .exposeQuery("allBaskets", "/baskets/")
-                .exposeFindByID("baskets", "/baskets/:customerID/");
+//        mewbase.buildQuery("allBaskets")
+//                .from("baskets")
+//                .documentFilter((doc, ctx) -> true)
+//                .create();
+//
+//        mewbase
+//                .exposeCommand("addItem", "/baskets/:customerID/", HttpMethod.PATCH)
+//                .exposeCommand("placeOrder", "/orders/:customerID/", HttpMethod.POST)
+//                .exposeQuery("allBaskets", "/baskets/")
+//                .exposeFindByID("baskets", "/baskets/:customerID/");
 
     }
 

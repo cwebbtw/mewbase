@@ -27,8 +27,9 @@ public class ShoppingBasketExample {
 
         // Setup and start a server
         MewbaseOptions options = new MewbaseOptions();
-        Server server = Server.newServer(options);
-        server.start().get();
+
+//        Server server = Server.newServer(options);
+//        server.start().get();
 
 //        server.createBinder("baskets").get();
 //
@@ -66,6 +67,6 @@ public class ShoppingBasketExample {
        // System.out.println("Basket is: " + basket);
 
        // client.close().get();
-        server.stop().get();
+       // server.stop().get();
     }
 }

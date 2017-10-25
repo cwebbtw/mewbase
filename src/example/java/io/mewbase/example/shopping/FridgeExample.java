@@ -41,8 +41,8 @@ public class FridgeExample {
     private void exampleServer() throws Exception {
 
         // Setup and start a server
-        final Server server = Server.newServer(new MewbaseOptions());
-        server.start().get();
+//        final Server server = Server.newServer(new MewbaseOptions());
+//        server.start().get();
 
         // server.createBinder("fridges").get();
 
@@ -62,7 +62,7 @@ public class FridgeExample {
 
         // run the client to exercise the server
         exampleClient();
-        server.stop().get();
+        //server.stop().get();
     }
 
 

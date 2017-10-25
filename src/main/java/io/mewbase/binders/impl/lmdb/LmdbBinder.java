@@ -16,19 +16,17 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
 import java.util.concurrent.*;
 
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static java.nio.ByteBuffer.allocate;
+
 import static java.nio.ByteBuffer.allocateDirect;
 import static org.lmdbjava.CursorIterator.IteratorType.FORWARD;
 import static org.lmdbjava.DbiFlags.MDB_CREATE;
-
 
 
 /**
@@ -41,7 +39,7 @@ public class LmdbBinder implements Binder {
     private final String name;
 
     // In LMDB all transactional ops have thread affinity so they must be executed on the same thread.
-    private final ExecutorService stexec;
+    private final ExecutorService stexec = Executors.newSingleThreadExecutor();
 
     private final Env<ByteBuffer> env;
     private Dbi<ByteBuffer> dbi;
@@ -49,9 +47,6 @@ public class LmdbBinder implements Binder {
     public LmdbBinder(String name, Env<ByteBuffer> env) {
         this.env = env;
         this.name = name;
-
-        // Each Binder has a thread on which it executes blocking calls to the particular dbi
-        this.stexec = Executors.newSingleThreadExecutor();
 
         // create the db if it doesnt exists
         this.dbi =  env.openDbi(name,MDB_CREATE);
@@ -64,43 +59,43 @@ public class LmdbBinder implements Binder {
         return name;
     }
 
-    @Override
-    public CompletableFuture<Stream<String>> getIds() {
-        return getIdsWithFilter(b -> true);
-    }
-
-    @Override
-    public CompletableFuture<Stream<String>> getIdsWithFilter(Predicate<BsonObject> filter) {
-
-       CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
-
-            LinkedList<String> matchingIds = new LinkedList<String>();
-
-            try (final Txn<ByteBuffer> txn = env.txnRead()) {
-                final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, FORWARD);
-                final Iterator<CursorIterator.KeyVal<ByteBuffer>> itr = cursorItr.iterable().iterator();
-                boolean hasNext = itr.hasNext();
-                txn.reset();
-
-                while (hasNext) {
-                    txn.renew();
-                    final CursorIterator.KeyVal<ByteBuffer> kv = itr.next();
-                    // Copy bytes from LMDB managed memory to vert.x buffers
-                    final Buffer keyBuffer = Buffer.buffer(kv.key().remaining());
-                    keyBuffer.setBytes(0, kv.key());
-                    final Buffer valueBuffer = Buffer.buffer(kv.val().remaining());
-                    valueBuffer.setBytes(0, kv.val());
-                    hasNext = itr.hasNext(); // iterator makes reference to the txn
-                    txn.reset(); // got data so release the txn
-                    final BsonObject doc = new BsonObject(valueBuffer);
-                    final String docId = new String(keyBuffer.getBytes());
-                    if (filter.test(doc)) matchingIds.addLast(docId);
-                }
-            }
-            return matchingIds.stream();
-        }, stexec);
-        return fut;
-    }
+//    @Override
+//    public CompletableFuture<Stream<String>> getIds() {
+//        return getIdsWithFilter(b -> true);
+//    }
+//
+//    @Override
+//    public CompletableFuture<Stream<String>> getIdsWithFilter(Predicate<BsonObject> filter) {
+//
+//       CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+//
+//            LinkedList<String> matchingIds = new LinkedList<String>();
+//
+//            try (final Txn<ByteBuffer> txn = env.txnRead()) {
+//                final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, FORWARD);
+//                final Iterator<CursorIterator.KeyVal<ByteBuffer>> itr = cursorItr.iterable().iterator();
+//                boolean hasNext = itr.hasNext();
+//                txn.reset();
+//
+//                while (hasNext) {
+//                    txn.renew();
+//                    final CursorIterator.KeyVal<ByteBuffer> kv = itr.next();
+//                    // Copy bytes from LMDB managed memory to vert.x buffers
+//                    final Buffer keyBuffer = Buffer.buffer(kv.key().remaining());
+//                    keyBuffer.setBytes(0, kv.key());
+//                    final Buffer valueBuffer = Buffer.buffer(kv.val().remaining());
+//                    valueBuffer.setBytes(0, kv.val());
+//                    hasNext = itr.hasNext(); // iterator makes reference to the txn
+//                    txn.reset(); // got data so release the txn
+//                    final BsonObject doc = new BsonObject(valueBuffer);
+//                    final String docId = new String(keyBuffer.getBytes());
+//                    if (filter.test(doc)) matchingIds.addLast(docId);
+//                }
+//            }
+//            return matchingIds.stream();
+//        }, stexec);
+//        return fut;
+//    }
 
 
     @Override
@@ -149,6 +144,48 @@ public class LmdbBinder implements Binder {
             return deleted;
         }, stexec);
         return fut;
+    }
+
+    @Override
+    public Stream<Map.Entry<String, BsonObject>> getDocuments() {
+        return getDocuments( new HashSet(), document -> true);
+    }
+
+    @Override
+    public Stream<Map.Entry<String, BsonObject>> getDocuments(Set<String> keySet, Predicate<BsonObject> filter) {
+        CompletableFuture<Set<Map.Entry<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
+
+            Set<Map.Entry<String, BsonObject>> resultSet = new HashSet<>();
+
+            try (final Txn<ByteBuffer> txn = env.txnRead()) {
+                final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, FORWARD);
+                final Iterator<CursorIterator.KeyVal<ByteBuffer>> itr = cursorItr.iterable().iterator();
+                boolean hasNext = itr.hasNext();
+                txn.reset();
+
+                while (hasNext) {
+                    txn.renew();
+                    final CursorIterator.KeyVal<ByteBuffer> rawKV = itr.next();
+                    // Copy bytes from LMDB managed memory to vert.x buffers
+                    final Buffer keyBuffer = Buffer.buffer(rawKV.key().remaining());
+                    keyBuffer.setBytes(0, rawKV.key());
+                    final Buffer valueBuffer = Buffer.buffer(rawKV.val().remaining());
+                    valueBuffer.setBytes(0, rawKV.val());
+                    hasNext = itr.hasNext(); // iterator makes reference to the txn
+                    txn.reset(); // got data so release the txn
+                    final String id = new String(keyBuffer.getBytes());
+                    if (keySet.isEmpty() || keySet.contains(id)) {
+                        final BsonObject doc = new BsonObject(valueBuffer);
+                        if (filter.test(doc)) {
+                            Map.Entry<String,BsonObject> entry = new AbstractMap.SimpleEntry<>(id, doc);
+                            resultSet.add(entry);
+                        }
+                    }
+                }
+            }
+            return resultSet;
+        }, stexec);
+        return fut.join().stream();
     }
 
 
