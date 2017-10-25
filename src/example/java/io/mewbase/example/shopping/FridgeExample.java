@@ -4,17 +4,15 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
-import io.mewbase.bson.BsonPath;
 
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
-import io.mewbase.projection.ProjectionBuilder;
+
 import io.mewbase.projection.ProjectionManager;
-import io.mewbase.server.Server;
-import io.mewbase.server.MewbaseOptions;
+
 
 import java.util.function.Consumer;
 
@@ -44,8 +42,8 @@ public class FridgeExample {
 
     public static void main(String[] args) throws Exception {
 
-        // In order to run a projection Setup a projection that will run
-        // when new events arrive start an EventSource and BinderStore.
+
+        // In order to run a projection set up an EventSource and BinderStore.
         EventSource src = new NatsEventSource();
         BinderStore store = new LmdbBinderStore();
         ProjectionManager mgr = ProjectionManager.instance(src,store);
@@ -73,6 +71,9 @@ public class FridgeExample {
                 .create();
 
 
+
+        //************************** Client Side Setup ******************************
+
         // set up a sink to send events to the projection
         EventSink sink = new NatsEventSink();
 
@@ -80,9 +81,9 @@ public class FridgeExample {
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
         sink.publish(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
 
-        Thread.sleep(10);
+        Thread.sleep(100);
 
-        // Now get the status
+        // Consumer of the Docuemnt
         Consumer<BsonObject> statusDocumentConsumer = fridgeStateDoc ->
                 System.out.println("Fridge State is :" + fridgeStateDoc);
 
@@ -91,7 +92,7 @@ public class FridgeExample {
 
         // Shut that door
         sink.publish(FRIDGE_EVENT_CHANNEL_NAME,event.copy().put("status", "shut"));
-        Thread.sleep(10);
+        Thread.sleep(100);
 
         // Now get the fridge state again
         fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );
