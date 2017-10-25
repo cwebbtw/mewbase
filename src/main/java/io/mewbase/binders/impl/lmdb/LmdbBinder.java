@@ -59,44 +59,6 @@ public class LmdbBinder implements Binder {
         return name;
     }
 
-//    @Override
-//    public CompletableFuture<Stream<String>> getIds() {
-//        return getIdsWithFilter(b -> true);
-//    }
-//
-//    @Override
-//    public CompletableFuture<Stream<String>> getIdsWithFilter(Predicate<BsonObject> filter) {
-//
-//       CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
-//
-//            LinkedList<String> matchingIds = new LinkedList<String>();
-//
-//            try (final Txn<ByteBuffer> txn = env.txnRead()) {
-//                final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, FORWARD);
-//                final Iterator<CursorIterator.KeyVal<ByteBuffer>> itr = cursorItr.iterable().iterator();
-//                boolean hasNext = itr.hasNext();
-//                txn.reset();
-//
-//                while (hasNext) {
-//                    txn.renew();
-//                    final CursorIterator.KeyVal<ByteBuffer> kv = itr.next();
-//                    // Copy bytes from LMDB managed memory to vert.x buffers
-//                    final Buffer keyBuffer = Buffer.buffer(kv.key().remaining());
-//                    keyBuffer.setBytes(0, kv.key());
-//                    final Buffer valueBuffer = Buffer.buffer(kv.val().remaining());
-//                    valueBuffer.setBytes(0, kv.val());
-//                    hasNext = itr.hasNext(); // iterator makes reference to the txn
-//                    txn.reset(); // got data so release the txn
-//                    final BsonObject doc = new BsonObject(valueBuffer);
-//                    final String docId = new String(keyBuffer.getBytes());
-//                    if (filter.test(doc)) matchingIds.addLast(docId);
-//                }
-//            }
-//            return matchingIds.stream();
-//        }, stexec);
-//        return fut;
-//    }
-
 
     @Override
     public CompletableFuture<BsonObject> get(String id) {
@@ -188,7 +150,7 @@ public class LmdbBinder implements Binder {
         return fut.join().stream();
     }
 
-
+    
     public Void close() {
         env.sync(true);
         dbi.close();

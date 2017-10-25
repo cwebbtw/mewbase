@@ -21,7 +21,6 @@ import java.util.function.Consumer;
  * Simple Shopping Basket when the Basket is an Aggregate projection over the
  * order events
  *
-
  * Created by tim on 08/11/16.
  * Updated by Nige on 25/10/17
  */
