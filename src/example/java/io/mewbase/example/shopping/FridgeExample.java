@@ -1,17 +1,29 @@
 package io.mewbase.example.shopping;
 
+import io.mewbase.binders.Binder;
+import io.mewbase.binders.BinderStore;
+import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.bson.BsonPath;
 
+import io.mewbase.eventsource.Event;
+import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.EventSource;
+import io.mewbase.eventsource.impl.nats.NatsEventSink;
+import io.mewbase.eventsource.impl.nats.NatsEventSource;
+import io.mewbase.projection.ProjectionBuilder;
+import io.mewbase.projection.ProjectionManager;
 import io.mewbase.server.Server;
 import io.mewbase.server.MewbaseOptions;
+
+import java.util.function.Consumer;
 
 
 /**
  * Fridge Example
  *
  * We assume that we have a number of Fridges (Refrigerators) that can raise IOT style events.
- * Each time the Fridge produces an event we Publish the event via the mewbase client to the server.
+ * Each time the Fridge produces an event we Publish the event as a BsonObject via an EventSink.
  * For each Fridge we maintain a Document in the 'fridges' Binder that reflects the current state
  * of each of the fridges that are sending out events.
  *
@@ -21,79 +33,73 @@ import io.mewbase.server.MewbaseOptions;
  * 2) Introduce a new event that reflects the temperature of the fridge and integrate this into
  * the current projection, or make a new projection to handle the new status event.
  *
+ * The example depends on a running instance of NatsStreaming service. See the instructions
+ * here https://github.com/Tesco/mewbase
+ *
  * Created by Nige on 17/05/17.
+ * Updated by Nige on 25/10/17
  */
 
 public class FridgeExample {
 
-    public static void main(String[] args) {
-        try {
-            new FridgeExample().exampleServer();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println("Main complete");
-    }
+    public static void main(String[] args) throws Exception {
 
-    /**
-    Simple Fridge example
-     */
-    private void exampleServer() throws Exception {
+        // In order to run a projection Setup a projection that will run
+        // when new events arrive start an EventSource and BinderStore.
+        EventSource src = new NatsEventSource();
+        BinderStore store = new LmdbBinderStore();
+        ProjectionManager mgr = ProjectionManager.instance(src,store);
 
-        // Setup and start a server
-//        final Server server = Server.newServer(new MewbaseOptions());
-//        server.start().get();
-
-        // server.createBinder("fridges").get();
-
-        // Register a projection that will respond to fridge door status events
-//        server.buildProjection("maintain_fridge_status")              // projection name
-//                .projecting("fridge.status")                                         // channel name
-//                .filteredBy(ev -> ev.getString("eventType").equals("doorStatus"))     // event filter
-//                .onto("fridges")                                                     // binder name
-//                .identifiedBy(ev -> ev.getString("fridgeID"))                   // document id selector; how to obtain the doc id from the event bson
-//                .as( (BsonObject fridge, BsonObject event) ->  { // projection function
-//
-//                        final String doorStatus = event.getString("status");
-//                        BsonPath.set(fridge, doorStatus, "door");
-//                        return fridge;
-//                } )
-//                .create();
-
-        // run the client to exercise the server
-        exampleClient();
-        //server.stop().get();
-    }
+        final String FRIDGE_EVENT_CHANNEL_NAME = "FridgeStatusChannel";
+        final String FRIDGE_BINDER_NAME = "FridgeBinder";
 
 
-    private void exampleClient() throws Exception {
+        // Create a projection by using a fluent builder from the manager.
+        mgr.builder().named("maintain_fridge_status")             // projection name
+                // channel name
+                .projecting(FRIDGE_EVENT_CHANNEL_NAME)
+                // event filter
+                .filteredBy(evt -> evt.getBson().getString("eventType").equals("doorStatus"))
+                // binder name
+                .onto(FRIDGE_BINDER_NAME)
+                // document id selector; how to obtain the doc id from the event Bson
+                .identifiedBy(evt -> evt.getBson().getString("fridgeID"))
+                // projection to update the fridge state with the given event
+                .as( (BsonObject fridgeState, Event evt) ->  {
+                        final String doorStatus = evt.getBson().getString("status");
+                        fridgeState.put("door", doorStatus);
+                        return fridgeState;
+                } )
+                .create();
 
-        // Create a client
-        //final Client client = Client.newClient(new ClientOptions());
+
+        // set up a sink to send events to the projection
+        EventSink sink = new NatsEventSink();
 
         // Send some open close events for this fridge
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
+        sink.publish(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
 
-        // Open the door
-        // TODO -
-        // client.publish("fridge.status", event.copy().put("status", "open"));
-        // wait for event to log and projection to fire
-        Thread.sleep(100);
+        Thread.sleep(10);
 
         // Now get the status
-       // BsonObject fridgeState1 = client.findByID("fridges", "f1").get();
-       // System.out.println("Fridge State is :" + fridgeState1);
+        Consumer<BsonObject> statusDocumentConsumer = fridgeStateDoc ->
+                System.out.println("Fridge State is :" + fridgeStateDoc);
 
-        // Shut the door
-        // TODO
-        // client.publish("fridge.status", event.copy().put("status", "shut"));
-        Thread.sleep(100);
+        Binder fridgeStatusBinder = store.get(FRIDGE_BINDER_NAME).get();
+        fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );
+
+        // Shut that door
+        sink.publish(FRIDGE_EVENT_CHANNEL_NAME,event.copy().put("status", "shut"));
+        Thread.sleep(10);
 
         // Now get the fridge state again
-        //BsonObject fridgeState2 = client.findByID("fridges", "f1").get();
-       //  System.out.println("Fridge State is :" + fridgeState2);
+        fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );
 
-        // client.close().get();
+        // close the resources
+        sink.close();
+        src.close();
+        store.close();
     }
 
 }
