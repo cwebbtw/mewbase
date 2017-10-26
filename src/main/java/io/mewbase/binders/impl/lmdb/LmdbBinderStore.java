@@ -97,7 +97,7 @@ public class LmdbBinderStore implements BinderStore {
     @Override
     public Boolean close() {
         try {
-            binders().map(binder -> ((LmdbBinder)binder).close());
+            binders().forEach(binder -> ((LmdbBinder)binder).close());
         } catch (Exception e) {
             logger.error("Failed to close all binders.", e);
         } finally {

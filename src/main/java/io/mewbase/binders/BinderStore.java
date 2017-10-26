@@ -56,6 +56,6 @@ public interface BinderStore {
      *
      * @return
      */
-    Boolean close();
+    Boolean close() throws Exception;
 
 }
