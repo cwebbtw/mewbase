@@ -43,8 +43,8 @@ pieces of technology - a messaging system and a database.
 
 ## Introducing mewbase
 
-Mewbase provides a library that abstracts a high performance streaming event store, such as Nats Streaming server and  
-also allows you to run persistent *functions* within the library that can listen to raw events and maintain multiple 
+Mewbase provides a library that abstracts a streaming event store, such as Nats Streaming server. 
+Allowing you to run persistent *functions* within the library that can listen to raw events and maintain multiple 
 *projections* of the event data.
  
 The projections can then be queried in similar way to how you would with a document or graph database.
@@ -59,8 +59,7 @@ An interesting observation is, unlike a normal document database, documents deri
 updated directly by clients, they are only updated in the engine by the functions.
 
 The client simply sends events (*add item to basket*), and issues queries (*give me current state of basket 1234*)(*see 
-shopping examples package within this project).
-That means the client has no access to shared mutable state - a big win!  
+shopping examples package within this project). That means the client has no access to shared mutable state - a big win!  
 
 The events, functions and documents are all maintained by the same library, mewbase keeps track of synchronization
 between the events and the views so you know they are always up to date.
