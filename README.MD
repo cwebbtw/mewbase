@@ -43,71 +43,67 @@ pieces of technology - a messaging system and a database.
 
 ## Introducing mewbase
 
-Mewbase provides an engine that functions as a high performance streaming event store but also
- allows you to run persistent *functions* in the engine that listen to raw events and maintain multiple *projections* of
- the event data.
+Mewbase provides a library that abstracts a high performance streaming event store, such as Nats Streaming server and  
+also allows you to run persistent *functions* within the library that can listen to raw events and maintain multiple 
+*projections* of the event data.
  
 The projections can then be queried in similar way to how you would with a document or graph database.
 
 So you can think of mewbase as combining the following:
 
-* An event streaming engine
-* A document/graph database
+* An event streaming protocol
+* A document/graph database protocol
 * Functions which map events to documents
 
-An interesting observation is, unlike a normal document database, the documents are not updated directly by clients,
-they are only updated in the engine by the functions.
+An interesting observation is, unlike a normal document database, documents derived from the mewbase library are not 
+updated directly by clients, they are only updated in the engine by the functions.
 
-The client simply sends events (*add item to basket*), and issues queries (*give me current state of basket 1234*).
+The client simply sends events (*add item to basket*), and issues queries (*give me current state of basket 1234*)(*see 
+shopping examples package within this project).
 That means the client has no access to shared mutable state - a big win!  
 
-The events, functions and documents are all maintained in the same engine, mewbase keeps track of synchronization
-between the events and the views so you know they are always up to date, irrespective of whether any client
-applications or services are connected.
+The events, functions and documents are all maintained by the same library, mewbase keeps track of synchronization
+between the events and the views so you know they are always up to date.
 
-Since the functions run on the server, you can write them in your normal programming language - no need to learn
-another language like SQL. The same applies to queries.
+Since the projection functions run within the library, you can write them in Java - no need to learn another language like SQL. 
+The same applies to commands and queries.
 
-All this functionality will be accessible over a simple wire protocol and via a simple client API which we will
-provide in Java, JavaScript and potentially other languages going ahead.
+The Mewbase library is fully embeddable in any Java (or Scala, or Groovy) application and  is a great match 
+for implementing event driven microservices using an event sourcing / CQRS pattern.
 
-Mewbase engine will also be fully embeddable in any Java (or Scala, or Groovy) application so you can
-colocate your "server" in your actual service, or if you prefer a standalone server or cluster of servers, mewbase will
-support that setup too.
-
-Mewbase is a great match for implementing event driven microservices using an event sourcing / CQRS pattern.
-
-Mewbase will be designed from scratch to cope with very large datasets and optimised for modern storage.
+Mewbase has adapters for transforming CQRS commands and queries into REST based server APIs allowing servers 
+to expose library faciliteis via REST interfaces in (Vert.x and SpringBoot *coming soon*)
 
 ### Features
 
 Some of the features / future features:
 
-* Multiple event logs scaling to large sizes
-* Horizontal scalability via sharding/partitioning
-* Replication
+Library Features
+
+* BSON messages
+* JSON to Bson and Bson to JSON transformations
+* Projection Creation and Management
+* User defined functions
+* Metrics
+* Completely non blocking, and reactive APIs
+* CQRS Toolkit
+* Live persistent queries - Document updates to event channels
+* Fully embeddable in Java 9, Scala, Groovy, etc servers.
+
+Facilities assumed in protocols for Event Sinks and Sources. 
+
+* Event streaming
+* Multiple event logs
 * Event persistence
-* Transactional persistence of events
-* Transaction updates of multiple documents in same binder 
 * Event subscription
 * Subscription filters
-* User defined functions
-* BSON messages
-* Persistent documents
+
+Facilities assumed in protocols for Document Stores
+
+* Persistent documents (Bson as Standard)
 * Document queries
-* Event streaming
 * Document streaming
-* Simple wire protocol
-* Clients in Java, JS, Go, ...
-* Pluggable authentication and authorisation
-* TLS for connections with server + client certs
-* Metrics
-* Fully embeddable
-* Standalone option
-* Log archiving
-* Completely non blocking, and reactive APIs
-* Live persistent queries - sends more matching data to client as it arrives on server 
-* Sidecars for node.js/go
+
 
 ### Why the name "mewbase"?
 
@@ -133,28 +129,27 @@ We also have a gitter channel for general chat. Come and say hi!
 
 Roadmap and other pages are on the [wiki](https://github.com/Tesco/mewbase/wiki)
 
-## Build and run
+## Install Library and Run Examples
 
-Mewbase can be run embedded in any Java application (see examples).
+Mewbase can be run embedded in any Java application (see examples package).
 
-The current version of Mewbase depends on an instance of a [nats-streaming](https://nats.io/documentation/streaming/nats-streaming-intro/) server instance.  Assuming you have [docker](https://www.docker.com/) locally installed, the quickest and easiest way to up and running is via following commands:
+The current version of Mewbase depends on a running instance of a [nats-streaming](https://nats.io/documentation/streaming/nats-streaming-intro/) server instance.  Assuming you have [docker](https://www.docker.com/) locally installed, the quickest and easiest way to up and running is via following commands:
 
     docker pull nats-streaming
     docker run -p 4222:4222 -p 8222:8222 -d nats-streaming
 
-Meebase can then be built and run as a standalone server, to do this:
 
-    mvn clean package
+Mewbase can then be built and installed into your local maven repository so that 
+you can include it as a library dependency into other client and server projects   
 
-This creates a distribution `tar.gz` and `.zip` in the `target` directory
+    mvn clean install
+ 
+ 
+Refer to the maven output for the the current library version number which you can add to 
+maven pom.xml build files, for example, and the example code can be run from the resulting 
+mewbase-<version>.jar file or from your project IDE.
 
-Unzip this where you want to install the server
 
-    unzip target/mewbase-0.1-SNAPSHOT-bin.zip
-
-Run it
-
-    mewbase-0.1-SNAPSHOT/bin/mew
     
-Tip: put the directory `mewbase-0.1-SNAPSHOT/bin` on your `PATH` environment variable so you can run `mew`
-from anywhere.   
+
+
