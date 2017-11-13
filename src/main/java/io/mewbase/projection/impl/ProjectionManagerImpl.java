@@ -92,7 +92,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
             }
         };
 
-        Subscription subs = subscribeFromMostRecentEvent(projectionName,channelName,eventHandler);
+        Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 
         // register it with the Factory
         ProjectionImpl proj = new ProjectionImpl(projectionName,subs);
@@ -112,12 +112,12 @@ public class ProjectionManagerImpl implements ProjectionManager {
     }
 
 
-    private Subscription subscribeFromMostRecentEvent(String projectionName, String channelName, EventHandler eventHandler) {
+    private Subscription subscribeFromLastKnownEvent(String projectionName, String channelName, EventHandler eventHandler) {
         try {
             final BsonObject stateDoc = stateBinder.get(projectionName).get();
             if (stateDoc == null) {
                 log.info("Projection " + projectionName + " subscribing from start of channel " + channelName);
-                return source.subscribe(channelName, eventHandler);
+                return source.subscribeAll(channelName, eventHandler);
             } else {
                 Long nextEvent = stateDoc.getLong(EVENT_NUM_FIELD) + 1;
                 log.info("Projection " + projectionName + " subscribing from event number " + nextEvent);
@@ -126,7 +126,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
         } catch (Exception exp) {
             log.error("Failed to recover last known state of the projection " + projectionName, exp);
         }
-        return null; // not reachable but compiler moans
+        return null;
     }
 
 }
