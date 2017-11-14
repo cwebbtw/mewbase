@@ -116,6 +116,9 @@ public class ProjectionManagerImpl implements ProjectionManager {
         return projections.keySet().stream() ;
     }
 
+    @Override
+    public void stopAll() { projections.forEach( (name, proj) -> proj.stop() ); }
+
 
     private Subscription subscribeFromLastKnownEvent(String projectionName, String channelName, EventHandler eventHandler) {
         try {

@@ -48,7 +48,7 @@ public interface ProjectionManager {
     Stream<String> projectionNames();
 
     /**
-     * Stops all of the current projections.
+     * Stops all of the current projections within this manager.
      */
     void stopAll();
 }

@@ -143,8 +143,8 @@ public class ProjectionTest extends MewbaseTestBase {
         });
 
         assertTrue( names.allMatch( name -> mgr.isProjection(name) ) );
-        Thread.sleep(200);
-
+        Thread.sleep(400);
+        mgr.stopAll();
     }
 
     @Test
