@@ -1,9 +1,7 @@
 package io.mewbase.binders.impl.lmdb;
 
-
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
-
 
 import io.vertx.core.buffer.Buffer;
 
@@ -61,7 +59,12 @@ public class LmdbBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<BsonObject> get(String id) {
+    public CompletableFuture<BsonObject> get(final String id) {
+        // The next line fixes a null value for "id" in the Supplier lambda in the
+        // following line. A very unsatisfying rationale it fixes an over optimisation
+        // in the constructor of the Supplier function by making explicit reference to
+        // the id parameter.
+        if (id == null) throw new NullPointerException("Binder Id Key cannot be null");
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             // in order to do a read we have to do it under a txn so use
             // try with resource to get the auto close magic.
@@ -99,7 +102,7 @@ public class LmdbBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<Boolean> delete(String id) {
+    public CompletableFuture<Boolean> delete(final String id) {
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
             boolean deleted = dbi.delete(key);

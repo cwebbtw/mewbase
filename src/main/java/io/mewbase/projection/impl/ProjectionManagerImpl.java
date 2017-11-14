@@ -69,26 +69,31 @@ public class ProjectionManagerImpl implements ProjectionManager {
             if (eventFilter.apply(event)) {
 
                 String docID = docIDSelector.apply(event);
-                Binder binder = store.open(binderName);
+                if (docID == null) {
+                    log.error("In projection " + projectionName + " document id selector returned null");
+                } else {
 
-                binder.get(docID).whenComplete((inputDoc, innerExp) -> {
+                    Binder binder = store.open(binderName);
+
+                    binder.get(docID).whenComplete((inputDoc, innerExp) -> {
                         // Case 1 - Something broke in the store/binder
-                    if (innerExp != null) {
-                        log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
-                    }
-                    // case 2 - Nothing broke but the document doesnt exists
-                    if (inputDoc == null && innerExp == null) {
-                        inputDoc = new BsonObject();
-                    }
-                    // case 3 - We now have the doc
-                    if (inputDoc != null && innerExp == null) {
-                        BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
-                        binder.put(docID, outputDoc);
-                        // write the number of this projections most recent event into the store.
-                        BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
-                        stateBinder.put(projectionName, projStateDoc);
-                    }
-                });
+                        if (innerExp != null) {
+                            log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
+                        }
+                        // case 2 - Nothing broke but the document doesnt exists
+                        if (inputDoc == null && innerExp == null) {
+                            inputDoc = new BsonObject();
+                        }
+                        // case 3 - We now have the doc
+                        if (inputDoc != null && innerExp == null) {
+                            BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
+                            binder.put(docID, outputDoc);
+                            // write the number of this projections most recent event into the store.
+                            BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
+                            stateBinder.put(projectionName, projStateDoc);
+                        }
+                    });
+                }
             }
         };
 
