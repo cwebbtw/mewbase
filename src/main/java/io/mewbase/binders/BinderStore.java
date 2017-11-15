@@ -51,11 +51,5 @@ public interface BinderStore {
     Boolean delete(String name);
 
 
-    /**
-     * Close the store in an orderly way ensuring that the binders are all closed and flushed to backing store.
-     *
-     * @return
-     */
-    Boolean close() throws Exception;
 
 }

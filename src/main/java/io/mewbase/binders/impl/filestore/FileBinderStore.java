@@ -1,0 +1,82 @@
+package io.mewbase.binders.impl.filestore;
+
+
+import io.mewbase.binders.Binder;
+import io.mewbase.binders.BinderStore;
+import io.mewbase.binders.impl.lmdb.LmdbBinder;
+import io.mewbase.server.MewbaseOptions;
+import org.lmdbjava.Env;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
+
+import static org.lmdbjava.EnvFlags.MDB_NOTLS;
+
+
+public class FileBinderStore implements BinderStore {
+
+    private final static Logger logger = LoggerFactory.getLogger(FileBinderStore.class);
+
+    private final ConcurrentMap<String, Binder> binders = new ConcurrentHashMap<>();
+
+    private final File bindersDir;
+
+
+
+    public FileBinderStore() { this(new MewbaseOptions()); }
+
+
+    public FileBinderStore(MewbaseOptions mewbaseOptions) {
+
+        bindersDir = Paths.get(mewbaseOptions.getDocsDir()).toFile();
+
+        logger.info("Starting file based binder store with docs dir: " + bindersDir.toString();
+
+        FileBinder.createIfDoesntExists(bindersDir);
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(bindersDir.toPath())) {
+            for (Path entry: stream) {
+                open(entry.getFileName().toString());
+            }
+        } catch (Exception ex) {
+            logger.error("File based Binder failed to start", ex);
+        }
+    }
+
+
+    @Override
+    public Binder open(String name) {
+        return binders.computeIfAbsent(name, k -> new FileBinder(k, new File(bindersDir,name)));
+    }
+
+    @Override
+    public Optional<Binder> get(String name) {
+        return Optional.ofNullable(binders.get(name));
+    }
+
+    @Override
+    public Stream<Binder> binders() {
+        return binders.values().stream();
+    }
+
+    @Override
+    public Stream<String> binderNames() {
+        return binders.keySet().stream();
+    }
+
+
+    @Override
+    public Boolean delete(String name) {
+        return null;
+    }
+
+
+}
