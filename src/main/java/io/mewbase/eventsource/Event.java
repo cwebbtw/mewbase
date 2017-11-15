@@ -15,4 +15,11 @@ public interface Event {
     Long getEventNumber();
 
     int getCrc32();
+
+    default  String asString() {
+        return "TimeStamp : " + this.getInstant() +
+                " EventNumber : " + this.getEventNumber() +
+                " PayLoad : " + this.getBson();
+    }
+
 }

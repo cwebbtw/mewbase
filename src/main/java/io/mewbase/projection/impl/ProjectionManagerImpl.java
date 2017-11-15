@@ -69,30 +69,35 @@ public class ProjectionManagerImpl implements ProjectionManager {
             if (eventFilter.apply(event)) {
 
                 String docID = docIDSelector.apply(event);
-                Binder binder = store.open(binderName);
+                if (docID == null) {
+                    log.error("In projection " + projectionName + " document id selector returned null");
+                } else {
 
-                binder.get(docID).whenComplete((inputDoc, innerExp) -> {
+                    Binder binder = store.open(binderName);
+
+                    binder.get(docID).whenComplete((inputDoc, innerExp) -> {
                         // Case 1 - Something broke in the store/binder
-                    if (innerExp != null) {
-                        log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
-                    }
-                    // case 2 - Nothing broke but the document doesnt exists
-                    if (inputDoc == null && innerExp == null) {
-                        inputDoc = new BsonObject();
-                    }
-                    // case 3 - We now have the doc
-                    if (inputDoc != null && innerExp == null) {
-                        BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
-                        binder.put(docID, outputDoc);
-                        // write the number of this projections most recent event into the store.
-                        BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
-                        stateBinder.put(projectionName, projStateDoc);
-                    }
-                });
+                        if (innerExp != null) {
+                            log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
+                        }
+                        // case 2 - Nothing broke but the document doesnt exists
+                        if (inputDoc == null && innerExp == null) {
+                            inputDoc = new BsonObject();
+                        }
+                        // case 3 - We now have the doc
+                        if (inputDoc != null && innerExp == null) {
+                            BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
+                            binder.put(docID, outputDoc);
+                            // write the number of this projections most recent event into the store.
+                            BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
+                            stateBinder.put(projectionName, projStateDoc);
+                        }
+                    });
+                }
             }
         };
 
-        Subscription subs = subscribeFromMostRecentEvent(projectionName,channelName,eventHandler);
+        Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 
         // register it with the Factory
         ProjectionImpl proj = new ProjectionImpl(projectionName,subs);
@@ -111,13 +116,16 @@ public class ProjectionManagerImpl implements ProjectionManager {
         return projections.keySet().stream() ;
     }
 
+    @Override
+    public void stopAll() { projections.forEach( (name, proj) -> proj.stop() ); }
 
-    private Subscription subscribeFromMostRecentEvent(String projectionName, String channelName, EventHandler eventHandler) {
+
+    private Subscription subscribeFromLastKnownEvent(String projectionName, String channelName, EventHandler eventHandler) {
         try {
             final BsonObject stateDoc = stateBinder.get(projectionName).get();
             if (stateDoc == null) {
                 log.info("Projection " + projectionName + " subscribing from start of channel " + channelName);
-                return source.subscribe(channelName, eventHandler);
+                return source.subscribeAll(channelName, eventHandler);
             } else {
                 Long nextEvent = stateDoc.getLong(EVENT_NUM_FIELD) + 1;
                 log.info("Projection " + projectionName + " subscribing from event number " + nextEvent);
@@ -126,7 +134,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
         } catch (Exception exp) {
             log.error("Failed to recover last known state of the projection " + projectionName, exp);
         }
-        return null; // not reachable but compiler moans
+        return null;
     }
 
 }

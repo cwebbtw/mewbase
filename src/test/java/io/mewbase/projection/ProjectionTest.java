@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tim on 30/09/16.
  */
-//@RunWith(VertxUnitRunner.class)
+
 public class ProjectionTest extends MewbaseTestBase {
 
     private final static Logger log = LoggerFactory.getLogger(ProjectionTest.class);
@@ -39,6 +39,8 @@ public class ProjectionTest extends MewbaseTestBase {
     private static final String TEST_CHANNEL = "ProjectionTestChannel";
     private static final String TEST_BINDER = "ProjectionTestBinder";
     private static final String TEST_PROJECTION_NAME = "TestProjection";
+
+    private static final String BASKET_ID_FIELD = "BasketID";
 
     private BinderStore store = null;
     private EventSource source = null;
@@ -71,7 +73,7 @@ public class ProjectionTest extends MewbaseTestBase {
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
-        Projection projection = createProjection(builder, TEST_PROJECTION_NAME);
+        Projection projection = createProjection(builder, BASKET_ID_FIELD,  TEST_PROJECTION_NAME);
 
         assertNotNull(projection);
         assertEquals(TEST_PROJECTION_NAME, projection.getName());
@@ -89,7 +91,7 @@ public class ProjectionTest extends MewbaseTestBase {
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
-        final String BASKET_ID_FIELD = "BasketID";
+
         final String TEST_BASKET_ID = "TestBasket";
         final Integer RESULT = new Integer(27);
 
@@ -128,19 +130,21 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
 
-    @Test
+    // @Test
     public void testProjectionNames() throws Exception {
 
-        ProjectionManager factory = ProjectionManager.instance(source,store);
-        ProjectionBuilder builder = factory.builder();
+        ProjectionManager mgr = ProjectionManager.instance(source,store);
+        ProjectionBuilder builder = mgr.builder();
 
         Stream<String> names = IntStream.range(1,10).mapToObj( i -> {
             final String projName = "Proj" + i;
-            createProjection(builder,projName);
+            createProjection(builder,BASKET_ID_FIELD,projName);
             return projName;
         });
 
-        assertTrue( names.allMatch( name -> factory.isProjection(name) ) );
+        assertTrue( names.allMatch( name -> mgr.isProjection(name) ) );
+        Thread.sleep(400);
+
     }
 
     @Test
@@ -151,7 +155,6 @@ public class ProjectionTest extends MewbaseTestBase {
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
-        final String BASKET_ID_FIELD = "BasketID";
         final String TEST_BASKET_ID = "TestBasket";
         final Integer RESULT = new Integer(27);
 
@@ -223,14 +226,14 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
 
-    private Projection createProjection(ProjectionBuilder builder, String projName) {
+    private Projection createProjection(ProjectionBuilder builder, String binderIdKey, String projName) {
 
         return builder
                 .named(projName)
                 .projecting(TEST_CHANNEL)
                 .onto(TEST_BINDER)
                 .filteredBy(event -> true)
-                .identifiedBy(event -> event.getBson().getString(projName))
+                .identifiedBy(event -> event.getBson().getString(binderIdKey))
                 .as( (basket, event) -> event.getBson().put("output",projName) )
                 .create();
     }

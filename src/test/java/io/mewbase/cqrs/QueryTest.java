@@ -112,7 +112,6 @@ public class QueryTest extends MewbaseTestBase {
         BsonObject anotherDoc  = new BsonObject().put(KEY_TO_MATCH, VAL_TO_NOT_MATCH);
         TEST_BINDER.put(DOC_ID_NOT_TO_MATCH, anotherDoc);
 
-
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
         Predicate<BsonObject> filter = document -> document.getInteger(KEY_TO_MATCH) == VAL_TO_MATCH;
@@ -155,7 +154,10 @@ public class QueryTest extends MewbaseTestBase {
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
-        Function<BsonObject, Set<String>> selector = params -> (Set.of(TEST_DOCUMENT_ID));
+        Set<String> testId = new HashSet<String>();
+        testId.add(TEST_DOCUMENT_ID);
+
+        Function<BsonObject, Set<String>> selector = params -> (testId);
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
                 from(TEST_BINDER_NAME).

@@ -30,6 +30,12 @@ class NatsEvent implements Event {
     @Override
     public int getCrc32() { return msg.getCrc32(); }
 
-    // TODO - Possibly add acknowledge (ack) to this - does it leak impl - discuss ???
+
+    @Override
+    public String toString() {
+        return "TimeStamp : " + this.getInstant() +
+                "EventNumber : " + this.getEventNumber() +
+                "PayLoad : " + this.getBson();
+    }
 
 }
