@@ -60,11 +60,7 @@ public class LmdbBinder implements Binder {
 
     @Override
     public CompletableFuture<BsonObject> get(final String id) {
-        // The next line fixes a null value for "id" in the Supplier lambda in the
-        // following line. A very unsatisfying rationale it fixes an over optimisation
-        // in the constructor of the Supplier function by making explicit reference to
-        // the id parameter.
-        if (id == null) throw new NullPointerException("Binder Id Key cannot be null");
+
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             // in order to do a read we have to do it under a txn so use
             // try with resource to get the auto close magic.
