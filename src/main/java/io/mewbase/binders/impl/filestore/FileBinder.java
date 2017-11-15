@@ -5,12 +5,10 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-
 
 import java.nio.file.*;
 import java.util.*;
@@ -67,7 +65,6 @@ public class FileBinder implements Binder {
             } else {
                 return null;
             }
-
         }, stexec);
         return fut;
     }
@@ -79,7 +76,7 @@ public class FileBinder implements Binder {
             try {
                 File file = new File(binderDir, id);
                 byte[] valBytes = doc.encode().getBytes();
-                Files.write(file.toPath(), valBytes, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE);
             } catch (Exception exp) {
                 log.error("Error writing document key : " + id + " value : " + doc);
             }
@@ -89,14 +86,15 @@ public class FileBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<Boolean> delete(String id) {
+    public CompletableFuture<Boolean> delete(final String id) {
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             File file = new File(binderDir, id);
             try {
                 return Files.deleteIfExists(file.toPath());
             } catch (Exception exp) {
-                log.error("Error deleting document " + )
+                log.error("Error deleting document " + id );
             }
+            return false;
         }, stexec);
         return fut;
     }

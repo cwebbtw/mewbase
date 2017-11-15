@@ -16,17 +16,15 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
 import static org.lmdbjava.EnvFlags.MDB_NOTLS;
 
-
+@Deprecated
 public class LmdbBinderStore implements BinderStore {
 
     private final static Logger logger = LoggerFactory.getLogger(LmdbBinderStore.class);
@@ -38,12 +36,12 @@ public class LmdbBinderStore implements BinderStore {
     private final int maxDBs;
     private final long maxDBSize;
 
-
     private Env<ByteBuffer> env;
 
+    @Deprecated
     public LmdbBinderStore() { this(new MewbaseOptions()); }
 
-
+    @Deprecated
     public LmdbBinderStore(MewbaseOptions mewbaseOptions) {
 
         this.docsDir = mewbaseOptions.getDocsDir();
@@ -94,7 +92,6 @@ public class LmdbBinderStore implements BinderStore {
     }
 
 
-    @Override
     public Boolean close() {
         try {
             binders().forEach(binder -> ((LmdbBinder)binder).close());

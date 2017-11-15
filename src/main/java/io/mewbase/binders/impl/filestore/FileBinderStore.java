@@ -3,22 +3,20 @@ package io.mewbase.binders.impl.filestore;
 
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
-import io.mewbase.binders.impl.lmdb.LmdbBinder;
+
 import io.mewbase.server.MewbaseOptions;
-import org.lmdbjava.Env;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.nio.file.*;
-import java.util.List;
+
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import static org.lmdbjava.EnvFlags.MDB_NOTLS;
 
 
 public class FileBinderStore implements BinderStore {
@@ -38,7 +36,7 @@ public class FileBinderStore implements BinderStore {
 
         bindersDir = Paths.get(mewbaseOptions.getDocsDir()).toFile();
 
-        logger.info("Starting file based binder store with docs dir: " + bindersDir.toString();
+        logger.info("Starting file based binder store with docs dir: " + bindersDir.toString());
 
         FileBinder.createIfDoesntExists(bindersDir);
 

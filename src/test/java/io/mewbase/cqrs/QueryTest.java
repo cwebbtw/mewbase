@@ -4,6 +4,7 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.ServerTestBase;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
+import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 
@@ -45,7 +46,7 @@ public class QueryTest extends MewbaseTestBase {
 
     @Test
     public void testQueryManager() throws Exception {
-        final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
         assertNotNull(mgr);
@@ -56,7 +57,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test
     public void testQueryBuilder() throws Exception {
 
-        final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
         final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
@@ -82,7 +83,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test(expected = NoSuchElementException.class)
     public void testNoSuchBinder() throws Exception {
 
-        final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
@@ -101,7 +102,7 @@ public class QueryTest extends MewbaseTestBase {
     public void testFiltered() throws Exception {
 
         // Set up the binder
-        final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
         final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
 
         // Matching document
@@ -124,9 +125,9 @@ public class QueryTest extends MewbaseTestBase {
                 create();
 
         BsonObject params = new BsonObject(); // no params for identity
-        Stream<Map.Entry<String,BsonObject>> resultStream = mgr.execute(TEST_QUERY_NAME, params);
+        Stream<KeyVal<String,BsonObject>> resultStream = mgr.execute(TEST_QUERY_NAME, params);
 
-        Set<Map.Entry<String,BsonObject>> resultSet = resultStream.map(result -> {
+        Set<KeyVal<String,BsonObject>> resultSet = resultStream.map(result -> {
                     assertEquals(TEST_DOCUMENT_ID, result.getKey());
                     assertEquals((Long)VAL_TO_MATCH, result.getValue().getLong(KEY_TO_MATCH));
                     assertNotEquals(DOC_ID_NOT_TO_MATCH, result.getKey());
@@ -142,7 +143,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test
     public void testIdSelector() throws Exception {
         // Set up the binder
-        final BinderStore TEST_BINDER_STORE = new LmdbBinderStore(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
         final Binder TEST_BINDER = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
 
         // Matching document
@@ -155,7 +156,12 @@ public class QueryTest extends MewbaseTestBase {
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
-        Function<BsonObject, Set<String>> selector = params -> (Set.of(TEST_DOCUMENT_ID));
+        Function<BsonObject, Set<String>> selector = params -> {
+            Set<String> s = new HashSet<>();
+            s.add(TEST_DOCUMENT_ID);
+            return s;
+        };
+
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
                 from(TEST_BINDER_NAME).
@@ -163,9 +169,9 @@ public class QueryTest extends MewbaseTestBase {
                 create();
 
         BsonObject params = new BsonObject(); // no params for identity
-        Stream<Map.Entry<String, BsonObject>> resultStream = mgr.execute(TEST_QUERY_NAME, params);
+        Stream<KeyVal<String, BsonObject>> resultStream = mgr.execute(TEST_QUERY_NAME, params);
 
-        Set<Map.Entry<String, BsonObject>> resultSet = resultStream.map(result -> {
+        Set<KeyVal<String, BsonObject>> resultSet = resultStream.map(result -> {
                     assertEquals(TEST_DOCUMENT_ID, result.getKey());
                     assertEquals((Long) VAL_TO_MATCH, result.getValue().getLong(KEY_TO_MATCH));
                     assertNotEquals(DOC_ID_NOT_TO_MATCH, result.getKey());

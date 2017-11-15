@@ -13,6 +13,7 @@ import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 
 
+import io.vertx.ext.unit.junit.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,13 +46,12 @@ public class ProjectionTest extends MewbaseTestBase {
 
     @Before
     public void before() throws Exception {
-        store = new LmdbBinderStore(createMewbaseOptions());
+        store = BinderStore.instance(createMewbaseOptions());
         source = new NatsEventSource();
     }
 
     @After
     public void after() throws Exception {
-        store.close();
         source.close();
     }
 
@@ -114,8 +114,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(TEST_CHANNEL, evt);
 
         latch.await();
-
-        Thread.sleep(200);
+        Thread.sleep(10);
 
         // try to recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -212,7 +211,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
         // and wait for the result
         newLatch.await();
-        Thread.sleep(200);
+       // Thread.sleep(200);
 
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();

@@ -2,8 +2,7 @@ package io.mewbase.example.retail;
 
 import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonObject;
-import io.mewbase.bson.BsonPath;
-import io.mewbase.binders.Binder;
+
 import io.mewbase.server.Mewbase;
 import io.vertx.core.http.HttpMethod;
 
@@ -158,7 +157,8 @@ public class OrderService  {
         }
 
         public BsonObject incrementQuantity(String productID, Integer quantity) {
-            return BsonPath.add(bsonObject, quantity, "products", productID);
+            Integer val = bsonObject.getBsonObject("products").getInteger(productID);
+            return  bsonObject.getBsonObject("products").put(productID,val+quantity);
         }
     }
 

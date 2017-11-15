@@ -1,9 +1,9 @@
 package io.mewbase.cqrs;
 
 import io.mewbase.binders.Binder;
+import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -29,6 +29,6 @@ public interface Query {
         BsonObject getDocument();
     }
 
-    Stream<Map.Entry<String, BsonObject>> execute(BsonObject params);
+    Stream<KeyVal<String, BsonObject>> execute(BsonObject params);
 
 }

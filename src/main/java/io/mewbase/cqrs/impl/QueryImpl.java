@@ -2,12 +2,12 @@ package io.mewbase.cqrs.impl;
 
 
 import io.mewbase.binders.Binder;
+import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.Query;
 
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -56,7 +56,7 @@ public class QueryImpl implements Query {
     }
 
     @Override
-    public Stream<Map.Entry<String, BsonObject>> execute(BsonObject params) {
+    public Stream<KeyVal<String, BsonObject>> execute(BsonObject params) {
         // Emtpy is match all or apply the
         Set<String> keySet = new HashSet();
         if (idSelector != null) keySet = idSelector.apply(params);

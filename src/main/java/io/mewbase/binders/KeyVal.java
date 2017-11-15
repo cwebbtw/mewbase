@@ -4,7 +4,7 @@ package io.mewbase.binders;
 import java.util.Objects;
 
 /**
- * Container for Keys and Values of any Kind
+ * Immutable container for Keys and Values of known types
  */
 public class KeyVal<K, V> {
 
@@ -12,7 +12,7 @@ public class KeyVal<K, V> {
     public final V value;
 
     /**
-     * Constructor for a Pair.
+     * Constructor for a KeyValue pair.
      *
      * @param key - The key
      * @param value - The associated value
@@ -21,6 +21,23 @@ public class KeyVal<K, V> {
         this.key = key;
         this.value = value;
     }
+
+    /**
+     * Get the key
+     * @return K the key
+     */
+    public K getKey() {
+        return key;
+    }
+
+    /**
+     * Get the value
+     * @return V the value
+     */
+    public V getValue() {
+        return value;
+    }
+
 
     /**
      * Checks the two objects for equality by delegating to their respective
@@ -49,11 +66,12 @@ public class KeyVal<K, V> {
         return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
     }
 
+
     /**
      * Convenience method for creating an appropriately typed KV pair.
-     * @param K the key
-     * @param V the  value
-     * @return a Pair that is templatized with the types of a and b
+     * @param k the key
+     * @param v the  value
+     * @return a KeyVal that is inferred from the types of params a and b
      */
     public static <K, V> KeyVal <K, V> create(K k, V v) {
         return new KeyVal<K, V>(k, v);

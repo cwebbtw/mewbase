@@ -3,6 +3,7 @@ package io.mewbase.cqrs.impl;
 import io.mewbase.binders.BinderStore;
 
 
+import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
 import io.mewbase.cqrs.Query;
@@ -62,7 +63,7 @@ public class QueryManagerImpl implements QueryManager {
     }
 
     @Override
-    public Stream<Map.Entry<String, BsonObject>> execute(String queryName, BsonObject params) {
+    public Stream<KeyVal<String, BsonObject>> execute(String queryName, BsonObject params) {
 
         Optional<Query> queryOpt = getQuery(queryName);
         if (queryOpt.isPresent()) {
