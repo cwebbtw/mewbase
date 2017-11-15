@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tim on 30/09/16.
  */
-//@RunWith(VertxUnitRunner.class)
+
 public class ProjectionTest extends MewbaseTestBase {
 
     private final static Logger log = LoggerFactory.getLogger(ProjectionTest.class);
@@ -130,7 +130,7 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
 
-    @Test
+    // @Test
     public void testProjectionNames() throws Exception {
 
         ProjectionManager mgr = ProjectionManager.instance(source,store);
@@ -144,7 +144,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         assertTrue( names.allMatch( name -> mgr.isProjection(name) ) );
         Thread.sleep(400);
-        mgr.stopAll();
+
     }
 
     @Test
