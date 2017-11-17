@@ -1,4 +1,5 @@
 package io.mewbase.binders.impl.lmdb;
+import io.mewbase.binders.KeyVal;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
@@ -28,8 +29,9 @@ import static org.lmdbjava.DbiFlags.MDB_CREATE;
 
 
 /**
- * Created by tim on 29/12/16.
+ * Created by Tim on 29/12/16.
  */
+@Deprecated
 public class LmdbBinder implements Binder {
 
     private final static Logger log = LoggerFactory.getLogger(LmdbBinder.class);
@@ -108,15 +110,15 @@ public class LmdbBinder implements Binder {
     }
 
     @Override
-    public Stream<Map.Entry<String, BsonObject>> getDocuments() {
+    public Stream<KeyVal<String, BsonObject>> getDocuments() {
         return getDocuments( new HashSet(), document -> true);
     }
 
     @Override
-    public Stream<Map.Entry<String, BsonObject>> getDocuments(Set<String> keySet, Predicate<BsonObject> filter) {
-        CompletableFuture<Set<Map.Entry<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
+    public Stream<KeyVal<String, BsonObject>> getDocuments(Set<String> keySet, Predicate<BsonObject> filter) {
+        CompletableFuture<Set<KeyVal<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
 
-            Set<Map.Entry<String, BsonObject>> resultSet = new HashSet<>();
+            Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
 
             try (final Txn<ByteBuffer> txn = env.txnRead()) {
                 final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, FORWARD);
@@ -138,7 +140,7 @@ public class LmdbBinder implements Binder {
                     if (keySet.isEmpty() || keySet.contains(id)) {
                         final BsonObject doc = new BsonObject(valueBuffer);
                         if (filter.test(doc)) {
-                            Map.Entry<String,BsonObject> entry = new AbstractMap.SimpleEntry<>(id, doc);
+                            KeyVal<String,BsonObject> entry = KeyVal.create(id, doc);
                             resultSet.add(entry);
                         }
                     }
@@ -160,7 +162,8 @@ public class LmdbBinder implements Binder {
 
     private ByteBuffer makeKeyBuffer(String id) {
         final ByteBuffer key = allocateDirect(env.getMaxKeySize());
-        key.put(id.getBytes(StandardCharsets.UTF_8)).flip();
+        // between jdk 8 and 9  flip has been moved hence apparently redundant cast
+        ((java.nio.Buffer)key.put(id.getBytes(StandardCharsets.UTF_8))).flip();
         return key;
     }
 

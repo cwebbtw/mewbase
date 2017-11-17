@@ -4,7 +4,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
-import io.mewbase.bson.BsonPath;
+
 
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventSink;
@@ -32,7 +32,7 @@ public class ShoppingBasketExample {
 
         // In order to run a projection set up an EventSource and BinderStore.
         EventSource src = new NatsEventSource();
-        BinderStore store = new LmdbBinderStore();
+        BinderStore store = BinderStore.instance();
         ProjectionManager mgr = ProjectionManager.instance(src,store);
 
         final String ORDERS_EVENT_CHANNEL = "OrderEventsChannel";
@@ -101,6 +101,6 @@ public class ShoppingBasketExample {
         // close the resources
         sink.close();
         src.close();
-        store.close();
     }
+
 }

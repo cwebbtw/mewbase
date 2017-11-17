@@ -56,6 +56,17 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         fromBson(new ByteArrayInputStream(buffer.getBytes()));
     }
 
+
+    /**
+     * Create an instance from a byte array
+     *
+     * @param buffer the byte array containing the BSON
+     */
+    public BsonObject(byte []  buffer) {
+        fromBson(new ByteArrayInputStream(buffer));
+    }
+
+
     /**
      * Create a new, empty instance
      */

@@ -1,6 +1,12 @@
 package io.mewbase.binders;
 
 
+import io.mewbase.binders.impl.filestore.FileBinderStore;
+import io.mewbase.eventsource.EventSource;
+import io.mewbase.projection.ProjectionManager;
+import io.mewbase.projection.impl.ProjectionManagerImpl;
+import io.mewbase.server.MewbaseOptions;
+
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -9,6 +15,16 @@ import java.util.stream.Stream;
  * Created by Nige on 14/09/17.
  */
 public interface BinderStore {
+
+
+    static BinderStore instance(MewbaseOptions opts) {
+        return new FileBinderStore(opts);
+    }
+
+    static BinderStore instance() {
+        return new FileBinderStore();
+    }
+
 
     /**
      * Open a new binder of the given name.
@@ -51,11 +67,5 @@ public interface BinderStore {
     Boolean delete(String name);
 
 
-    /**
-     * Close the store in an orderly way ensuring that the binders are all closed and flushed to backing store.
-     *
-     * @return
-     */
-    Boolean close() throws Exception;
 
 }

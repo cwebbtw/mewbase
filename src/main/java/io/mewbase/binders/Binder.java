@@ -55,7 +55,7 @@ public interface Binder {
      *
      * @return A stream of futures of all of the ids and documents in the binder
      */
-    Stream<Map.Entry<String, BsonObject>> getDocuments();
+    Stream<KeyVal<String, BsonObject>> getDocuments();
 
     /**
      * Get all of the documents in the Binder given a KeySet and a Content based filter.
@@ -67,8 +67,7 @@ public interface Binder {
      *
      * @return A stream of futures of the matching ids and documents in the binder.
      */
-    Stream<Map.Entry<String, BsonObject>>
+    Stream<KeyVal<String, BsonObject>>
                 getDocuments(Set<String> keySet, Predicate<BsonObject> filter);
-
 
 }

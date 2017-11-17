@@ -42,10 +42,9 @@ public class FridgeExample {
 
     public static void main(String[] args) throws Exception {
 
-
         // In order to run a projection set up an EventSource and BinderStore.
         EventSource src = new NatsEventSource();
-        BinderStore store = new LmdbBinderStore();
+        BinderStore store = BinderStore.instance();
         ProjectionManager mgr = ProjectionManager.instance(src,store);
 
         final String FRIDGE_EVENT_CHANNEL_NAME = "FridgeStatusChannel";
@@ -100,7 +99,7 @@ public class FridgeExample {
         // close the resources
         sink.close();
         src.close();
-        store.close();
+
     }
 
 }

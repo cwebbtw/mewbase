@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static io.mewbase.binders.BinderStore.*;
+
 /**
  * TODO content types
  * <p>
@@ -29,15 +31,15 @@ import java.util.concurrent.ExecutionException;
 public class RESTServiceAdaptor {
 
     private final static Logger logger = LoggerFactory.getLogger(RESTServiceAdaptor.class);
-    private String host = "0.0.0.0";
-    private int port = 8080;
+    private final String host = "0.0.0.0";
+    private final int port = 8080;
 
     private final ServerImpl server;
-    private HttpServer httpServer;
-    private Router router;
+    private final HttpServer httpServer;
+    private final Router router;
     private QueryManager queryManager;
 
-    private BinderStore store = new LmdbBinderStore();
+    private final BinderStore store = BinderStore.instance();
 
     public RESTServiceAdaptor(ServerImpl server) {
         this.server = server;
