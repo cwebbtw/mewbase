@@ -72,9 +72,9 @@ public class ProjectionManagerImpl implements ProjectionManager {
                 Binder binder = store.open(binderName);
 
                 binder.get(docID).whenComplete((inputDoc, innerExp) -> {
-                        // Case 1 - Something broke in the store/binder
+                    // Case 1 - Something broke in the store/binder
                     if (innerExp != null) {
-                        log.error("Error in binder " + binderName + " while finding " + docID, innerExp);
+                        log.error("Projection " + projectionName + " binder " + binderName + " document ID " + docID, innerExp);
                     }
                     // case 2 - Nothing broke but the document doesnt exists
                     if (inputDoc == null && innerExp == null) {
@@ -82,11 +82,18 @@ public class ProjectionManagerImpl implements ProjectionManager {
                     }
                     // case 3 - We now have the doc
                     if (inputDoc != null && innerExp == null) {
+                        //
                         BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
-                        binder.put(docID, outputDoc);
-                        // write the number of this projections most recent event into the store.
                         BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
-                        stateBinder.put(projectionName, projStateDoc);
+
+                        // do document write and write/update last seen, only update event number if document write succeeds.
+                        binder.put(docID, outputDoc).whenComplete( (writeGood, writeBad) -> {
+                            if (writeBad == null) {
+                                stateBinder.put(projectionName, projStateDoc);
+                            } else {
+                                log.error("Projection " + projectionName + " binder " + binderName + " document ID " + docID, writeBad);
+                            }
+                        });
                     }
                 });
             }

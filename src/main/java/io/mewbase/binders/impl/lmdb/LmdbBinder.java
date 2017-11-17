@@ -163,7 +163,8 @@ public class LmdbBinder implements Binder {
 
     private ByteBuffer makeKeyBuffer(String id) {
         final ByteBuffer key = allocateDirect(env.getMaxKeySize());
-        key.put(id.getBytes(StandardCharsets.UTF_8)).flip();
+        // between jdk 8 and 9  flip has been moved hence apparently redundant cast
+        ((java.nio.Buffer)key.put(id.getBytes(StandardCharsets.UTF_8))).flip();
         return key;
     }
 

@@ -50,9 +50,9 @@ public class FileBinder implements Binder {
 
     @Override
     public CompletableFuture<BsonObject> get(final String id) {
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        File file = new File(binderDir,id);
 
-            File file = new File(binderDir,id);
+        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             if (file.exists()) {
                 BsonObject doc = null;
                 try {
@@ -72,11 +72,12 @@ public class FileBinder implements Binder {
 
     @Override
     public CompletableFuture<Void> put(final String id, final BsonObject doc) {
+        final File file = new File(binderDir, id);
+        final byte[] valBytes = doc.encode().getBytes();
+
         CompletableFuture fut = CompletableFuture.runAsync( () -> {
             try {
-                File file = new File(binderDir, id);
-                byte[] valBytes = doc.encode().getBytes();
-                Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE);
+                Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE;
             } catch (Exception exp) {
                 log.error("Error writing document key : " + id + " value : " + doc);
             }
@@ -87,8 +88,9 @@ public class FileBinder implements Binder {
 
     @Override
     public CompletableFuture<Boolean> delete(final String id) {
+        final File file = new File(binderDir, id);
+
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
-            File file = new File(binderDir, id);
             try {
                 return Files.deleteIfExists(file.toPath());
             } catch (Exception exp) {

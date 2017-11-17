@@ -86,8 +86,8 @@ public class ProjectionTest extends MewbaseTestBase {
 
         log.info("testSimpleProjectionRuns");
 
-        ProjectionManager factory = ProjectionManager.instance(source,store);
-        ProjectionBuilder builder = factory.builder();
+        ProjectionManager manager = ProjectionManager.instance(source,store);
+        ProjectionBuilder builder = manager.builder();
 
         final String BASKET_ID_FIELD = "BasketID";
         final String TEST_BASKET_ID = "TestBasket";
@@ -102,6 +102,8 @@ public class ProjectionTest extends MewbaseTestBase {
                 .filteredBy(event -> true)
                 .identifiedBy(event -> event.getBson().getString(BASKET_ID_FIELD))
                 .as( (basket, event) -> {
+                    assertNotNull(basket);
+                    assertNotNull(event);
                     BsonObject out = event.getBson().put("output",RESULT);
                     latch.countDown();
                     return out;
@@ -114,14 +116,13 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(TEST_CHANNEL, evt);
 
         latch.await();
-        Thread.sleep(10);
+        Thread.sleep(100);
 
         // try to recover the new document
         Binder binder = store.open(TEST_BINDER);
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
         assertNotNull(basketDoc);
         assertEquals(RESULT,basketDoc.getInteger("output"));
-
 
         projection.stop();
     }
@@ -177,6 +178,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
 
         latch.await();
+        Thread.sleep(100);
 
         // Recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -187,12 +189,12 @@ public class ProjectionTest extends MewbaseTestBase {
         projection.stop();
 
         // binder now has offset event and valid current document
+        // rebuild everything as tho' we had restarted.
         ProjectionManager newFactory = ProjectionManager.instance(source,store);
         ProjectionBuilder newBuilder = newFactory.builder();
 
         final CountDownLatch newLatch = new CountDownLatch(1);
 
-        // make new projection of the same name
         Projection newProjection = newBuilder
                 .named(TEST_PROJECTION_NAME)
                 .projecting(MULTI_EVENT_CHANNEL)
@@ -211,7 +213,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
         // and wait for the result
         newLatch.await();
-       // Thread.sleep(200);
+        Thread.sleep(100);
 
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();

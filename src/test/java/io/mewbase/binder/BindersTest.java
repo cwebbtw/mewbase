@@ -4,6 +4,7 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
 
+import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
@@ -18,6 +19,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -93,6 +95,34 @@ public class BindersTest extends MewbaseTestBase {
 
 
     @Test
+    public void testAsyncWriteReadInterleaved() throws Exception {
+
+        // Binder store must satisfy 'linearize' properties.
+
+        final BinderStore store = BinderStore.instance(createMewbaseOptions());
+        final Binder binder = store.open(BINDER_NAME);
+
+        final String TEST_KEY  = "InOrderTest";
+        final BsonObject docToWrite = new BsonObject().put("Thing1", "Bad").put("Thing2", "Worse");
+
+        int iterations = 256;
+        CountDownLatch countThemAllHome = new CountDownLatch(iterations);
+
+        IntStream.rangeClosed(1, iterations).forEach(i -> {
+            binder.put(TEST_KEY + String.valueOf(i), docToWrite);
+            binder.get(TEST_KEY + String.valueOf(i)).whenComplete( (doc,exp) -> {
+                assertNotNull(doc);
+                assertNull(exp);
+                countThemAllHome.countDown();
+            });
+        });
+
+        countThemAllHome.await();
+    }
+
+
+
+    @Test
     public void testPutGetDifferentBinders() throws Exception {
 
         final String B1 = BINDER_NAME + "1";
@@ -115,8 +145,8 @@ public class BindersTest extends MewbaseTestBase {
 
         BsonObject docGet2 = binder2.get("id0").get();
         assertEquals("binder2", docGet2.remove("binder"));
-
     }
+
 
     @Test
     public void testBinderIsPersistent() throws Exception {
@@ -144,10 +174,9 @@ public class BindersTest extends MewbaseTestBase {
         final String DOC_ID = "ID1234567";
         final String FIELD_KEY = "K";
         BsonObject doc = createObject();
-        final Integer END_VAL = 59;
+        final Integer END_VAL = 128;
         IntStream.rangeClosed(0,END_VAL).forEach( i -> binder.put(DOC_ID, doc.put(FIELD_KEY,i)));
         assertEquals(END_VAL,binder.get("ID1234567").join().getInteger(FIELD_KEY));
-
     }
 
 
@@ -172,7 +201,6 @@ public class BindersTest extends MewbaseTestBase {
         assertTrue(binder.delete("id1234").get());
         docGet = binder.get("id1234").get();
         assertNull(docGet);
-
     }
 
 
@@ -182,7 +210,7 @@ public class BindersTest extends MewbaseTestBase {
         BinderStore store = BinderStore.instance(createMewbaseOptions());;
         Binder binder = store.open(BINDER_NAME);
 
-        final int MANY_DOCS = 1000;
+        final int MANY_DOCS = 64;
         final String DOC_ID_KEY = "id";
 
         final IntStream range = IntStream.rangeClosed(1, MANY_DOCS);
@@ -208,7 +236,6 @@ public class BindersTest extends MewbaseTestBase {
         // get all
         Stream<KeyVal<String, BsonObject>> docs = binder.getDocuments();
         docs.forEach(checker);
-
     }
 
 
@@ -291,6 +318,63 @@ public class BindersTest extends MewbaseTestBase {
         BsonObject obj = new BsonObject();
         obj.put("foo", "bar").put("quux", 1234).put("wib", true);
         return obj;
+    }
+
+
+    //@Test
+    public void testPerformance() throws Exception {
+
+        final BinderStore store = BinderStore.instance(createMewbaseOptions());
+        // final BinderStore store = new LmdbBinderStore();
+        final Binder binder = store.open(BINDER_NAME);
+
+        final BsonObject docToWrite = new BsonObject().put("Thing1","Bad").put("Thing2","Worse");
+
+        int iterations = 10000;
+
+        {
+            final String test = "Sync Writes";
+            final long start = System.currentTimeMillis();
+            IntStream.rangeClosed(1, iterations).forEach(i ->
+                binder.put(String.valueOf(i), docToWrite).join()
+            );
+            final long end = System.currentTimeMillis();
+            System.out.println(test + " :" + ((float)iterations * 1000f) / (float)(end - start));
+        }
+
+        {
+            final String test = "Sync Reads";
+            final long start = System.currentTimeMillis();
+            IntStream.rangeClosed(1, iterations).forEach(i ->
+                binder.get(String.valueOf(i)).join()
+            );
+            final long end = System.currentTimeMillis();
+            System.out.println(test + " :" + ((float)iterations * 1000f) / (float)(end - start));
+        }
+
+
+        iterations = 1000000;
+        {
+            final String test = "Async Writes";
+            final long start = System.currentTimeMillis();
+            IntStream.rangeClosed(1, iterations).forEach(i ->
+                    binder.put(String.valueOf(i), docToWrite)
+            );
+            final long end = System.currentTimeMillis();
+            System.out.println(test + " :" + ((float)iterations * 1000f) / (float)(end - start));
+        }
+
+        {
+            final String test = "Async Reads";
+            final long start = System.currentTimeMillis();
+            IntStream.rangeClosed(1, iterations).forEach(i ->
+                    binder.get(String.valueOf(i))
+            );
+            final long end = System.currentTimeMillis();
+            System.out.println(test + " :" + ((float)iterations * 1000f) / (float)(end - start));
+        }
+
+
     }
 
 
