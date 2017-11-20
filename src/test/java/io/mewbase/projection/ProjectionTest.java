@@ -4,7 +4,7 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
-import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
+
 import io.mewbase.bson.BsonObject;
 
 import io.mewbase.eventsource.EventSink;
@@ -86,7 +86,7 @@ public class ProjectionTest extends MewbaseTestBase {
     // @Repeat(50)
     public void testSimpleProjectionRuns() throws Exception {
 
-        log.info("testSimpleProjectionRuns");
+        log.info("******* TestSimpleProjectionRuns *******");
 
         ProjectionManager manager = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = manager.builder();
@@ -130,7 +130,7 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
 
-    // @Test
+    @Test
     public void testProjectionNames() throws Exception {
 
         ProjectionManager mgr = ProjectionManager.instance(source,store);
@@ -143,9 +143,8 @@ public class ProjectionTest extends MewbaseTestBase {
         });
 
         assertTrue( names.allMatch( name -> mgr.isProjection(name) ) );
-        Thread.sleep(400);
-
     }
+
 
     @Test
     public void testProjectionRecoversFromEventNumber() throws Exception {

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -42,6 +43,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
         this.stateBinder = store.open(PROJ_STATE_BINDER_NAME);
     }
 
+
     @Override
     public ProjectionBuilder builder() {
        return new ProjectionBuilderImpl(this);
@@ -65,39 +67,57 @@ public class ProjectionManagerImpl implements ProjectionManager {
                                 final BiFunction<BsonObject, Event, BsonObject> projectionFunction) {
 
 
-        EventHandler eventHandler =  event -> {
+        EventHandler eventHandler =  (Event event) -> {
             if (eventFilter.apply(event)) {
-
                 String docID = docIDSelector.apply(event);
                 if (docID == null) {
                     log.error("In projection " + projectionName + " document id selector returned null");
                 } else {
-
-
-                    Binder binder = store.open(binderName);
-                    binder.get(docID).whenComplete((inputDoc, innerExp) -> {
-                        // Case 1 - Something broke in the store/binder
+                    Binder docBinder = store.open(binderName);
+                    docBinder.get(docID).whenComplete((final BsonObject inputDoc, final Throwable innerExp) -> {
+                        // Something broke in the store/binder dont try to apply the projection and log the error
+                        // dont apply the
                         if (innerExp != null) {
-                            log.error("Projection " + projectionName + " binder " + binderName + " document ID " + docID, innerExp);
-                        }
-                        // case 2 - Nothing broke but the document doesnt exists
-                        if (inputDoc == null && innerExp == null) {
-                            inputDoc = new BsonObject();
-                        }
-                        // case 3 - We now have the doc
-                        if (inputDoc != null && innerExp == null) {
-                            //
-                            BsonObject outputDoc = projectionFunction.apply(inputDoc, event);
+                            log.error("Attempt to read document from store failed in " +
+                                        " Projection " + projectionName +
+                                        " Binder " + binderName +
+                                        " Document ID " + docID, innerExp);
+                        } else {
+                            // Check that the document exists and provide an empty one if it doesnt.
+                            // should never pass a null to the projection apply function
+                            final BsonObject validDoc = (inputDoc == null) ? new BsonObject() : inputDoc;
+
+                            BsonObject outputDoc = projectionFunction.apply(validDoc, event);
                             BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
 
-                            // do document write and write/update last seen, only update event number if document write succeeds.
-                            binder.put(docID, outputDoc).whenComplete((writeGood, writeBad) -> {
-                                if (writeBad == null) {
-                                    stateBinder.put(projectionName, projStateDoc);
-                                } else {
-                                    log.error("Projection " + projectionName + " binder " + binderName + " document ID " + docID, writeBad);
+
+                            // Set up a handler so that if the projection fails because the state
+                            // store fails for any reason then attempt to rewind a possible
+                            // partial or complete failure. And then finally stop the projection
+                            // on that assumption that the storage has failed
+                            BiFunction<Void,Throwable, Void> rewindHandler = (final Void val, final Throwable thrbl) -> {
+                                if (thrbl != null) {
+                                    // assuming one of the writes failed that it is extremely likely that the rewind
+                                    // will succeed for similar reasons and if both failed then rewind will be idempotent.
+                                    docBinder.put(docID, inputDoc);
+                                    stateBinder.put(projectionName, validDoc);
+                                    log.error("Projection write failed and rewound at " +
+                                            "Projection " + projectionName +
+                                            " Binder " + binderName +
+                                            " Document ID " + docID, thrbl);
+                                    log.error("Hence stopping projection.");
+                                    projections.get(projectionName).stop();
                                 }
-                            });
+                                return null;
+                            };
+
+                            // Now attempt Attempt to write both the update to the document and the state
+                            CompletableFuture<Void> binderWrite = docBinder.put(docID, outputDoc);
+                            CompletableFuture<Void> stateWrite = stateBinder.put(projectionName, projStateDoc);
+
+                            // If either fails then rewind both.
+                            binderWrite.handle(rewindHandler);
+                            stateWrite.handle(rewindHandler);
                         }
                     });
                 }
