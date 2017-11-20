@@ -30,12 +30,13 @@ public class ProjectionManagerImpl implements ProjectionManager {
     private final EventSource source;
     private final BinderStore store;
 
-    final String PROJ_STATE_BINDER_NAME = "mewbase.proj.state";
-    final String EVENT_NUM_FIELD = "eventNum";
+    public static final String PROJ_STATE_BINDER_NAME = "mewbase.proj.state";
+    public static final String EVENT_NUM_FIELD = "eventNum";
+
     private final Binder stateBinder;
 
-
     private final Map<String, ProjectionImpl> projections = new ConcurrentHashMap<>();
+
 
     public ProjectionManagerImpl(EventSource source, BinderStore store) throws Exception {
         this.source = source;
@@ -66,7 +67,6 @@ public class ProjectionManagerImpl implements ProjectionManager {
                                 final Function<Event, String> docIDSelector,
                                 final BiFunction<BsonObject, Event, BsonObject> projectionFunction) {
 
-
         EventHandler eventHandler =  (Event event) -> {
             if (eventFilter.apply(event)) {
                 String docID = docIDSelector.apply(event);
@@ -75,13 +75,13 @@ public class ProjectionManagerImpl implements ProjectionManager {
                 } else {
                     Binder docBinder = store.open(binderName);
                     docBinder.get(docID).whenComplete((final BsonObject inputDoc, final Throwable innerExp) -> {
-                        // Something broke in the store/binder dont try to apply the projection and log the error
-                        // dont apply the
+                        // Something broke in the store/binder dont try to apply the projection
+                        // and log the error don't apply the
                         if (innerExp != null) {
                             log.error("Attempt to read document from store failed in " +
-                                        " Projection " + projectionName +
-                                        " Binder " + binderName +
-                                        " Document ID " + docID, innerExp);
+                                        " Projection:" + projectionName +
+                                        " Binder:" + binderName +
+                                        " Document ID:" + docID, innerExp);
                         } else {
                             // Check that the document exists and provide an empty one if it doesnt.
                             // should never pass a null to the projection apply function
@@ -90,34 +90,34 @@ public class ProjectionManagerImpl implements ProjectionManager {
                             BsonObject outputDoc = projectionFunction.apply(validDoc, event);
                             BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
 
-
                             // Set up a handler so that if the projection fails because the state
                             // store fails for any reason then attempt to rewind a possible
                             // partial or complete failure. And then finally stop the projection
                             // on that assumption that the storage has failed
-                            BiFunction<Void,Throwable, Void> rewindHandler = (final Void val, final Throwable thrbl) -> {
-                                if (thrbl != null) {
-                                    // assuming one of the writes failed that it is extremely likely that the rewind
-                                    // will succeed for similar reasons and if both failed then rewind will be idempotent.
-                                    docBinder.put(docID, inputDoc);
-                                    stateBinder.put(projectionName, validDoc);
-                                    log.error("Projection write failed and rewound at " +
-                                            "Projection " + projectionName +
-                                            " Binder " + binderName +
-                                            " Document ID " + docID, thrbl);
-                                    log.error("Hence stopping projection.");
-                                    projections.get(projectionName).stop();
-                                }
+                            Function<Throwable, Void> rewindHandler = (final Throwable thrbl) -> {
+                                // assuming one of the writes failed that it is extremely likely that the rewind
+                                // will succeed for similar reasons and if both failed then rewind will be idempotent.
+                                docBinder.put(docID, validDoc);
+                                final long previousEvent = Math.max(0,event.getEventNumber()-1);
+                                BsonObject prevStateDoc = new BsonObject().put(EVENT_NUM_FIELD, previousEvent);
+                                stateBinder.put(projectionName, prevStateDoc);
+                                log.error("Projection write failed and rewound at " +
+                                        "Projection:" + projectionName +
+                                        " Binder:" + binderName +
+                                        " Document ID:" + docID, thrbl);
+                                log.error("Hence stopping projection.");
+                                projections.get(projectionName).stop();
                                 return null;
                             };
 
                             // Now attempt Attempt to write both the update to the document and the state
-                            CompletableFuture<Void> binderWrite = docBinder.put(docID, outputDoc);
                             CompletableFuture<Void> stateWrite = stateBinder.put(projectionName, projStateDoc);
+                            CompletableFuture<Void> binderWrite = docBinder.put(docID, outputDoc);
 
-                            // If either fails then rewind both.
-                            binderWrite.handle(rewindHandler);
-                            stateWrite.handle(rewindHandler);
+
+                            // If either fails then rewind.
+                            binderWrite.exceptionally(rewindHandler);
+                            stateWrite.exceptionally(rewindHandler);
                         }
                     });
                 }
@@ -126,12 +126,11 @@ public class ProjectionManagerImpl implements ProjectionManager {
 
         Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 
-        // register it with the Factory
+        // register it with the manager
         ProjectionImpl proj = new ProjectionImpl(projectionName,subs);
         projections.put(projectionName,proj);
         return proj;
     }
-
 
     @Override
     public boolean isProjection(String projectionName) {

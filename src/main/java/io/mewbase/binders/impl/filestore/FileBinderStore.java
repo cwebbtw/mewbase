@@ -23,14 +23,12 @@ public class FileBinderStore implements BinderStore {
 
     private final static Logger logger = LoggerFactory.getLogger(FileBinderStore.class);
 
-    private final ConcurrentMap<String, Binder> binders = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<String, Binder> binders = new ConcurrentHashMap<>();
 
-    private final File bindersDir;
-
+    protected final File bindersDir;
 
 
     public FileBinderStore() { this(new MewbaseOptions()); }
-
 
     public FileBinderStore(MewbaseOptions mewbaseOptions) {
 

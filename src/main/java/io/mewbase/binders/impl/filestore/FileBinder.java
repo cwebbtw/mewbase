@@ -50,7 +50,7 @@ public class FileBinder implements Binder {
 
     @Override
     public CompletableFuture<BsonObject> get(final String id) {
-        File file = new File(binderDir,id);
+        final File file = new File(binderDir,id);
 
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             if (file.exists()) {
@@ -133,7 +133,6 @@ public class FileBinder implements Binder {
         }, stexec);
         return fut.join().stream();
     }
-
 
 
     public static void createIfDoesntExists(File dir) {
