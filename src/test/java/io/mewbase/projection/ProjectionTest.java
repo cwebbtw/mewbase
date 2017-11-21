@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.IntStream;
@@ -261,6 +262,9 @@ public class ProjectionTest extends MewbaseTestBase {
 
         BinderStore failingStore  = new PartiallyFailingStore(createMewbaseOptions());
 
+        final String UNIQUE_PROJECTION_NAME = TEST_PROJECTION_NAME+ UUID.randomUUID();
+        final String UNIQUE_CHANNEL_NAME = TEST_CHANNEL + UUID.randomUUID();
+
         // copies the code exactly from a previous succeeding test.
         ProjectionManager manager = ProjectionManager.instance(source,failingStore);
         ProjectionBuilder builder = manager.builder();
@@ -271,8 +275,8 @@ public class ProjectionTest extends MewbaseTestBase {
         final CountDownLatch latch = new CountDownLatch(1);
 
         Projection projection = builder
-                .named(TEST_PROJECTION_NAME)
-                .projecting(TEST_CHANNEL)
+                .named(UNIQUE_PROJECTION_NAME)
+                .projecting(UNIQUE_CHANNEL_NAME)
                 .onto(TEST_BINDER)
                 .filteredBy(event -> true)
                 .identifiedBy(event -> event.getBson().getString(BASKET_ID_FIELD))
@@ -288,7 +292,7 @@ public class ProjectionTest extends MewbaseTestBase {
         // Send an event to the channel which the projection is subscribed to.
         EventSink sink = new NatsEventSink();
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
-        sink.publish(TEST_CHANNEL, evt);
+        sink.publish(UNIQUE_CHANNEL_NAME, evt);
 
         latch.await();
         Thread.sleep(1000);
@@ -297,10 +301,11 @@ public class ProjectionTest extends MewbaseTestBase {
         Binder binder = store.open(TEST_BINDER);
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
         assertNull(basketDoc);
-        // check the event number was rewound
+
+        // Try to recover the state update that wasnt written
         Binder stateBinder = store.open(ProjectionManagerImpl.PROJ_STATE_BINDER_NAME);
-        BsonObject state = stateBinder.get(TEST_PROJECTION_NAME).get();
-        //assertEquals(0L , (long)state.getLong(ProjectionManagerImpl.EVENT_NUM_FIELD));
+        BsonObject state = stateBinder.get(UNIQUE_PROJECTION_NAME).get();
+        assertNull(state);
     }
 
 

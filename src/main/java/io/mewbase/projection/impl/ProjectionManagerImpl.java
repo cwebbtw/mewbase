@@ -90,39 +90,41 @@ public class ProjectionManagerImpl implements ProjectionManager {
                             BsonObject outputDoc = projectionFunction.apply(validDoc, event);
                             BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
 
-                            // Set up a handler so that if the projection fails because the state
-                            // store fails for any reason then attempt to rewind a possible
-                            // partial or complete failure. And then finally stop the projection
-                            // on that assumption that the storage has failed
-                            Function<Throwable, Void> rewindHandler = (final Throwable thrbl) -> {
-                                // assuming one of the writes failed that it is extremely likely that the rewind
-                                // will succeed for similar reasons and if both failed then rewind will be idempotent.
-                                docBinder.put(docID, validDoc);
-                                final long previousEvent = Math.max(0,event.getEventNumber()-1);
-                                BsonObject prevStateDoc = new BsonObject().put(EVENT_NUM_FIELD, previousEvent);
-                                stateBinder.put(projectionName, prevStateDoc);
-                                log.error("Projection write failed and rewound at " +
-                                        "Projection:" + projectionName +
-                                        " Binder:" + binderName +
-                                        " Document ID:" + docID, thrbl);
-                                log.error("Hence stopping projection.");
-                                projections.get(projectionName).stop();
-                                return null;
-                            };
-
-                            // Now attempt Attempt to write both the update to the document and the state
-                            CompletableFuture<Void> stateWrite = stateBinder.put(projectionName, projStateDoc);
-                            CompletableFuture<Void> binderWrite = docBinder.put(docID, outputDoc);
-
-
-                            // If either fails then rewind.
-                            binderWrite.exceptionally(rewindHandler);
-                            stateWrite.exceptionally(rewindHandler);
+                            // Now attempt attempt to write the result of the projection and
+                            // if this succeeds write the state (EventNumber) update.
+                            docBinder.put(docID, outputDoc).whenComplete(
+                                    (final Void doc, final Throwable docWriteExp) -> {
+                                        if (docWriteExp == null) {
+                                            stateBinder.put(projectionName, projStateDoc).whenComplete(
+                                                    (final Void state, final Throwable stateWriteExp) -> {
+                                                        if (stateWriteExp == null) {
+                                                            // all is good
+                                                        } else {
+                                                            // Doc succeeded and state failed - panic
+                                                            log.error("State Write failed possible out of sync error at " +
+                                                                    " Projection:" + projectionName +
+                                                                    " Binder:" + binderName +
+                                                                    " Document ID:" + docID, innerExp);
+                                                            projections.get(projectionName).stop();
+                                                        }
+                                                    }
+                                            );
+                                        } else {
+                                            // Updated document failed to write hence state update not written.
+                                            log.error("Document write failed possible hence stopping projection at " +
+                                                    " Projection:" + projectionName +
+                                                    " Binder:" + binderName +
+                                                    " Document ID:" + docID, innerExp);
+                                            projections.get(projectionName).stop();
+                                        }
+                                    }
+                            );
                         }
                     });
                 }
             }
         };
+
 
         Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 
