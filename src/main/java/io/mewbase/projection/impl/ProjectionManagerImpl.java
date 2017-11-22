@@ -97,24 +97,20 @@ public class ProjectionManagerImpl implements ProjectionManager {
                                         if (docWriteExp == null) {
                                             stateBinder.put(projectionName, projStateDoc).whenComplete(
                                                     (final Void state, final Throwable stateWriteExp) -> {
-                                                        if (stateWriteExp == null) {
-                                                            // all is good
-                                                        } else {
+                                                        if (stateWriteExp != null) {
                                                             // Doc succeeded and state failed - panic
                                                             log.error("State Write failed possible out of sync error at " +
                                                                     " Projection:" + projectionName +
                                                                     " Binder:" + binderName +
-                                                                    " Document ID:" + docID, innerExp);
+                                                                    " Document ID:" + docID, innerExp, stateWriteExp);
                                                             projections.get(projectionName).stop();
                                                         }
-                                                    }
-                                            );
+                                                    } );
                                         } else {
-                                            // Updated document failed to write hence state update not written.
-                                            log.error("Document write failed possible hence stopping projection at " +
+                                            log.error("Document write failed hence stopping projection at " +
                                                     " Projection:" + projectionName +
                                                     " Binder:" + binderName +
-                                                    " Document ID:" + docID, innerExp);
+                                                    " Document ID:" + docID, docWriteExp);
                                             projections.get(projectionName).stop();
                                         }
                                     }
@@ -133,6 +129,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
         projections.put(projectionName,proj);
         return proj;
     }
+
 
     @Override
     public boolean isProjection(String projectionName) {
