@@ -11,6 +11,8 @@ import java.time.Instant;
  *
  * Run this example to generate timestamped events until it is cancelled by an OS signal
  * You can set the rate or events (per second) and event channel where given.
+ * java -cp  <libraries>/mewbase-<version>-jar-with-dependencies.jar
+ *                  io.mewbase.example.sink.SinkExample
  *
  */
 public class SinkExample {
