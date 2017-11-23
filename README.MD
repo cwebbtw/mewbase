@@ -148,7 +148,9 @@ Refer to the maven output for the the current library version number which you c
 maven pom.xml build files, for example, and the example code can be run from the resulting 
 mewbase-<version>.jar file or from your project IDE.
 
+## Generate mewbase project from template
 
-    
+A template Mewbase project can also be generated using the following command:
 
+    mvn archetype:generate -DarchetypeGroupId=io.mewbase -DarchetypeArtifactId=mewbase  -DarchetypeVersion=0.2.1  -DgroupId=[sample.groupId] -DartifactId=[mySampleArtifact]
 
