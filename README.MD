@@ -157,4 +157,3 @@ A template Mewbase project can also be generated using the following command:
     						-DarchetypeVersion=0.2.1  		\
     						-DgroupId=[sample.groupId] 		\
     						-DartifactId=[mySampleArtifact]	
-
