@@ -14,6 +14,7 @@ import java.nio.file.*;
 import java.util.*;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
@@ -50,7 +51,7 @@ public class FileBinder implements Binder {
 
     @Override
     public CompletableFuture<BsonObject> get(final String id) {
-        File file = new File(binderDir,id);
+        final File file = new File(binderDir,id);
 
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             if (file.exists()) {
@@ -60,6 +61,7 @@ public class FileBinder implements Binder {
                     doc = new BsonObject(buffer);
                 } catch (Exception exp) {
                     log.error("Error getting document with key : "+ id);
+                    throw new CompletionException(exp);
                 }
                 return doc;
             } else {
@@ -80,6 +82,7 @@ public class FileBinder implements Binder {
                 Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE;
             } catch (Exception exp) {
                 log.error("Error writing document key : " + id + " value : " + doc);
+                throw new CompletionException(exp);
             }
         }, stexec);
         return fut;
@@ -95,8 +98,8 @@ public class FileBinder implements Binder {
                 return Files.deleteIfExists(file.toPath());
             } catch (Exception exp) {
                 log.error("Error deleting document " + id );
+                throw new CompletionException(exp);
             }
-            return false;
         }, stexec);
         return fut;
     }
@@ -133,7 +136,6 @@ public class FileBinder implements Binder {
         }, stexec);
         return fut.join().stream();
     }
-
 
 
     public static void createIfDoesntExists(File dir) {
