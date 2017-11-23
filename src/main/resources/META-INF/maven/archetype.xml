@@ -1,0 +1,9 @@
+<archetype>
+  <id>mewbase</id>
+  <sources>
+  	<source>src/main/java/Example.java</source>
+  </sources>
+  <testSources>
+  	<source>src/test/java/ExampleTest.java</source>
+  </testSources>
+</archetype>
