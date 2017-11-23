@@ -152,5 +152,9 @@ mewbase-<version>.jar file or from your project IDE.
 
 A template Mewbase project can also be generated using the following command:
 
-    mvn archetype:generate -DarchetypeGroupId=io.mewbase -DarchetypeArtifactId=mewbase  -DarchetypeVersion=0.2.1  -DgroupId=[sample.groupId] -DartifactId=[mySampleArtifact]
+    mvn archetype:generate 	-DarchetypeGroupId=io.mewbase 	\
+    						-DarchetypeArtifactId=mewbase 	\
+    						-DarchetypeVersion=0.2.1  		\
+    						-DgroupId=[sample.groupId] 		\
+    						-DartifactId=[mySampleArtifact]	
 
