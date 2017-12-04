@@ -60,7 +60,7 @@ public class PostgresBinder implements Binder {
             try {
                 final Statement stmt = connection.createStatement();
                 final ResultSet resultSet = stmt.executeQuery("SELECT data FROM "+name+" WHERE key = '"+id+"';");
-                if (resultSet.first()) {
+                if (resultSet.next()) {
                     byte[] buffer = resultSet.getBytes("data");
                     doc = new BsonObject(buffer);
                     resultSet.close();
@@ -82,9 +82,12 @@ public class PostgresBinder implements Binder {
 
         CompletableFuture fut = CompletableFuture.runAsync( () -> {
             try {
-                final PreparedStatement stmt = connection.prepareStatement("INSERT INTO "+name+" VALUES(?,?)");
+                final String sql = "INSERT INTO "+name+" VALUES( ?, ? )" +
+                        " ON CONFLICT (key) DO UPDATE SET data = ? ;";
+                final PreparedStatement stmt = connection.prepareStatement(sql);
                 stmt.setString(1,id);
                 stmt.setBytes(2,valBytes);
+                stmt.setBytes(3,valBytes);
                 stmt.executeUpdate();
                 stmt.close();
             } catch (Exception exp) {
@@ -150,7 +153,7 @@ public class PostgresBinder implements Binder {
 
 
     public void createIfDoesntExists(final String name) throws SQLException {
-        final String sql = "CREATE TABLE IF NOT EXISTS "+name+" (key TEXT, data BLOB, PRIMARY KEY ( key ))";
+        final String sql = "CREATE TABLE IF NOT EXISTS "+name+" (key TEXT, data bytea, PRIMARY KEY ( key ))";
         connection.createStatement().executeUpdate(sql);
     }
 
