@@ -2,6 +2,7 @@ package io.mewbase.binders;
 
 
 import io.mewbase.binders.impl.filestore.FileBinderStore;
+import io.mewbase.binders.impl.postgres.PostgresBinderStore;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.projection.ProjectionManager;
 import io.mewbase.projection.impl.ProjectionManagerImpl;
@@ -18,7 +19,7 @@ public interface BinderStore {
 
 
     static BinderStore instance(MewbaseOptions opts) {
-        return new FileBinderStore(opts);
+        return new PostgresBinderStore(opts);
     }
 
     static BinderStore instance() {

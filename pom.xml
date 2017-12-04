@@ -65,6 +65,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.1.4</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.nats</groupId>
             <artifactId>java-nats-streaming</artifactId>
             <version>0.4.1</version>
