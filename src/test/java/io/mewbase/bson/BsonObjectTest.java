@@ -18,6 +18,8 @@
 
 package io.mewbase.bson;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mewbase.TestUtils;
 
 import io.vertx.core.buffer.Buffer;
@@ -25,6 +27,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,6 +48,21 @@ public class BsonObjectTest {
     public void setUp() throws Exception {
         bsonObject = new BsonObject();
     }
+
+
+    // answering #144
+    @Test
+    public void shouldInstantiateBsonObjectfromJsonObject() throws IOException {
+        final String key = "event_type";
+        final String value = "manually_typed_address_merged";
+        final String jsonStr = "{\""+key+"\":\""+value+"\"}";
+        final JsonObject jsonObject = new JsonObject(jsonStr);
+        final BsonObject bsonObject = new BsonObject(jsonObject);
+        assertNotNull(bsonObject);
+        assertEquals(bsonObject.getString(key),value);
+    }
+
+
 
     @Test
     public void testGetInteger() {
