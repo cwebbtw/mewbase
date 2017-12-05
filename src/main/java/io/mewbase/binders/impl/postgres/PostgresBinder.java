@@ -39,7 +39,7 @@ public class PostgresBinder implements Binder {
         this.name = name;
         try {
             createIfDoesntExists(name);
-            log.trace("Opened Binder named " + name);
+            log.info("Opened Binder named " + name);
         } catch (Exception exp) {
             log.error("Failed to open binder " + name, exp);
         }
@@ -144,7 +144,7 @@ public class PostgresBinder implements Binder {
                     }
                 }
             } catch (Exception ex) {
-                log.error("File based Binder failed to start", ex);
+                log.error("Postgres Binder failed to get documents", ex);
             }
             return resultSet;
         }, stexec);
@@ -153,8 +153,11 @@ public class PostgresBinder implements Binder {
 
 
     public void createIfDoesntExists(final String name) throws SQLException {
-        final String sql = "CREATE TABLE IF NOT EXISTS "+name+" (key TEXT, data bytea, PRIMARY KEY ( key ))";
-        connection.createStatement().executeUpdate(sql);
+        final String schemaSql = "CREATE SCHEMA IF NOT EXISTS mewbase;";
+        connection.createStatement().executeUpdate(schemaSql);
+        final String tableSql =  "CREATE TABLE IF NOT EXISTS mewbase."+ name +
+                                    " (key TEXT, data bytea, PRIMARY KEY ( key ))";
+        connection.createStatement().executeUpdate(tableSql);
     }
 
 }

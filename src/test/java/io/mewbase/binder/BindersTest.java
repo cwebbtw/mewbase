@@ -38,14 +38,13 @@ import static org.junit.Assert.*;
 @RunWith(VertxUnitRunner.class)
 public class BindersTest extends MewbaseTestBase {
 
-    private final static String BINDER_NAME = "TestBinderName";
 
 
     @Test
     public void testCreateBinderStore() throws Exception {
         BinderStore store = BinderStore.instance(createMewbaseOptions());
-        store.binderNames().forEach( bn-> System.out.println(bn));
-        assertEquals(store.binderNames().count(),0L);
+        // doesnt throw exceptions and does return a valid handle to store
+        assertNotNull(store);
     }
 
 
@@ -53,20 +52,21 @@ public class BindersTest extends MewbaseTestBase {
     public void testOpenBinders() throws Exception {
 
         // set up the store and add some binders
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
         BinderStore store = BinderStore.instance(createMewbaseOptions());
 
         final int numBinders = 10;
         Binder[] all = new Binder[numBinders];
         IntStream.range(0, all.length).forEach( i -> {
-            all[i] = store.open("testbinder" + i);
+            all[i] = store.open(testBinderName + i);
         });
 
         Set<String> bindersSet1 = store.binderNames().collect(toSet());
         for (int i = 0; i < numBinders; i++) {
-            assertTrue(bindersSet1.contains("testbinder" + i));
+            assertTrue(bindersSet1.contains(testBinderName + i));
         }
 
-        final String name = "AnotherBinder";
+        final String name = "YetAnother" + testBinderName;
         store.open(name);
         Set<String> bindersSet2 = store.binderNames().collect(toSet());
         assertTrue(bindersSet2.contains(name));
@@ -79,7 +79,9 @@ public class BindersTest extends MewbaseTestBase {
    public void testSimplePutGet() throws Exception {
 
        BinderStore store = BinderStore.instance(createMewbaseOptions());
-       Binder binder = store.open(BINDER_NAME);
+       final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
+       Binder binder = store.open(testBinderName);
        BsonObject docPut = createObject();
        assertNull(binder.put("id1234", docPut).get());
        BsonObject docGet = binder.get("id1234").get();
@@ -97,10 +99,10 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testAsyncWriteReadInterleaved() throws Exception {
 
-        // Binder store must satisfy 'linearize' properties.
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
         final BinderStore store = BinderStore.instance(createMewbaseOptions());
-        final Binder binder = store.open(BINDER_NAME);
+        final Binder binder = store.open(testBinderName);
 
         final String TEST_KEY  = "InOrderTest";
         final BsonObject docToWrite = new BsonObject().put("Thing1", "Bad").put("Thing2", "Worse");
@@ -125,8 +127,10 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testPutGetDifferentBinders() throws Exception {
 
-        final String B1 = BINDER_NAME + "1";
-        final String B2 = BINDER_NAME + "2";
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
+        final String B1 = testBinderName + "1";
+        final String B2 = testBinderName + "2";
 
         BinderStore store = BinderStore.instance(createMewbaseOptions());
         Binder binder1 = store.open(B1);
@@ -152,15 +156,16 @@ public class BindersTest extends MewbaseTestBase {
     public void testBinderIsPersistent() throws Exception {
 
         final MewbaseOptions OPTIONS = createMewbaseOptions();
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
         BinderStore store = BinderStore.instance(OPTIONS);
-        Binder binder = store.open(BINDER_NAME);
+        Binder binder = store.open(testBinderName);
         BsonObject docPut = createObject();
         binder.put("id1234", docPut).get();
 
 
         BinderStore store2 = BinderStore.instance(OPTIONS);
-        Binder binder2 = store2.open(BINDER_NAME);
+        Binder binder2 = store2.open(testBinderName);
         BsonObject docGet = binder2.get("id1234").get();
         assertEquals(docPut, docGet);
     }
@@ -169,8 +174,10 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testBinderSerialisesPutsAndGetsCorrectly() throws Exception {
 
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
         BinderStore store = BinderStore.instance(createMewbaseOptions());
-        Binder binder = store.open(BINDER_NAME);
+        Binder binder = store.open(testBinderName);
         final String DOC_ID = "ID1234567";
         final String FIELD_KEY = "K";
         BsonObject doc = createObject();
@@ -182,8 +189,10 @@ public class BindersTest extends MewbaseTestBase {
 
     @Test
     public void testFindNoEntry() throws Exception {
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
         BinderStore store = BinderStore.instance(createMewbaseOptions());
-        Binder binder = store.open(BINDER_NAME);
+        Binder binder = store.open(testBinderName);
         assertNull(binder.get("id1234").get());
 
     }
@@ -191,8 +200,11 @@ public class BindersTest extends MewbaseTestBase {
 
     @Test
     public void testDelete() throws Exception {
+
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
         BinderStore store = BinderStore.instance(createMewbaseOptions());
-        Binder binder = store.open(BINDER_NAME);
+        Binder binder = store.open(testBinderName);
 
         BsonObject docPut = createObject();
         assertNull(binder.put("id1234", docPut).get());
@@ -207,8 +219,10 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testGetAll() throws Exception {
 
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
         BinderStore store = BinderStore.instance(createMewbaseOptions());;
-        Binder binder = store.open(BINDER_NAME);
+        Binder binder = store.open(testBinderName);
 
         final int MANY_DOCS = 64;
         final String DOC_ID_KEY = "id";
@@ -242,8 +256,10 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testGetWithFilter() throws Exception {
 
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
         BinderStore store = BinderStore.instance(createMewbaseOptions());
-        Binder binder = store.open(BINDER_NAME);
+        Binder binder = store.open(testBinderName);
 
         final int ALL_DOCS = 64;
         final String DOC_ID_KEY = "id";
@@ -252,7 +268,7 @@ public class BindersTest extends MewbaseTestBase {
 
         range.forEach(i -> {
             final BsonObject docPut = createObject();
-            binder.put(String.valueOf(i), docPut.put(DOC_ID_KEY, i));
+            binder.put(String.valueOf(i), docPut.put(DOC_ID_KEY, i)).join();
         });
 
         // get with filter
@@ -271,15 +287,16 @@ public class BindersTest extends MewbaseTestBase {
         Predicate<BsonObject> filter = doc -> doc.getInteger(DOC_ID_KEY) <= HALF_THE_DOCS;
         Stream<KeyVal<String, BsonObject>> docs = binder.getDocuments(new HashSet(),filter);
 
-        assertEquals(docs.map(checker).collect(toSet()).size(), HALF_THE_DOCS);
+        assertEquals(HALF_THE_DOCS, docs.map(checker).collect(toSet()).size());
 
     }
 
     @Test
     public void testGetWithIdSet() throws Exception {
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());;
-        Binder binder = store.open(BINDER_NAME);
+        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+        Binder binder = store.open(testBinderName);
 
         final int ALL_DOCS = 64;
         final String DOC_ID_KEY = "id";
@@ -321,12 +338,14 @@ public class BindersTest extends MewbaseTestBase {
     }
 
 
-    //@Test
+    // @Test
     public void testPerformance() throws Exception {
 
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
         final BinderStore store = BinderStore.instance(createMewbaseOptions());
         // final BinderStore store = new LmdbBinderStore();
-        final Binder binder = store.open(BINDER_NAME);
+
+        final Binder binder = store.open(testBinderName);
 
         final BsonObject docToWrite = new BsonObject().put("Thing1","Bad").put("Thing2","Worse");
 
@@ -353,7 +372,7 @@ public class BindersTest extends MewbaseTestBase {
         }
 
 
-        iterations = 1000000;
+        iterations = 100000;
         {
             final String test = "Async Writes";
             final long start = System.currentTimeMillis();

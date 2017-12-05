@@ -15,7 +15,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
@@ -43,9 +47,7 @@ public class PostgresBinderStore implements BinderStore {
             logger.error("Postgres binder failed to start", exp);
         }
 
-
-        // list all dbs <=>  binders
-        // then  open(binder name);
+        listAllTables().forEach( name -> open(name) );
     }
 
 
@@ -74,6 +76,24 @@ public class PostgresBinderStore implements BinderStore {
     public Boolean delete(String name) {
         return null;
     }
+
+
+    private Stream<String> listAllTables() {
+        Set<String> names = new HashSet();
+        try {
+            final String sql = "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'mewbase';";
+            final Statement stmt = connection.createStatement();
+            final ResultSet dbrs = stmt.executeQuery(sql);
+
+            while (dbrs.next()) {
+                names.add(dbrs.getString(2));
+            }
+        } catch (Exception exp) {
+            logger.error("Failed to find current binders list in postgres",exp);
+        }
+        return names.stream();
+    }
+
 
 
 }
