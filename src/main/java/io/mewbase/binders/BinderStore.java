@@ -19,7 +19,7 @@ public interface BinderStore {
 
 
     static BinderStore instance(MewbaseOptions opts) {
-        return new PostgresBinderStore(opts);
+        return new FileBinderStore(opts);
     }
 
     static BinderStore instance() {
