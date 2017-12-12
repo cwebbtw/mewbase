@@ -46,7 +46,7 @@ public class ProjectionTest extends MewbaseTestBase {
     private final static Logger log = LoggerFactory.getLogger(ProjectionTest.class);
 
     private static final String TEST_CHANNEL = "ProjectionTestChannel";
-    private static final String TEST_BINDER = "ProjectionTestBinder";
+
     private static final String TEST_PROJECTION_NAME = "TestProjection";
 
     private static final String BASKET_ID_FIELD = "BasketID";
@@ -78,10 +78,13 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     public void testProjectionBuilder() throws Exception {
 
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+        store.delete(TEST_BINDER);
+
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
 
-        Projection projection = createProjection(builder, BASKET_ID_FIELD,  TEST_PROJECTION_NAME);
+        Projection projection = createProjection(builder,TEST_BINDER, BASKET_ID_FIELD,  TEST_PROJECTION_NAME);
 
         assertNotNull(projection);
         assertEquals(TEST_PROJECTION_NAME, projection.getName());
@@ -93,6 +96,9 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     // @Repeat(50)
     public void testSimpleProjectionRuns() throws Exception {
+
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+        store.delete(TEST_BINDER);
 
         ProjectionManager manager = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = manager.builder();
@@ -139,12 +145,16 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     public void testProjectionNames() throws Exception {
 
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+        store.delete(TEST_BINDER);
+
+
         ProjectionManager mgr = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = mgr.builder();
 
         Stream<String> names = IntStream.range(1,10).mapToObj( i -> {
             final String projName = "Proj" + i;
-            createProjection(builder,BASKET_ID_FIELD,projName);
+            createProjection(builder,TEST_BINDER, BASKET_ID_FIELD,projName);
             return projName;
         });
 
@@ -154,6 +164,9 @@ public class ProjectionTest extends MewbaseTestBase {
 
     @Test
     public void testProjectionRecoversFromEventNumber() throws Exception {
+
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+        store.delete(TEST_BINDER);
 
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
@@ -233,6 +246,10 @@ public class ProjectionTest extends MewbaseTestBase {
     @Test
     public void testPartialWriteFailsStatefullyCorrect() throws Exception {
 
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+        store.delete(TEST_BINDER);
+
+
         // Patch the Binder so that fails in the most possible nasty way
         class FailingBinder extends FileBinder {
             public FailingBinder(String name, File binderDir) {
@@ -262,7 +279,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         BinderStore failingStore  = new PartiallyFailingStore(createMewbaseOptions());
 
-        final String UNIQUE_PROJECTION_NAME = TEST_PROJECTION_NAME+ UUID.randomUUID();
+        final String UNIQUE_PROJECTION_NAME = TEST_PROJECTION_NAME + UUID.randomUUID();
         final String UNIQUE_CHANNEL_NAME = TEST_CHANNEL + UUID.randomUUID();
 
         // copies the code exactly from a previous succeeding test.
@@ -297,7 +314,7 @@ public class ProjectionTest extends MewbaseTestBase {
         latch.await();
         Thread.sleep(1000);
 
-        // Try to recover the new document which was never written
+        // Try to recover the new document which should not have been written
         Binder binder = store.open(TEST_BINDER);
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
         assertNull(basketDoc);
@@ -309,12 +326,12 @@ public class ProjectionTest extends MewbaseTestBase {
     }
 
 
-    private Projection createProjection(ProjectionBuilder builder, String binderIdKey, String projName) {
+    private Projection createProjection(ProjectionBuilder builder, String testBinder, String binderIdKey, String projName) {
 
         return builder
                 .named(projName)
                 .projecting(TEST_CHANNEL)
-                .onto(TEST_BINDER)
+                .onto(testBinder)
                 .filteredBy(event -> true)
                 .identifiedBy(event -> event.getBson().getString(binderIdKey))
                 .as( (basket, event) -> event.getBson().put("output",projName) )

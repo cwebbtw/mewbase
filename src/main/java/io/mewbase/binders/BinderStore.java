@@ -2,6 +2,7 @@ package io.mewbase.binders;
 
 
 import io.mewbase.binders.impl.filestore.FileBinderStore;
+import io.mewbase.binders.impl.postgres.PostgresBinderStore;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.projection.ProjectionManager;
 import io.mewbase.projection.impl.ProjectionManagerImpl;
@@ -64,6 +65,7 @@ public interface BinderStore {
      * @param  name of  binder
      * @return a CompleteableFuture with a Boolean set to true if successful
      */
+    @Deprecated
     Boolean delete(String name);
 
 

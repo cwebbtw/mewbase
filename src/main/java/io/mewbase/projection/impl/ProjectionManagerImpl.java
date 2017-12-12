@@ -30,7 +30,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
     private final EventSource source;
     private final BinderStore store;
 
-    public static final String PROJ_STATE_BINDER_NAME = "mewbase.proj.state";
+    public static final String PROJ_STATE_BINDER_NAME = "mewbase_proj_state";
     public static final String EVENT_NUM_FIELD = "eventNum";
 
     private final Binder stateBinder;
