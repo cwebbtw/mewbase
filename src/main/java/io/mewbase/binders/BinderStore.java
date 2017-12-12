@@ -65,6 +65,7 @@ public interface BinderStore {
      * @param  name of  binder
      * @return a CompleteableFuture with a Boolean set to true if successful
      */
+    @Deprecated
     Boolean delete(String name);
 
 

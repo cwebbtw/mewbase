@@ -63,8 +63,10 @@ public class PostgresBinder implements Binder {
                 if (resultSet.next()) {
                     byte[] buffer = resultSet.getBytes("data");
                     doc = new BsonObject(buffer);
-                    resultSet.close();
+
                 }
+                resultSet.close();
+                stmt.close();
             } catch (Exception exp) {
                     log.error("Error getting document with key : " + id);
                     throw new CompletionException(exp);
@@ -100,6 +102,7 @@ public class PostgresBinder implements Binder {
 
 
     @Override
+    @Deprecated
     public CompletableFuture<Boolean> delete(final String id) {
 
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
@@ -143,6 +146,9 @@ public class PostgresBinder implements Binder {
                         }
                     }
                 }
+                dbrs.close();
+                stmt.close();
+
             } catch (Exception ex) {
                 log.error("Postgres Binder failed to get documents", ex);
             }

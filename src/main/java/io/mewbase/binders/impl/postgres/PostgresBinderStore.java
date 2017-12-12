@@ -88,6 +88,8 @@ public class PostgresBinderStore implements BinderStore {
             while (dbrs.next()) {
                 names.add(dbrs.getString(2));
             }
+            dbrs.close();
+            stmt.close();
         } catch (Exception exp) {
             logger.error("Failed to find current binders list in postgres",exp);
         }
