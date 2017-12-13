@@ -1,11 +1,13 @@
 package io.mewbase.eventsource.impl.nats;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 
-import io.mewbase.server.MewbaseOptions;
+
 import io.nats.stan.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +29,14 @@ public class NatsEventSource implements EventSource {
 
 
     public NatsEventSource() {
-        this(new MewbaseOptions());
+        this(ConfigFactory.load() );
     }
 
-    public NatsEventSource(MewbaseOptions mewbaseOptions) {
+    public NatsEventSource(Config cfg) {
 
-        final String userName = mewbaseOptions.getSourceUserName();
-        final String clusterName = mewbaseOptions.getSourceClusterName();
-        final String url = mewbaseOptions.getSourceUrl();
+        final String userName = cfg.getString("mewbase.event.source.nats.username");
+        final String clusterName = cfg.getString("mewbase.event.source.nats.clustername");
+        final String url = cfg.getString("mewbase.event.source.nats.url");
 
         final ConnectionFactory cf = new ConnectionFactory(clusterName,userName);
         cf.setNatsUrl(url);

@@ -1,10 +1,12 @@
 package io.mewbase.eventsource.impl.nats;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
-import io.mewbase.server.MewbaseOptions;
+
 import io.nats.stan.AckHandler;
 import io.nats.stan.Connection;
 import io.nats.stan.ConnectionFactory;
@@ -25,19 +27,17 @@ public class NatsEventSink implements EventSink {
 
     private final static Logger logger = LoggerFactory.getLogger(NatsEventSink.class);
 
-
     private final Connection nats;
 
-
     public NatsEventSink() {
-        this(new MewbaseOptions());
+        this( ConfigFactory.load() );
     }
 
 
-    public NatsEventSink(MewbaseOptions mewbaseOptions) {
-        final String userName = mewbaseOptions.getSinkUserName();;
-        final String clusterName = mewbaseOptions.getSinkClusterName();
-        final String url = mewbaseOptions.getSinkUrl();
+    public NatsEventSink(Config cfg) {
+        final String userName = cfg.getString("mewbase.event.sink.nats.username");
+        final String clusterName = cfg.getString("mewbase.event.sink.nats.clustername");
+        final String url = cfg.getString("mewbase.event.sink.nats.url");
 
         final ConnectionFactory cf = new ConnectionFactory(clusterName,userName);
         cf.setNatsUrl(url);

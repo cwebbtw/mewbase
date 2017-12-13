@@ -1,18 +1,13 @@
 package io.mewbase.binders.impl.postgres;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
-import io.mewbase.binders.impl.filestore.FileBinder;
-import io.mewbase.server.MewbaseOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -33,15 +28,16 @@ public class PostgresBinderStore implements BinderStore {
 
     Connection connection;
 
+    public PostgresBinderStore() { this(ConfigFactory.load() ); }
 
-    public PostgresBinderStore() { this(new MewbaseOptions()); }
 
-    public PostgresBinderStore(MewbaseOptions mewbaseOptions) {
-
+    public PostgresBinderStore(Config cfg) {
         try {
             Class.forName("org.postgresql.Driver");
-            final String uri = "jdbc:postgresql://127.0.0.1:5432/mewbase";
-            connection = DriverManager.getConnection(uri, "mewbase", "mewbase");
+            final String uri = cfg.getString("mewbase.binders.postgres.store.url");
+            final String username = cfg.getString("mewbase.binders.postgres.store.username");
+            final String password = cfg.getString("mewbase.binders.postgres.store.password");
+            connection = DriverManager.getConnection(uri, username, password);
             logger.info("Started postgress binder store with  " + uri);
         } catch (Exception exp) {
             logger.error("Postgres binder failed to start", exp);

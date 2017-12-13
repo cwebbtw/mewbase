@@ -1,10 +1,10 @@
 package io.mewbase.binders.impl.lmdb;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
-
-import io.mewbase.server.MewbaseOptions;
 
 import org.lmdbjava.Env;
 import org.slf4j.Logger;
@@ -39,14 +39,14 @@ public class LmdbBinderStore implements BinderStore {
     private Env<ByteBuffer> env;
 
     @Deprecated
-    public LmdbBinderStore() { this(new MewbaseOptions()); }
+    public LmdbBinderStore() { this(ConfigFactory.load()); }
 
     @Deprecated
-    public LmdbBinderStore(MewbaseOptions mewbaseOptions) {
+    public LmdbBinderStore(Config cfg) {
 
-        this.docsDir = mewbaseOptions.getDocsDir();
-        this.maxDBs = mewbaseOptions.getMaxBinders();
-        this.maxDBSize = mewbaseOptions.getMaxBinderSize();
+        this.docsDir = cfg.getString("mewbase.binders.lmdb.store.basedir");
+        this.maxDBs = cfg.getInt("mewbase.binders.lmdb.store.max.binders");
+        this.maxDBSize = cfg.getLong("mewbase.binders.lmdb.store.max.binder.size");
 
         logger.info("Starting LMDB binder store with docs dir: " + docsDir);
         File fDocsDir = new File(docsDir);
