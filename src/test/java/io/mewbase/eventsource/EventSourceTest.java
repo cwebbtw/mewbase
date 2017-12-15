@@ -1,15 +1,14 @@
 package io.mewbase.eventsource;
 
 import io.mewbase.MewbaseTestBase;
-import io.mewbase.ServerTestBase;
+
 
 import io.mewbase.bson.BsonObject;
 
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventProducer;
 
-import io.mewbase.server.MewbaseOptions;
-import io.vertx.core.buffer.Buffer;
+
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +16,7 @@ import org.junit.runner.RunWith;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.assertEquals;
+
 
 /**
  * Created by Nige on 7/9/2017.
@@ -28,7 +27,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
     @Test
     public void testConnectToEventSource() throws Exception {
-        EventSource es = new NatsEventSource(new MewbaseOptions());
+        EventSource es = EventSource.instance();
         es.close();
         assert (true);
     }
@@ -45,7 +44,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        EventSource es = new NatsEventSource(new MewbaseOptions());
+        EventSource es = EventSource.instance(createConfig());
         Subscription subs = es.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
@@ -115,7 +114,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         prod.sendNumberedEvents((long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
 
-        EventSource es = new NatsEventSource(new MewbaseOptions());
+        EventSource es = EventSource.instance(createConfig());
         es.subscribeFromMostRecent(testChannelName, event -> {
             BsonObject bson = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());

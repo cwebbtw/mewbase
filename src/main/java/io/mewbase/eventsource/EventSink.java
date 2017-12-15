@@ -1,11 +1,36 @@
 package io.mewbase.eventsource;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
 import io.mewbase.bson.BsonObject;
+import io.mewbase.eventsource.impl.nats.NatsEventSink;
+import io.mewbase.util.CanFactoryFrom;
 
 import java.util.concurrent.CompletableFuture;
 
+
 public interface EventSink {
+
+    /**
+     * Create an instance using the current config.
+     * @return an Instance of an EventSink
+     */
+    static EventSink instance() {
+        return EventSink.instance(ConfigFactory.load());
+    }
+
+    /**
+     * Create an instance using the current config.
+     * If the config fails it will create a NatsEventSink
+     * @return an Instance of an EventSink
+     */
+    static EventSink instance(Config cfg) {
+        final String factoryConfigPath = "mewbase.event.sink.factory";
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new NatsEventSink(cfg) );
+    }
+
 
     /**
      * Publish an Event in the form of a byte array to a named channel.
@@ -13,7 +38,7 @@ public interface EventSink {
      *
      * This function is intended to block until the associated EventSink implemetnation
      * acknowledges that the event as been received. For async Events please see the
-     * @AsyncEventSink
+     * @EventSink:publishAsync
      *
      * @param channelName
      * @param event as a BsonObject.
@@ -27,7 +52,7 @@ public interface EventSink {
      * the event that was successfully sent or will terminate Exceptionally with the
      * associated Exception.
      *
-     * For blocking version see @EventSink
+     * For blocking version see @EventSink:publish
      *
      * @param channelName String of the channel name.
      * @param event as a BsonObject.

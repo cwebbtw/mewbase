@@ -1,8 +1,24 @@
 package io.mewbase.eventsource;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import io.mewbase.eventsource.impl.nats.NatsEventSource;
+import io.mewbase.util.CanFactoryFrom;
+
 import java.time.Instant;
 
+
 public interface EventSource {
+
+
+    static EventSource instance() {
+        return EventSource.instance(ConfigFactory.load());
+    }
+
+    static EventSource instance(Config cfg) {
+        final String factoryConfigPath = "mewbase.event.source.factory";
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new NatsEventSource(cfg) );
+    }
 
     /**
      * Subscribe to a named channel with the given event handler.

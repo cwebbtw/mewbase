@@ -2,7 +2,10 @@ package io.mewbase.binders;
 
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
 import io.mewbase.binders.impl.filestore.FileBinderStore;
+import io.mewbase.util.CanFactoryFrom;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -11,14 +14,25 @@ import java.util.stream.Stream;
 /**
  * Created by Nige on 14/09/17.
  */
-public interface BinderStore {
+public interface BinderStore  {
 
-
+    /**
+     * Create an instance using the current config.
+     * @return an Instance of a BinderStore
+     */
     static BinderStore instance() {
-        return new FileBinderStore();
+        return BinderStore.instance(ConfigFactory.load());
     }
 
-    static BinderStore instance(Config cfg) { return new FileBinderStore(cfg); }
+    /**
+     * Create an instance using the current config.
+     * If the config fails it will create a FileBinderStore
+     * @return an Instance of a BinderStore
+     */
+    static BinderStore instance(Config cfg) {
+        final String factoryConfigPath = "mewbase.binders.factory";
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new FileBinderStore(cfg) );
+    }
 
 
     /**
