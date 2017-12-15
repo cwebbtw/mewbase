@@ -5,7 +5,6 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventProducer;
 
 
@@ -81,7 +80,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        EventSource es = new NatsEventSource();
+        EventSource es = EventSource.instance(createConfig());;
         es.subscribe(testChannelName, event -> {
                 BsonObject bson =  event.getBson();
                 long thisEventNum = END_EVENT_NUMBER - latch.getCount();
@@ -147,7 +146,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         prod.sendNumberedEvents((long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
 
-        EventSource es = new NatsEventSource();
+        EventSource es = EventSource.instance(createConfig());
         es.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
             BsonObject bson = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
@@ -186,7 +185,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         prod.sendNumberedEvents((long)MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER);
 
-        EventSource es = new NatsEventSource();
+        EventSource es = EventSource.instance(createConfig());
         es.subscribeFromInstant(testChannelName, then, event -> {
             BsonObject bson  = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + 1 + (eventsToTest - latch.getCount());
@@ -217,7 +216,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         prod.sendNumberedEvents((long)START_EVENT_NUMBER, MID_EVENT_NUMBER);
 
-        EventSource es = new NatsEventSource();
+        EventSource es = EventSource.instance(createConfig());
         es.subscribeAll(testChannelName,  event -> {
             BsonObject bson = event.getBson();
             long thisEventNum = START_EVENT_NUMBER + eventsToTest - latch.getCount();
