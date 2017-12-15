@@ -88,9 +88,10 @@ public class MewbaseTestBase {
 
     //
     protected Config createConfig() throws Exception {
-        System.setProperty("mewbase.binders.files.store.basedir", testFolder.newFolder().getPath());
+        final String path = testFolder.newFolder().getPath();
+        System.setProperty("mewbase.binders.files.store.basedir", path);
         Config cfg = ConfigFactory.load();
-        System.out.println(cfg.root().render());
+        // System.out.println(cfg.root().render());
         return  cfg;
     }
 }

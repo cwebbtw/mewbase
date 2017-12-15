@@ -34,7 +34,7 @@ public class FileBinderStore implements BinderStore {
 
     public FileBinderStore(Config cfg) {
 
-        bindersDir = Paths.get(cfg.getString("mewbase.binders.files.store")).toFile();
+        bindersDir = Paths.get(cfg.getString("mewbase.binders.files.store.basedir")).toFile();
 
         logger.info("Starting file based binder store with docs dir: " + bindersDir.toString());
 
