@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 /**
  * Created by Nige on 14/09/17.
  */
-public interface BinderStore  {
+public interface BinderStore {
 
     /**
      * Create an instance using the current config.
