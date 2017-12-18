@@ -28,7 +28,7 @@ public class PostgresBinderStore implements BinderStore {
 
     Connection connection;
 
-    public PostgresBinderStore() { this(ConfigFactory.load() ); }
+    public PostgresBinderStore() { this(ConfigFactory.load()); }
 
 
     public PostgresBinderStore(Config cfg) {
