@@ -1,4 +1,4 @@
-package io.mewbase.server.impl;
+package io.mewbase.util;
 
 import io.vertx.core.buffer.Buffer;
 

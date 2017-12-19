@@ -1,6 +1,6 @@
-package io.mewbase.server.impl.transport.net;
+package io.mewbase.util.transport;
 
-import io.mewbase.server.impl.TransportConnection;
+import io.mewbase.util.TransportConnection;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 

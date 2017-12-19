@@ -31,7 +31,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
     @Test
     public void testConnectToEventSink() throws Exception {
-        EventSink es = new NatsEventSink();
+        EventSink es = EventSink.instance();
         es.close();
         assert(true);
     }
@@ -40,7 +40,7 @@ public class EventSinkTest extends MewbaseTestBase {
     @Test
     public void testPublishSingleEvent() throws Exception {
 
-        EventSink eSink = new NatsEventSink();
+        EventSink eSink = EventSink.instance();
 
         final String testChannelName = "singleEventSink";
         final String inputUUID = randomString();
@@ -70,7 +70,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         // Test local event producer to inject events in the event source.
         final String testChannelName = "TestMultiEventChannel";
-        EventSink eSink = new NatsEventSink();
+        EventSink eSink = EventSink.instance();
 
         final int START_EVENT_NUMBER = 1;
         final int END_EVENT_NUMBER = 128;
@@ -102,7 +102,7 @@ public class EventSinkTest extends MewbaseTestBase {
     public void testManyAsyncEvents() throws Exception {
 
         final String testChannelName = "TestManyAsyncEventChannel";
-        EventSink eSink = new NatsEventSink();
+        EventSink eSink = EventSink.instance();
 
         final int START_EVENT_NUMBER = 1;
         final int END_EVENT_NUMBER = 128;

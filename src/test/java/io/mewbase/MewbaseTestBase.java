@@ -1,13 +1,16 @@
 package io.mewbase;
 
-import io.mewbase.server.MewbaseOptions;
-import io.vertx.ext.unit.TestContext;
+
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
+
 import io.vertx.ext.unit.junit.RepeatRule;
-import org.junit.After;
+
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
+
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
@@ -83,8 +86,12 @@ public class MewbaseTestBase {
         return UUID.randomUUID().toString();
     }
 
-
-    protected MewbaseOptions createMewbaseOptions() throws Exception {
-        return new MewbaseOptions().setDocsDir(testFolder.newFolder().getPath());
+    //
+    protected Config createConfig() throws Exception {
+        final String path = testFolder.newFolder().getPath();
+        System.setProperty("mewbase.binders.files.store.basedir", path);
+        Config cfg = ConfigFactory.load();
+        // System.out.println(cfg.root().render());
+        return  cfg;
     }
 }

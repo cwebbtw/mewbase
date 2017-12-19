@@ -1,13 +1,14 @@
-package io.mewbase.server.impl;
+package io.mewbase.rest;
 
 import io.mewbase.binders.BinderStore;
-import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
 import io.mewbase.cqrs.QueryManager;
 import io.mewbase.cqrs.impl.QueryImpl;
+
 import io.mewbase.util.AsyncResCF;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -21,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static io.mewbase.binders.BinderStore.*;
-
 /**
  * TODO content types
  * <p>
@@ -31,21 +30,23 @@ import static io.mewbase.binders.BinderStore.*;
 public class RESTServiceAdaptor {
 
     private final static Logger logger = LoggerFactory.getLogger(RESTServiceAdaptor.class);
+
+    // TODO replace with new config
     private final String host = "0.0.0.0";
     private final int port = 8080;
 
-    private final ServerImpl server;
+    private final Vertx vertx = Vertx.vertx();
     private final HttpServer httpServer;
     private final Router router;
     private QueryManager queryManager;
 
     private final BinderStore store = BinderStore.instance();
 
-    public RESTServiceAdaptor(ServerImpl server) {
-        this.server = server;
+    public RESTServiceAdaptor() {
+
         //this.queryManager = server.getQueryManager();
-        this.httpServer = server.getVertx().createHttpServer(new HttpServerOptions().setHost(host).setPort(port));
-        router = Router.router(server.getVertx());
+        this.httpServer = vertx.createHttpServer(new HttpServerOptions().setHost(host).setPort(port));
+        router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
         httpServer.requestHandler(router::accept);
     }

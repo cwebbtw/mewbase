@@ -1,23 +1,18 @@
 package io.mewbase.cqrs;
 
 import io.mewbase.MewbaseTestBase;
-import io.mewbase.ServerTestBase;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
-import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 
 
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,7 +41,7 @@ public class QueryTest extends MewbaseTestBase {
 
     @Test
     public void testQueryManager() throws Exception {
-        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createConfig());
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
         assertNotNull(mgr);
@@ -57,7 +52,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test
     public void testQueryBuilder() throws Exception {
 
-        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createConfig());
         final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
@@ -83,7 +78,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test(expected = NoSuchElementException.class)
     public void testNoSuchBinder() throws Exception {
 
-        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createConfig());
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
@@ -102,7 +97,7 @@ public class QueryTest extends MewbaseTestBase {
     public void testFiltered() throws Exception {
 
         // Set up the binder
-        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createConfig());
         final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
 
         // Matching document
@@ -142,7 +137,7 @@ public class QueryTest extends MewbaseTestBase {
     @Test
     public void testIdSelector() throws Exception {
         // Set up the binder
-        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createMewbaseOptions());
+        final BinderStore TEST_BINDER_STORE = BinderStore.instance(createConfig());
         final Binder TEST_BINDER = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
 
         // Matching document

@@ -1,15 +1,13 @@
 package io.mewbase.binder;
 
+import com.typesafe.config.Config;
 import io.mewbase.MewbaseTestBase;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
 
-import io.mewbase.binders.impl.lmdb.LmdbBinderStore;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
-
-import io.mewbase.server.MewbaseOptions;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.Test;
@@ -42,7 +40,7 @@ public class BindersTest extends MewbaseTestBase {
 
     @Test
     public void testCreateBinderStore() throws Exception {
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         // doesnt throw exceptions and does return a valid handle to store
         assertNotNull(store);
     }
@@ -53,7 +51,7 @@ public class BindersTest extends MewbaseTestBase {
 
         // set up the store and add some binders
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
 
         final int numBinders = 10;
         Binder[] all = new Binder[numBinders];
@@ -78,7 +76,7 @@ public class BindersTest extends MewbaseTestBase {
    @Test
    public void testSimplePutGet() throws Exception {
 
-       BinderStore store = BinderStore.instance(createMewbaseOptions());
+       BinderStore store = BinderStore.instance(createConfig());
        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
        Binder binder = store.open(testBinderName);
@@ -101,7 +99,7 @@ public class BindersTest extends MewbaseTestBase {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        final BinderStore store = BinderStore.instance(createMewbaseOptions());
+        final BinderStore store = BinderStore.instance(createConfig());
         final Binder binder = store.open(testBinderName);
 
         final String TEST_KEY  = "InOrderTest";
@@ -132,7 +130,7 @@ public class BindersTest extends MewbaseTestBase {
         final String B1 = testBinderName + "1";
         final String B2 = testBinderName + "2";
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         Binder binder1 = store.open(B1);
         Binder binder2 = store.open(B2);
 
@@ -155,16 +153,16 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testBinderIsPersistent() throws Exception {
 
-        final MewbaseOptions OPTIONS = createMewbaseOptions();
+        final Config cfg = createConfig();
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        BinderStore store = BinderStore.instance(OPTIONS);
+        BinderStore store = BinderStore.instance(cfg);
         Binder binder = store.open(testBinderName);
         BsonObject docPut = createObject();
         binder.put("id1234", docPut).get();
 
 
-        BinderStore store2 = BinderStore.instance(OPTIONS);
+        BinderStore store2 = BinderStore.instance(cfg);
         Binder binder2 = store2.open(testBinderName);
         BsonObject docGet = binder2.get("id1234").get();
         assertEquals(docPut, docGet);
@@ -176,7 +174,7 @@ public class BindersTest extends MewbaseTestBase {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         Binder binder = store.open(testBinderName);
         final String DOC_ID = "ID1234567";
         final String FIELD_KEY = "K";
@@ -191,7 +189,7 @@ public class BindersTest extends MewbaseTestBase {
     public void testFindNoEntry() throws Exception {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         Binder binder = store.open(testBinderName);
         assertNull(binder.get("id1234").get());
 
@@ -203,7 +201,7 @@ public class BindersTest extends MewbaseTestBase {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         Binder binder = store.open(testBinderName);
 
         BsonObject docPut = createObject();
@@ -221,7 +219,7 @@ public class BindersTest extends MewbaseTestBase {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());;
+        BinderStore store = BinderStore.instance(createConfig());;
         Binder binder = store.open(testBinderName);
 
         final int MANY_DOCS = 64;
@@ -258,7 +256,7 @@ public class BindersTest extends MewbaseTestBase {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         Binder binder = store.open(testBinderName);
 
         final int ALL_DOCS = 64;
@@ -294,7 +292,7 @@ public class BindersTest extends MewbaseTestBase {
     @Test
     public void testGetWithIdSet() throws Exception {
 
-        BinderStore store = BinderStore.instance(createMewbaseOptions());
+        BinderStore store = BinderStore.instance(createConfig());
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
         Binder binder = store.open(testBinderName);
 
@@ -342,7 +340,7 @@ public class BindersTest extends MewbaseTestBase {
     public void testPerformance() throws Exception {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
-        final BinderStore store = BinderStore.instance(createMewbaseOptions());
+        final BinderStore store = BinderStore.instance(createConfig());
         // final BinderStore store = new LmdbBinderStore();
 
         final Binder binder = store.open(testBinderName);

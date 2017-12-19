@@ -1,10 +1,12 @@
 package io.mewbase.binders.impl.filestore;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 
-import io.mewbase.server.MewbaseOptions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +30,11 @@ public class FileBinderStore implements BinderStore {
     protected final File bindersDir;
 
 
-    public FileBinderStore() { this(new MewbaseOptions()); }
+    public FileBinderStore() { this(ConfigFactory.load() ); }
 
-    public FileBinderStore(MewbaseOptions mewbaseOptions) {
+    public FileBinderStore(Config cfg) {
 
-        bindersDir = Paths.get(mewbaseOptions.getDocsDir()).toFile();
+        bindersDir = Paths.get(cfg.getString("mewbase.binders.files.store.basedir")).toFile();
 
         logger.info("Starting file based binder store with docs dir: " + bindersDir.toString());
 

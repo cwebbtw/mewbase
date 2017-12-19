@@ -1,10 +1,10 @@
-package io.mewbase.server;
+package io.mewbase.rest;
 
 
 /**
  * Created by tim on 15/12/16.
  */
-public interface Mewbase {
+public interface MewbaseRest {
 
     // REST adaptor related operations
 

@@ -1,4 +1,4 @@
-package io.mewbase.server.impl;
+package io.mewbase.util;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;

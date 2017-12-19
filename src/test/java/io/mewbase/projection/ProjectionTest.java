@@ -1,5 +1,6 @@
 package io.mewbase.projection;
 
+import com.typesafe.config.Config;
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.binders.Binder;
@@ -16,8 +17,7 @@ import io.mewbase.eventsource.impl.nats.NatsEventSource;
 
 
 import io.mewbase.projection.impl.ProjectionManagerImpl;
-import io.mewbase.server.MewbaseOptions;
-import io.vertx.ext.unit.junit.Repeat;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +56,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
     @Before
     public void before() throws Exception {
-        store = BinderStore.instance(createMewbaseOptions());
+        store = BinderStore.instance(createConfig());
         source = new NatsEventSource();
     }
 
@@ -264,8 +264,8 @@ public class ProjectionTest extends MewbaseTestBase {
         }
 
         class PartiallyFailingStore extends FileBinderStore {
-            public PartiallyFailingStore(MewbaseOptions options) {
-                super(options);
+            public PartiallyFailingStore(Config cfg) {
+                super(cfg);
             }
             @Override
             public Binder open(String name) {
@@ -277,7 +277,7 @@ public class ProjectionTest extends MewbaseTestBase {
             }
         }
 
-        BinderStore failingStore  = new PartiallyFailingStore(createMewbaseOptions());
+        BinderStore failingStore  = new PartiallyFailingStore(createConfig());
 
         final String UNIQUE_PROJECTION_NAME = TEST_PROJECTION_NAME + UUID.randomUUID();
         final String UNIQUE_CHANNEL_NAME = TEST_CHANNEL + UUID.randomUUID();

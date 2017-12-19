@@ -1,12 +1,9 @@
 package io.mewbase.example.retail;
 
-import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.server.Mewbase;
-import io.vertx.core.http.HttpMethod;
+import io.mewbase.rest.MewbaseRest;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -169,7 +166,7 @@ public class OrderService  {
     private static final String ORDER_PLACED_EVENT_TYPE = "orderPlaced";
 
 
-    public void setupServer(Mewbase mewbase) throws Exception {
+    public void setupServer(MewbaseRest mewbase) throws Exception {
 
 
 //        mewbase.buildProjection("maintain_basket")                    // projection name

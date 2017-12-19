@@ -1,8 +1,8 @@
-package io.mewbase.server.impl.transport.net;
+package io.mewbase.util.transport;
 
-import io.mewbase.server.MewbaseOptions;
-import io.mewbase.server.impl.Transport;
-import io.mewbase.server.impl.TransportConnection;
+
+import io.mewbase.util.Transport;
+import io.mewbase.util.TransportConnection;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetServer;
@@ -24,13 +24,12 @@ public class NetTransport implements Transport {
     private final static Logger logger = LoggerFactory.getLogger(NetTransport.class);
 
     private final Vertx vertx;
-    private final MewbaseOptions mewbaseOptions;
+
     private final Set<NetServer> netServers = new ConcurrentHashSet<>();
     private Consumer<TransportConnection> connectHandler;
 
-    public NetTransport(Vertx vertx, MewbaseOptions options) {
+    public NetTransport(Vertx vertx) {
         this.vertx = vertx;
-        this.mewbaseOptions = options;
     }
 
     public CompletableFuture<Void> start() {
@@ -38,20 +37,20 @@ public class NetTransport implements Transport {
         logger.trace("Starting " + numServers + " net servers");
         CompletableFuture[] all = new CompletableFuture[numServers];
         for (int i = 0; i < numServers; i++) {
-            NetServer netServer = vertx.createNetServer(mewbaseOptions.getNetServerOptions());
-            netServer.connectHandler(this::connectHandler);
-            CompletableFuture<Void> cf = new CompletableFuture<>();
-            netServer.listen(mewbaseOptions.getNetServerOptions().getPort(),
-                    mewbaseOptions.getNetServerOptions().getHost(), ar -> {
-                        if (ar.succeeded()) {
-                            logger.trace("Mewbase listening");
-                            cf.complete(null);
-                        } else {
-                            cf.completeExceptionally(ar.cause());
-                        }
-                    });
-            netServers.add(netServer);
-            all[i] = cf;
+//            NetServer netServer = vertx.createNetServer(mewbaseOptions.getNetServerOptions());
+//            netServer.connectHandler(this::connectHandler);
+//            CompletableFuture<Void> cf = new CompletableFuture<>();
+//            netServer.listen(mewbaseOptions.getNetServerOptions().getPort(),
+//                    mewbaseOptions.getNetServerOptions().getHost(), ar -> {
+//                        if (ar.succeeded()) {
+//                            logger.trace("Mewbase listening");
+//                            cf.complete(null);
+//                        } else {
+//                            cf.completeExceptionally(ar.cause());
+//                        }
+//                    });
+//            netServers.add(netServer);
+//            all[i] = cf;
         }
         return CompletableFuture.allOf(all);
     }

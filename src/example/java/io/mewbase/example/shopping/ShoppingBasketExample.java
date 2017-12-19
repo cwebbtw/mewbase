@@ -12,8 +12,6 @@ import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 import io.mewbase.projection.ProjectionManager;
-import io.mewbase.server.Server;
-import io.mewbase.server.MewbaseOptions;
 
 import java.util.function.Consumer;
 
