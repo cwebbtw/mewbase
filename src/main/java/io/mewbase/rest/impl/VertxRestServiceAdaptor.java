@@ -2,6 +2,7 @@ package io.mewbase.rest.impl;
 
 import com.typesafe.config.Config;
 
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
@@ -39,6 +40,11 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
     private final HttpServer httpServer;
     private final Router router;
+
+
+    public VertxRestServiceAdaptor() {
+        this(ConfigFactory.load());
+    }
 
 
     public VertxRestServiceAdaptor(Config cfg) {

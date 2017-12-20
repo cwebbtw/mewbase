@@ -1,22 +1,24 @@
-package io.mewbase;
+package io.mewbase.rest;
 
+import io.mewbase.MewbaseTestBase;
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+import static io.restassured.RestAssured.given;
+import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -28,10 +30,22 @@ public class RESTAdaptorTest extends MewbaseTestBase {
     private final static Logger logger = LoggerFactory.getLogger(RESTAdaptorTest.class);
 
 
-
-
-
     @Test
+    public void testCreateEmptyAdaptor() throws InterruptedException {
+
+        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        assertNotNull(serv);
+        serv.start();
+
+        // rest assured
+        given().when().get("/nonexistant").then().statusCode(404);
+
+        serv.stop();
+    }
+
+
+
+ //   @Test
     public void testCommandWithPathParam(TestContext testContext) throws Exception {
         String commandName = "testcommand";
         String customerID = "customer123";
@@ -71,7 +85,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 //        req.end(sentCommand.encode());
     }
 
-    @Test
+//    @Test
     public void testSimpleCommand(TestContext testContext) throws Exception {
         String commandName = "testcommand";
 //        CommandHandler handler = server.buildCommandHandler(commandName)
@@ -117,7 +131,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         int numDocs = 100;
         BsonArray bsonArray = new BsonArray();
         for (int i = 0; i < numDocs; i++) {
-            String docID = getID(i);
+            String docID = getIdAsString(i);
             BsonObject doc = new BsonObject().put("id", docID).put("foo", "bar");
            // prod.publish(doc).get();
             bsonArray.add(doc);
@@ -156,7 +170,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
     //@Test
     public void testFindByID(TestContext testContext) throws Exception {
 
-        BsonObject doc = new BsonObject().put("id", getID(0)).put("foo", "bar");
+        BsonObject doc = new BsonObject().put("id", getIdAsString(0)).put("foo", "bar");
       //  prod.publish(doc).get();
       //  waitForDoc(0);
 
@@ -192,7 +206,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
     }
 
 
-    protected String getID(int id) {
+    protected String getIdAsString(int id) {
         return String.format("id-%05d", id);
     }
 
