@@ -38,6 +38,12 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
     private final static Logger logger = LoggerFactory.getLogger(VertxRestServiceAdaptor.class);
 
+    private static final String binderParamKey = "binderName";
+    private static final String documentParamKey = "documentId";
+    private static final String binderParam = "/:" + binderParamKey;
+    private static final String documentParam = "/:" + documentParamKey;
+
+
     private final HttpServer httpServer;
     private final Router router;
 
@@ -64,7 +70,122 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
 
     @Override
-    public RestServiceAdaptor exposeCommand(CommandManager commandMgr, String commandName, String uri) {
+    public RestServiceAdaptor exposeGetDocument(final BinderStore binderStore) {
+        return exposeGetDocument(binderStore, "/binders");
+    }
+
+
+    @Override
+    public RestServiceAdaptor exposeGetDocument(final BinderStore binderStore, String uriPathPrefix) {
+
+        // list all of the binders
+        router.route(HttpMethod.GET, uriPathPrefix).handler(rc -> {
+            final HttpServerResponse response = rc.response();
+            response.
+                    putHeader("content-type", "application/json").
+                    // TODO make Json
+                            end(binderStore.binderNames().toString());
+        } );
+
+        // list the document Ids in a binder.
+        final String binderQualifingUri = uriPathPrefix + binderParam;
+        router.route(HttpMethod.GET, binderQualifingUri).handler(rc -> {
+            final MultiMap params = rc.request().params();
+            final String binderName = params.get(binderParamKey);
+
+            final HttpServerResponse response = rc.response();
+            // Todo needs getDocumentIds on Binder
+            final Stream ids = binderStore.
+                                    open(binderName).
+                                    getDocuments().
+                                    map( kv -> kv.getKey() );
+            response.
+                    putHeader("content-type", "application/json").
+                    // TODO make Json
+                    end(ids.toString());
+        } );
+
+
+        // get the given document from docID or not.
+        final String documentQualifingUri = binderQualifingUri + documentParam;
+        router.route(HttpMethod.GET, documentQualifingUri).handler(rc -> {
+            final MultiMap params = rc.request().params();
+            final String binderName = params.get(binderParamKey);
+            final String documentId = params.get(documentParamKey);
+
+            final HttpServerResponse response = rc.response();
+            binderStore.open(binderName).get(documentId).whenComplete((doc, t) -> {
+                if (t != null) {
+                    String errMsg = "Failed to find "+ documentId +" in binder "+ binderName;
+                    logger.error(errMsg, t);
+                    response.
+                            setStatusCode(500).
+                            setStatusMessage(errMsg).
+                            end();
+                } else {
+                    response.
+                            putHeader("content-type","application/json").
+                            end(doc.encodeToString());
+                }
+            });
+        } );
+        return this;
+    }
+
+
+    @Override
+    public RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String binderName, String uriPathPrefix) {
+        // list the document Ids in a binder.
+        final String binderQualifingUri = uriPathPrefix + binderName;
+        router.route(HttpMethod.GET, binderQualifingUri).handler(rc -> {
+            final HttpServerResponse response = rc.response();
+            // Todo needs getDocumentIds on Binder
+            final Stream ids = binderStore.
+                    open(binderName).
+                    getDocuments().
+                    map( kv -> kv.getKey() );
+            response.
+                    putHeader("content-type", "application/json").
+                    // TODO make Json
+                    end(ids.toString());
+        } );
+
+
+        // get the given document from docID or not.
+        final String documentQualifingUri = binderQualifingUri + documentParam;
+        router.route(HttpMethod.GET, documentQualifingUri).handler(rc -> {
+            final MultiMap params = rc.request().params();
+            final String documentId = params.get(binderParamKey);
+
+            final HttpServerResponse response = rc.response();
+            binderStore.open(binderName).get(documentId).whenComplete( (doc, t) -> {
+                if (t != null) {
+                    String errMsg = "Failed to find "+ documentId +" in binder "+ binderName;
+                    logger.error(errMsg, t);
+                    response.
+                            setStatusCode(500).
+                            setStatusMessage(errMsg).
+                            end();
+                } else {
+                    response.
+                            putHeader("content-type","application/json").
+                            end(doc.encodeToString());
+                }
+            });
+        } );
+        return this;
+    }
+
+
+    @Override
+    public RestServiceAdaptor exposeCommand(CommandManager qmgr, String commandName) {
+        // TODO
+        return this;
+    }
+
+
+    @Override
+    public RestServiceAdaptor exposeCommand(final CommandManager commandMgr, String commandName, String uri) {
 
         router.route(HttpMethod.POST, uri).handler(rc -> {
             rc.setAcceptableContentType("application/json");
@@ -81,8 +202,15 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
     }
 
 
+
     @Override
-    public RestServiceAdaptor exposeQuery(QueryManager qmgr, String queryName, String uri) {
+    public RestServiceAdaptor exposeQuery(QueryManager qmgr, String queryName) {
+        // TODO
+        return this;
+    }
+
+    @Override
+    public RestServiceAdaptor exposeQuery(final QueryManager qmgr, String queryName, String uri) {
 
        router.route(HttpMethod.GET, uri).handler(rc -> {
            // dispatch the query
@@ -103,39 +231,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
     }
 
 
-    @Override
-    public RestServiceAdaptor exposeFindByID(BinderStore binderStore, String uri) {
 
-        router.route(HttpMethod.GET, uri).handler(rc -> {
-            MultiMap params = rc.request().params();
-            String binderName = params.get("binder");
-            String id = params.get("id");
-
-            HttpServerResponse response = rc.response();
-            if (binderName == null || id == null) {
-                    response.
-                        setStatusCode(404).
-                        setStatusMessage("Missing Parameter for 'binder' and/or 'id'.").
-                        end();
-            } else {
-                binderStore.open(binderName).get(id).whenComplete((doc, t) -> {
-                    if (t != null) {
-                        String errMsg = "Failed to find "+ id +" in binder "+ binderName;
-                        logger.error(errMsg, t);
-                        response.
-                            setStatusCode(500).
-                            setStatusMessage(errMsg).
-                            end();
-                    } else {
-                        response.
-                            putHeader("content-type","application/json").
-                            end(doc.encodeToString());
-                    }
-                });
-            }
-        });
-        return this;
-    }
 
 
     public CompletableFuture<Void> start() {

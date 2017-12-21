@@ -53,7 +53,7 @@ public interface Binder {
     /**
      * Get all of the Documents and their ID's contained in this binder.
      *
-     * @return A stream of futures of all of the ids and documents in the binder
+     * @return A stream of all of the ids and documents in the binder
      */
     Stream<KeyVal<String, BsonObject>> getDocuments();
 
@@ -65,7 +65,7 @@ public interface Binder {
      *
      * Then apply the filter Predicate to the items that match the key set.
      *
-     * @return A stream of futures of the matching ids and documents in the binder.
+     * @return A stream of the matching ids and documents in the binder.
      */
     Stream<KeyVal<String, BsonObject>>
                 getDocuments(Set<String> keySet, Predicate<BsonObject> filter);

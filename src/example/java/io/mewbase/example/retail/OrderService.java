@@ -224,7 +224,7 @@ public class OrderService  {
 //                .exposeCommand("addItem", "/baskets/:customerID/", HttpMethod.PATCH)
 //                .exposeCommand("placeOrder", "/orders/:customerID/", HttpMethod.POST)
 //                .exposeQuery("allBaskets", "/baskets/")
-//                .exposeFindByID("baskets", "/baskets/:customerID/");
+//                .exposeGetDocument("baskets", "/baskets/:customerID/");
 
 //    }
 

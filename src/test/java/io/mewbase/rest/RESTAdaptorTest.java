@@ -1,10 +1,13 @@
 package io.mewbase.rest;
 
 import io.mewbase.MewbaseTestBase;
+import io.mewbase.binders.Binder;
+import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
 
+import io.restassured.RestAssured;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -15,9 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 
@@ -37,7 +43,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         assertNotNull(serv);
         serv.start();
 
-        // rest assured
+        // rest assured DSL attempt to get nothing
         given().when().get("/nonexistant").then().statusCode(404);
 
         serv.stop();
@@ -45,44 +51,37 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
 
 
- //   @Test
-    public void testCommandWithPathParam(TestContext testContext) throws Exception {
-        String commandName = "testcommand";
-        String customerID = "customer123";
+    @Test
+    public void testSingleFindById() throws Exception {
 
-//        CommandHandler handler = server.buildCommandHandler(commandName)
-////                .emittingTo(TEST_CHANNEL_1)
-////                .as((command, context) -> {
-////                    testContext.assertEquals(customerID, command.getBsonObject("pathParams").getString("customerID"));
-////                    context.publishEvent(new BsonObject().put("eventField", command.getString("commandField")));
-////                    context.complete();
-////                })
-//                .create();
-//
-//        assertNotNull(handler);
-//        assertEquals(commandName, handler.getName());
+        final String docId = "Document-1234";
+        final String key = "Key";
+        final String value = "Value";
 
-    //    Async async = testContext.async(2);
+        // write a document into the store for the REST interface to find
+        BinderStore store = BinderStore.instance(createConfig());
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+        Binder binder = store.open(testBinderName);
+        BsonObject doc = new BsonObject().put(key, value);
+        binder.put(docId,doc);
 
-//        Consumer<ClientDelivery> subHandler = del -> {
-//            BsonObject event = del.event();
-//            testContext.assertEquals("foobar", event.getString("eventField"));
-//            async.complete();
-//        };
+        // Create and configure the adaptor
+        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        serv.exposeGetDocument(store);
+        serv.start();
 
-        //client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_1), subHandler).get();
+        final String quote = "\"";
+        final String jsonKey = quote + key + quote;
 
-  //      server.exposeCommand(commandName, "/orders/:customerID", HttpMethod.POST);
-
-        BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
-
-//        HttpClient httpClient = vertx.createHttpClient();
-//        HttpClientRequest req = httpClient.request(HttpMethod.POST, 8080, "localhost", "/orders/" + customerID, resp -> {
-//            assertEquals(200, resp.statusCode());
-//           // async.complete();
-//        });
-//        req.putHeader("content-type", "text/json");
-//        req.end(sentCommand.encode());
+        RestAssured.
+            given().
+            when().
+                get("/binders/"+testBinderName+"/"+docId).
+            then().
+                statusCode(200).
+                body( jsonKey, is(value));
+        
+        serv.stop();
     }
 
 //    @Test
@@ -174,7 +173,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
       //  prod.publish(doc).get();
       //  waitForDoc(0);
 
-      //  server.exposeFindByID(TEST_BINDER1, "/orders/:id");
+      //  server.exposeGetDocument(TEST_BINDER1, "/orders/:id");
 
         Async async = testContext.async();
 
