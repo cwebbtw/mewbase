@@ -1,5 +1,6 @@
 package io.mewbase.rest.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 
 import com.typesafe.config.ConfigFactory;
@@ -37,6 +38,8 @@ import java.util.stream.Stream;
 public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
     private final static Logger logger = LoggerFactory.getLogger(VertxRestServiceAdaptor.class);
+
+    final ObjectMapper mapper = new ObjectMapper();
 
     private static final String binderParamKey = "binderName";
     private static final String documentParamKey = "documentId";
@@ -83,8 +86,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
             final HttpServerResponse response = rc.response();
             response.
                     putHeader("content-type", "application/json").
-                    // TODO make Json
-                            end(binderStore.binderNames().toString());
+                    end(convertToJson(binderStore.binderNames().toArray()));
         } );
 
         // list the document Ids in a binder.
@@ -94,17 +96,16 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
             final String binderName = params.get(binderParamKey);
 
             final HttpServerResponse response = rc.response();
-            // Todo needs getDocumentIds on Binder
+            // Todo - needs getDocumentIds on Binder rather than as map over the kv pairs
             final Stream ids = binderStore.
                                     open(binderName).
                                     getDocuments().
                                     map( kv -> kv.getKey() );
             response.
                     putHeader("content-type", "application/json").
-                    // TODO make Json
-                    end(ids.toString());
-        } );
+                    end(convertToJson(ids.toArray()));
 
+        } );
 
         // get the given document from docID or not.
         final String documentQualifingUri = binderQualifingUri + documentParam;
@@ -146,8 +147,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
                     map( kv -> kv.getKey() );
             response.
                     putHeader("content-type", "application/json").
-                    // TODO make Json
-                    end(ids.toString());
+                    end(convertToJson(binderStore.binderNames().toArray()));
         } );
 
 
@@ -231,8 +231,19 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
     }
 
 
-
-
+    /**
+     * Helper to trap the Exception side effect on a failed conversion to
+     * @return
+     */
+    private final String convertToJson(Object obj) {
+        try {
+            return mapper.writeValueAsString(obj);
+        } catch (Exception exp) {
+            final String errMsg = "Failed to convert Java object " + obj + " to Json";
+            logger.error(errMsg,exp);
+            return errMsg;
+        }
+    }
 
     public CompletableFuture<Void> start() {
         AsyncResCF<HttpServer> ar = new AsyncResCF<>();

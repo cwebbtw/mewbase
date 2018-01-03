@@ -6,8 +6,8 @@ import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
-
 import io.restassured.RestAssured;
+import io.restassured.response.ResponseBodyExtractionOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -18,7 +18,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import static io.restassured.RestAssured.*;
+import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.*;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -34,6 +42,8 @@ import static org.junit.Assert.fail;
 public class RESTAdaptorTest extends MewbaseTestBase {
 
     private final static Logger logger = LoggerFactory.getLogger(RESTAdaptorTest.class);
+    // json loves a quote
+    private final static String quote = "\"";
 
 
     @Test
@@ -80,9 +90,53 @@ public class RESTAdaptorTest extends MewbaseTestBase {
             then().
                 statusCode(200).
                 body( jsonKey, is(value));
-        
+
         serv.stop();
     }
+
+
+    @Test
+    public void testListMultipleBindersAndDocs() throws Exception {
+
+        final String binderPrefix = "Binder";
+        final String docPrefix = "Document";
+        final String key = "Key";
+
+        BinderStore store = BinderStore.instance(createConfig());
+
+        // write a set of binders with a document in each into the store
+        // for the REST interface to find
+        final Set<String> expected = IntStream.rangeClosed(0,9).mapToObj( i  -> {
+            final String binderName = binderPrefix +  i;
+            final String docName = docPrefix + i;
+            final Binder binder = store.open(binderName);
+            BsonObject doc = new BsonObject().put(key,docName);
+            binder.put(docName,doc);
+            return binderName;
+        }).collect(Collectors.toSet());
+
+
+        // Create and configure the adaptor
+        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        serv.exposeGetDocument(store);
+        serv.start();
+
+        final ResponseBodyExtractionOptions body = RestAssured.
+                given().
+                when().
+                get("/binders").
+                then().
+                statusCode(200).
+                extract().body();
+
+        final List<String> results = Arrays.asList(body.as(String[].class));
+        expected.forEach( binderName -> assertTrue(results.contains(binderName)));
+
+        serv.stop();
+    }
+
+    
+
 
 //    @Test
     public void testSimpleCommand(TestContext testContext) throws Exception {
@@ -166,35 +220,6 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
     }
 
-    //@Test
-    public void testFindByID(TestContext testContext) throws Exception {
-
-        BsonObject doc = new BsonObject().put("id", getIdAsString(0)).put("foo", "bar");
-      //  prod.publish(doc).get();
-      //  waitForDoc(0);
-
-      //  server.exposeGetDocument(TEST_BINDER1, "/orders/:id");
-
-        Async async = testContext.async();
-
-//        HttpClient httpClient = vertx.createHttpClient();
-//        HttpClientRequest req = httpClient.request(HttpMethod.GET, 8080, "localhost",
-//                "/orders/" + getID(0), resp -> {
-//                    assertEquals(200, resp.statusCode());
-//                    resp.bodyHandler(body -> {
-//                        BsonObject received = new BsonObject(new JsonObject(body.toString()));
-//                        assertEquals(doc, received);
-//                        async.complete();
-//                    });
-//                    resp.exceptionHandler(t -> t.printStackTrace());
-//                });
-//        req.exceptionHandler(t -> {
-//            t.printStackTrace();
-//        });
-
-//        req.putHeader("content-type", "text/json");
-//        req.end();
-    }
 
 
 
