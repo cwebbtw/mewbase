@@ -38,7 +38,6 @@ public interface RestServiceAdaptor {
         return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new VertxRestServiceAdaptor(cfg) );
     }
 
-
     /**
      * This will setup a set of routes (paths) to every document in every binder in the form
      *

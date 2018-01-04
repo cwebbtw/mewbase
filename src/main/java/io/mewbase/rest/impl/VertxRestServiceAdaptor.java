@@ -13,14 +13,13 @@ import io.mewbase.cqrs.QueryManager;
 import io.mewbase.rest.RestServiceAdaptor;
 import io.mewbase.util.AsyncResCF;
 
-
-
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 
@@ -28,12 +27,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import java.util.stream.Stream;
 
 /**
- * Created by tim on 11/01/17.
+ * Created by Tim on 11/01/17.
  */
 public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
@@ -115,14 +115,14 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
             final String documentId = params.get(documentParamKey);
 
             final HttpServerResponse response = rc.response();
-            binderStore.open(binderName).get(documentId).whenComplete((doc, t) -> {
-                if (t != null) {
-                    String errMsg = "Failed to find "+ documentId +" in binder "+ binderName;
-                    logger.error(errMsg, t);
-                    response.
-                            setStatusCode(500).
-                            setStatusMessage(errMsg).
-                            end();
+            binderStore.open(binderName).get(documentId).whenComplete((doc, thbl) -> {
+                if (thbl != null ) {
+                    String errMsg = "Error whilst trying to find " + documentId + " in binder " + binderName;
+                    logger.error(errMsg, thbl);
+                    response.setStatusCode(500).setStatusMessage(errMsg).end();
+                } else if (doc == null) {
+                    String failMsg = "Failed to find "+ documentId +" in binder "+ binderName;
+                    response.setStatusCode(500).setStatusMessage(failMsg).end();
                 } else {
                     response.
                             putHeader("content-type","application/json").
@@ -178,22 +178,24 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
 
     @Override
-    public RestServiceAdaptor exposeCommand(CommandManager qmgr, String commandName) {
-        // TODO
-        return this;
+    public RestServiceAdaptor exposeCommand(final CommandManager commandMgr, String commandName) {
+        return exposeCommand(commandMgr, commandName, "");
     }
 
 
     @Override
-    public RestServiceAdaptor exposeCommand(final CommandManager commandMgr, String commandName, String uri) {
-
+    public RestServiceAdaptor exposeCommand(final CommandManager commandMgr, String commandName, String uriPathPrefix) {
+        // Todo - Check that command manager has the named command
+        // the command url is any prefix plus the command name
+        final String uri = uriPathPrefix + "/" + commandName;
         router.route(HttpMethod.POST, uri).handler(rc -> {
             rc.setAcceptableContentType("application/json");
-
             // Pack the path params and body into the call context
-            BsonObject context = new BsonObject();
-            context.put("pathParams", new BsonObject(rc.pathParams()));
-            context.put("body", new BsonObject(rc.getBody()));
+            final BsonObject context = new BsonObject();
+            final Map pathParams = rc.pathParams();
+            context.put("pathParams", new BsonObject(pathParams));
+            final JsonObject body = rc.getBodyAsJson();
+            context.put("body", new BsonObject(body));
             // Dispatch the command in context on another thread
             CompletableFuture<BsonObject> cf = commandMgr.execute(commandName, context);
             rc.response().setStatusCode(200).end();
@@ -204,15 +206,15 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
 
     @Override
-    public RestServiceAdaptor exposeQuery(QueryManager qmgr, String queryName) {
-        // TODO
-        return this;
+    public RestServiceAdaptor exposeQuery(final QueryManager qmgr, String queryName) {
+        return exposeQuery(qmgr, queryName, "");
     }
 
     @Override
-    public RestServiceAdaptor exposeQuery(final QueryManager qmgr, String queryName, String uri) {
+    public RestServiceAdaptor exposeQuery(final QueryManager qmgr, String queryName, String uriPathPrefix) {
 
-       router.route(HttpMethod.GET, uri).handler(rc -> {
+            final String uri = uriPathPrefix + "/" + queryName;
+            router.route(HttpMethod.GET, uri).handler(rc -> {
            // dispatch the query
            rc.setAcceptableContentType("application/json");
            BsonObject context = new BsonObject();
@@ -232,7 +234,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
 
     /**
-     * Helper to trap the Exception side effect on a failed conversion to
+     * Helper to trap the Exception side effect on a failed conversion to Json
      * @return
      */
     private final String convertToJson(Object obj) {

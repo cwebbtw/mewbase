@@ -6,24 +6,35 @@ import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
+import io.mewbase.cqrs.Command;
+import io.mewbase.cqrs.CommandManager;
+import io.mewbase.cqrs.QueryManager;
+import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.EventSource;
+import io.mewbase.eventsource.Subscription;
 import io.restassured.RestAssured;
 import io.restassured.response.ResponseBodyExtractionOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
+import junit.framework.TestCase;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.*;
 import static junit.framework.TestCase.assertTrue;
@@ -42,8 +53,15 @@ import static org.junit.Assert.fail;
 public class RESTAdaptorTest extends MewbaseTestBase {
 
     private final static Logger logger = LoggerFactory.getLogger(RESTAdaptorTest.class);
-    // json loves a quote
-    private final static String quote = "\"";
+
+    final EventSink TEST_EVENT_SINK = EventSink.instance();
+    final EventSource TEST_EVENT_SOURCE = EventSource.instance();
+
+    final String quote = "\"";
+    final String key = "Key";
+    final String value = "Value";
+    final String quotedKey = quote + key + quote;
+    final String quotedValue = quote + value + quote;
 
 
     @Test
@@ -53,8 +71,8 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         assertNotNull(serv);
         serv.start();
 
-        // rest assured DSL attempt to get nothing
-        given().when().get("/nonexistant").then().statusCode(404);
+        // test get non route
+        RestAssured.given().when().get("/nonexistant").then().statusCode(404);
 
         serv.stop();
     }
@@ -62,11 +80,9 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
 
     @Test
-    public void testSingleFindById() throws Exception {
+    public void testGetDocumentById() throws Exception {
 
         final String docId = "Document-1234";
-        final String key = "Key";
-        final String value = "Value";
 
         // write a document into the store for the REST interface to find
         BinderStore store = BinderStore.instance(createConfig());
@@ -80,16 +96,26 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         serv.exposeGetDocument(store);
         serv.start();
 
-        final String quote = "\"";
-        final String jsonKey = quote + key + quote;
 
+        // positive
         RestAssured.
             given().
             when().
                 get("/binders/"+testBinderName+"/"+docId).
             then().
                 statusCode(200).
-                body( jsonKey, is(value));
+                body( value, is(value));
+
+        // negative
+        final String failDocName = "nonExistentDoc";
+        RestAssured.
+                given().
+                when().
+                get("/binders/"+testBinderName+"/"+failDocName).
+                then().
+                statusCode(500).
+                statusLine( containsString(failDocName)).
+                body( isEmptyOrNullString() );
 
         serv.stop();
     }
@@ -104,9 +130,8 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
         BinderStore store = BinderStore.instance(createConfig());
 
-        // write a set of binders with a document in each into the store
-        // for the REST interface to find
-        final Set<String> expected = IntStream.rangeClosed(0,9).mapToObj( i  -> {
+        // write a set of binders with a document in each into the store for the REST interface to find
+        final Set<String> expectedBinders = IntStream.rangeClosed(0,9).mapToObj( i  -> {
             final String binderName = binderPrefix +  i;
             final String docName = docPrefix + i;
             final Binder binder = store.open(binderName);
@@ -115,13 +140,13 @@ public class RESTAdaptorTest extends MewbaseTestBase {
             return binderName;
         }).collect(Collectors.toSet());
 
-
         // Create and configure the adaptor
         RestServiceAdaptor serv = RestServiceAdaptor.instance();
         serv.exposeGetDocument(store);
         serv.start();
 
-        final ResponseBodyExtractionOptions body = RestAssured.
+        // List all binders in store
+        final ResponseBodyExtractionOptions bindersJson = RestAssured.
                 given().
                 when().
                 get("/binders").
@@ -129,110 +154,131 @@ public class RESTAdaptorTest extends MewbaseTestBase {
                 statusCode(200).
                 extract().body();
 
-        final List<String> results = Arrays.asList(body.as(String[].class));
-        expected.forEach( binderName -> assertTrue(results.contains(binderName)));
+        final List<String> bindersList = Arrays.asList(bindersJson.as(String[].class));
+        expectedBinders.forEach( binderName -> assertTrue(bindersList.contains(binderName)));
+
+        // List docs in a binder
+        final int index = 3;
+        final String targetBinder = binderPrefix + index;
+        final String targetDoc = docPrefix + index;
+        final ResponseBodyExtractionOptions docsJson = RestAssured.
+                given().
+                when().
+                get("/binders" + "/" + targetBinder).
+                then().
+                statusCode(200).
+                extract().body();
+
+        final List<String> docsList = Arrays.asList(docsJson.as(String[].class));
+        Collections.singleton(targetDoc).forEach(docName -> assertTrue(docsList.contains(docName)));
 
         serv.stop();
     }
 
-    
 
-
-//    @Test
+     @Test
     public void testSimpleCommand(TestContext testContext) throws Exception {
-        String commandName = "testcommand";
-//        CommandHandler handler = server.buildCommandHandler(commandName)
-////                .emittingTo(TEST_CHANNEL_1)
-////                .as((command, context) -> {
-////                    testContext.assertNull(command.getBsonObject("pathParams"));
-////                    context.publishEvent(new BsonObject().put("eventField", command.getString("commandField")));
-////                    context.complete();
-////                })
-//                .create();
-//
-//        assertNotNull(handler);
-//        assertEquals(commandName, handler.getName());
 
-  //      Async async = testContext.async(2);
+         final String CHANNEL_NAME = "CommandTestChannel";
+         final String COMMAND_NAME = "TestCommand";
 
-//        Consumer<ClientDelivery> subHandler = del -> {
-//            BsonObject event = del.event();
-//            testContext.assertEquals("foobar", event.getString("eventField"));
-//            async.complete();
-//        };
+        final CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
 
-        //client.subscribe(new SubDescriptor().setChannel(TEST_CHANNEL_1), subHandler).get();
+        mgr.commandBuilder().
+                    named(COMMAND_NAME).
+                    emittingTo(CHANNEL_NAME).
+                    // send the input JSON as the event BSON
+                    as( (context -> {
+                        // has the incoming Json been made into Bson correctly
+                        assertNotNull(context);
+                        BsonObject body = context.getBsonObject("body");
+                        assertNotNull(body);
+                        assertEquals(body.getString(key), value);
+                        // path params are empty in this case.
+                        BsonObject pathParams = context.getBsonObject("pathParams");
+                        assertNotNull(pathParams);
+                        return body;
+                    }) ).
+                    create();
 
-//        server.exposeCommand(commandName, "/orders", HttpMethod.POST);
+        // Create and configure the adaptor
+        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        serv.exposeCommand(mgr,COMMAND_NAME);
+        serv.start();
 
-        BsonObject sentCommand = new BsonObject().put("commandField", "foobar");
+        // listen for an event arriving on the channel
+         final CountDownLatch latch = new CountDownLatch(1);
+         Subscription subs = TEST_EVENT_SOURCE.subscribe(CHANNEL_NAME, event ->  {
+                     BsonObject bson  = event.getBson();
+                     assertNotNull(bson);
+                     assertEquals(bson.getString(key),value);
+                     latch.countDown();
+                 }
+         );
 
-//        HttpClient httpClient = vertx.createHttpClient();
-//        HttpClientRequest req = httpClient.request(HttpMethod.POST, 8080, "localhost", "/orders", resp -> {
-//            assertEquals(200, resp.statusCode());
-//           // async.complete();
-//        });
-//        req.putHeader("content-type", "text/json");
-//        req.end(sentCommand.encode());
-    }
+         // post to the command
+         final String inputJson = "{ "+quotedKey+" : "+quotedValue+" }";
+         RestAssured.
+                 given().
+                    contentType("application/json").
+                    and().
+                    body(inputJson).
+                 when().
+                 post("/" + COMMAND_NAME).
+                 then().
+                 statusCode(200).
+                 body( isEmptyOrNullString() );
 
-    //@Test
+         // latch clears when event received
+         latch.await();
+
+         serv.stop();
+     }
+
+
+
+    @Test
     public void testSimpleQuery(TestContext testContext) throws Exception {
 
-        String queryName = "testQuery";
+        final String docId = "Document-1234";
+        final String QUERY_NAME = "TestQuery";
 
-        int numDocs = 100;
-        BsonArray bsonArray = new BsonArray();
-        for (int i = 0; i < numDocs; i++) {
-            String docID = getIdAsString(i);
-            BsonObject doc = new BsonObject().put("id", docID).put("foo", "bar");
-           // prod.publish(doc).get();
-            bsonArray.add(doc);
-        }
+        // write a document into the store for the REST interface to find
+        BinderStore store = BinderStore.instance(createConfig());
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+        Binder binder = store.open(testBinderName);
+        BsonObject doc = new BsonObject().put(key, value);
+        binder.put(docId,doc);
 
-       // waitForDoc(numDocs - 1);
+        QueryManager qmgr = QueryManager.instance(store);
 
-        // Setup a query
-//        server.buildQuery(queryName).documentFilter((doc, ctx) -> {
-//            return true;
-//        }).from(TEST_BINDER1).create();
+        Predicate<BsonObject> identity = document -> true;
 
-//        server.exposeQuery(queryName, "/orders/");
+        qmgr.queryBuilder().
+                named(QUERY_NAME).
+                from(testBinderName).
+                filteredBy(identity).
+                create();
 
-        Async async = testContext.async();
+        // Create and configure the adaptor
+        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        serv.exposeQuery(qmgr,QUERY_NAME);
+        serv.start();
 
-//        HttpClient httpClient = vertx.createHttpClient();
-//        HttpClientRequest req = httpClient.request(HttpMethod.GET, 8080, "localhost", "/orders/", resp -> {
-//            assertEquals(200, resp.statusCode());
-//            resp.bodyHandler(body -> {
-//                BsonArray arr = new BsonArray(new JsonArray(body.toString()));
-//                assertEquals(bsonArray, arr);
-//                async.complete();
-//            });
-//            resp.exceptionHandler(t -> t.printStackTrace());
-//        });
-//        req.exceptionHandler(t -> {
-//            t.printStackTrace();
-//        });
+        RestAssured.
+                given().
+                contentType("application/json").
+                when().
+                post("/" + QUERY_NAME).
+                then().
+                statusCode(200).
+                body( isEmptyOrNullString() );
 
-//        req.putHeader("content-type", "text/json");
-//        req.end();
+
 
     }
 
-
-
-
-    protected void installInsertProjection() {
-//        server.buildProjection("testproj").projecting(TEST_CHANNEL_1).onto(TEST_BINDER1).filteredBy(ev -> true)
-//                .identifiedBy(ev -> ev.getString("id"))
-//                .as((basket, del) -> del.event()).create();
-    }
-
-
-    protected String getIdAsString(int id) {
-        return String.format("id-%05d", id);
-    }
+    
 
 
 }
