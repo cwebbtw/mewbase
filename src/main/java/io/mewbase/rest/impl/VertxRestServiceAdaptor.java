@@ -216,7 +216,6 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
         final String uri = uriPathPrefix + "/" + queryName;
         router.route(HttpMethod.GET, uri).handler(rc -> {
            // dispatch the query
-           rc.setAcceptableContentType("application/json");
            BsonObject context = new BsonObject();
            context.put("pathParams", new BsonObject(rc.pathParams()));
            Stream<KeyVal<String, BsonObject>> binders = qmgr.execute(queryName,context);
