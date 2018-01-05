@@ -213,8 +213,8 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
     @Override
     public RestServiceAdaptor exposeQuery(final QueryManager qmgr, String queryName, String uriPathPrefix) {
 
-            final String uri = uriPathPrefix + "/" + queryName;
-            router.route(HttpMethod.GET, uri).handler(rc -> {
+        final String uri = uriPathPrefix + "/" + queryName;
+        router.route(HttpMethod.GET, uri).handler(rc -> {
            // dispatch the query
            rc.setAcceptableContentType("application/json");
            BsonObject context = new BsonObject();
@@ -223,7 +223,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
            // assemble the response
            BsonObject payload = new BsonObject();
-           binders.map( kv -> payload.put(kv.getKey(),kv.getValue()));
+           binders.forEach( kv -> payload.put(kv.getKey(),kv.getValue()));
 
            rc.response().
                putHeader("content-type","application/json").

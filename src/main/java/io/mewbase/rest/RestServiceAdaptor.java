@@ -20,6 +20,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface RestServiceAdaptor {
 
+
+    String factoryConfigPath = "mewbase.api.rest.factory";
+
     /**
      * Given the contents of the current config create a concrete instance of a RestServiceAdapter
      * @return
@@ -34,8 +37,7 @@ public interface RestServiceAdaptor {
      * @return
      */
     static RestServiceAdaptor instance(Config cfg) {
-        final String factoryConfigPath = "mewbase.api.rest.factory";
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new VertxRestServiceAdaptor(cfg) );
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new VertxRestServiceAdaptor(cfg) );
     }
 
     /**

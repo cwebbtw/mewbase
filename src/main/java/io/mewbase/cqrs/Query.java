@@ -5,6 +5,7 @@ import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -20,14 +21,15 @@ public interface Query {
 
     Binder getBinder();
 
-    Predicate<BsonObject> getDocumentFilter();
-
-    Function<BsonObject, Set<String>> getIdSelector();
-
-    interface Result {
-        String getId();
-        BsonObject getDocument();
-    }
+    /**
+     * Return the function that can filter the documents in this binder in a context
+     * Params are
+     * Context Object - passed in when the Query is executed
+     * KeyVal - String - Document ID
+     * KeyVal - BsonObject - Document contents.
+     * @return
+     */
+    BiPredicate<BsonObject, KeyVal<String, BsonObject>> getQueryFilter();
 
     Stream<KeyVal<String, BsonObject>> execute(BsonObject params);
 

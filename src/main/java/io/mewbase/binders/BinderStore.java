@@ -16,6 +16,8 @@ import java.util.stream.Stream;
  */
 public interface BinderStore {
 
+    String factoryConfigPath = "mewbase.binders.factory";
+
     /**
      * Create an instance using the current config.
      * @return an Instance of a BinderStore
@@ -29,9 +31,8 @@ public interface BinderStore {
      * If the config fails it will create a FileBinderStore
      * @return an Instance of a BinderStore
      */
-    static BinderStore instance(Config cfg) {
-        final String factoryConfigPath = "mewbase.binders.factory";
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new FileBinderStore(cfg) );
+     static BinderStore instance(Config cfg) {
+         return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileBinderStore(cfg));
     }
 
 

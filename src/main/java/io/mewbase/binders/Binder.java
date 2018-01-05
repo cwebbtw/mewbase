@@ -5,6 +5,7 @@ import io.mewbase.bson.BsonObject;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -58,16 +59,12 @@ public interface Binder {
     Stream<KeyVal<String, BsonObject>> getDocuments();
 
     /**
-     * Get all of the documents in the Binder given a KeySet and a Content based filter.
+     * Get all of the documents in the Binder that match the filter.
      *
-     * Finds all the documents matching the keySet.
-     * If then keySet is empty then match all of the keys.
-     *
-     * Then apply the filter Predicate to the items that match the key set.
+     * KeyVal is the Document ID and Contents to apply the filter to.
      *
      * @return A stream of the matching ids and documents in the binder.
      */
-    Stream<KeyVal<String, BsonObject>>
-                getDocuments(Set<String> keySet, Predicate<BsonObject> filter);
+    Stream<KeyVal<String, BsonObject>> getDocuments( Predicate<KeyVal<String,BsonObject>> filter);
 
 }

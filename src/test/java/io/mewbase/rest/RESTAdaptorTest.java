@@ -3,6 +3,7 @@ package io.mewbase.rest;
 import io.mewbase.MewbaseTestBase;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
+import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
@@ -13,6 +14,7 @@ import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import io.restassured.response.ResponseBodyExtractionOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -26,15 +28,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Predicate;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiPredicate;
+
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 
 import static io.restassured.RestAssured.*;
 import static junit.framework.TestCase.assertTrue;
@@ -64,17 +69,30 @@ public class RESTAdaptorTest extends MewbaseTestBase {
     final String quotedValue = quote + value + quote;
 
 
+    final Lock sequential = new ReentrantLock();
+
+
+    public RestServiceAdaptor setUpServer() {
+        sequential.lock();
+        return RestServiceAdaptor.instance();
+    }
+
+    public void tearDownServer(RestServiceAdaptor serv) {
+        serv.stop();
+        sequential.unlock();
+    }
+
     @Test
     public void testCreateEmptyAdaptor() throws InterruptedException {
 
-        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        RestServiceAdaptor serv = setUpServer();
         assertNotNull(serv);
         serv.start();
 
         // test get non route
         RestAssured.given().when().get("/nonexistant").then().statusCode(404);
 
-        serv.stop();
+        tearDownServer(serv);
     }
 
 
@@ -89,22 +107,29 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
         Binder binder = store.open(testBinderName);
         BsonObject doc = new BsonObject().put(key, value);
-        binder.put(docId,doc);
+        binder.put(docId,doc).join();
 
         // Create and configure the adaptor
-        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        RestServiceAdaptor serv = setUpServer();
         serv.exposeGetDocument(store);
         serv.start();
 
-
         // positive
+        Response resp =  RestAssured.
+                given().
+                when().
+                    get("/binders/"+testBinderName+"/"+docId).
+                then().
+                    extract().response();
+        System.out.println(resp.asString());
+
         RestAssured.
             given().
             when().
                 get("/binders/"+testBinderName+"/"+docId).
             then().
                 statusCode(200).
-                body( value, is(value));
+                body( key, is(value));
 
         // negative
         final String failDocName = "nonExistentDoc";
@@ -117,7 +142,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
                 statusLine( containsString(failDocName)).
                 body( isEmptyOrNullString() );
 
-        serv.stop();
+        tearDownServer(serv);
     }
 
 
@@ -126,7 +151,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
         final String binderPrefix = "Binder";
         final String docPrefix = "Document";
-        final String key = "Key";
+
 
         BinderStore store = BinderStore.instance(createConfig());
 
@@ -136,12 +161,12 @@ public class RESTAdaptorTest extends MewbaseTestBase {
             final String docName = docPrefix + i;
             final Binder binder = store.open(binderName);
             BsonObject doc = new BsonObject().put(key,docName);
-            binder.put(docName,doc);
+            binder.put(docName,doc).join();
             return binderName;
         }).collect(Collectors.toSet());
 
         // Create and configure the adaptor
-        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        RestServiceAdaptor serv = setUpServer();
         serv.exposeGetDocument(store);
         serv.start();
 
@@ -172,7 +197,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         final List<String> docsList = Arrays.asList(docsJson.as(String[].class));
         Collections.singleton(targetDoc).forEach(docName -> assertTrue(docsList.contains(docName)));
 
-        serv.stop();
+        tearDownServer(serv);
     }
 
 
@@ -202,7 +227,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
                     create();
 
         // Create and configure the adaptor
-        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        RestServiceAdaptor serv = setUpServer();
         serv.exposeCommand(mgr,COMMAND_NAME);
         serv.start();
 
@@ -232,7 +257,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
          // latch clears when event received
          latch.await();
 
-         serv.stop();
+         tearDownServer(serv);
      }
 
 
@@ -240,7 +265,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
     @Test
     public void testSimpleQuery(TestContext testContext) throws Exception {
 
-        final String docId = "Document-1234";
+        final String docId = "Document-";
         final String QUERY_NAME = "TestQuery";
 
         // write a document into the store for the REST interface to find
@@ -248,37 +273,35 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
         Binder binder = store.open(testBinderName);
         BsonObject doc = new BsonObject().put(key, value);
-        binder.put(docId,doc);
+        IntStream.range(0,9).forEachOrdered(i -> binder.put(docId+i,doc));
 
         QueryManager qmgr = QueryManager.instance(store);
 
-        Predicate<BsonObject> identity = document -> true;
+        BiPredicate<BsonObject, KeyVal<String, BsonObject>> allGoodFilter = (ctx, kv) -> true;
 
         qmgr.queryBuilder().
                 named(QUERY_NAME).
                 from(testBinderName).
-                filteredBy(identity).
+                filteredBy(allGoodFilter).
                 create();
 
         // Create and configure the adaptor
-        RestServiceAdaptor serv = RestServiceAdaptor.instance();
+        RestServiceAdaptor serv = setUpServer();
         serv.exposeQuery(qmgr,QUERY_NAME);
         serv.start();
 
         RestAssured.
                 given().
-                contentType("application/json").
+                    contentType("application/json").
                 when().
-                post("/" + QUERY_NAME).
+                    get("/" + QUERY_NAME).
                 then().
-                statusCode(200).
-                body( isEmptyOrNullString() );
+                    statusCode(200).
+                    // sample in the set
+                    body( "Document-4.Key", is(value) );
 
-
-
+        tearDownServer(serv);
     }
-
-    
 
 
 }

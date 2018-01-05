@@ -1,8 +1,10 @@
 package io.mewbase.cqrs;
 
+import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -15,9 +17,7 @@ public interface QueryBuilder {
 
     QueryBuilder from(String binderName);
 
-    QueryBuilder selectedBy(Function<BsonObject, Set<String>> idSelector);
-
-    QueryBuilder filteredBy(Predicate<BsonObject> documentFilter);
+    QueryBuilder filteredBy(BiPredicate<BsonObject, KeyVal<String,BsonObject>> documentFilter);
 
     Query create();
 }

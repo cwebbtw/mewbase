@@ -49,7 +49,6 @@ public class FileBinderStore implements BinderStore {
         }
     }
 
-
     @Override
     public Binder open(String name) {
         return binders.computeIfAbsent(name, k -> new FileBinder(k, new File(bindersDir,name)));
@@ -69,7 +68,6 @@ public class FileBinderStore implements BinderStore {
     public Stream<String> binderNames() {
         return binders.keySet().stream();
     }
-
 
     @Override
     public Boolean delete(String name) {
