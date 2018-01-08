@@ -74,7 +74,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
     public RestServiceAdaptor setUpServer() {
         sequential.lock();
-        RestAssured.baseURI = "http://localhost:8080";
+        RestAssured.baseURI = "http://localhost:8081";
         return RestServiceAdaptor.instance();
     }
 
