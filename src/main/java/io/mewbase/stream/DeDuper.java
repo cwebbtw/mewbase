@@ -9,7 +9,23 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-
+/**
+ *
+ * A de-duplicating class for events expressed as BsonObjects
+ *
+ * It is necessary to express a window of events over which the duplicates can be detected.
+ *
+ * E.g to de-duplicate 10K events use
+ *
+ *  DeDuper dd = new DeDuper(10000);
+ *
+ * * Important usage note *
+ *
+ * This uses long hashes of the events so it is possible although very improbable that non duplicate events will be
+ * seen as duplicates (i.e. a hash collision). If is critical for your application that all non-duplicate events
+ * are processed. We suggest using the "at least once" idempotent event pattern as opposed to de-duplication.
+ *
+ */
 public class DeDuper {
 
     static final String nothing = "";
