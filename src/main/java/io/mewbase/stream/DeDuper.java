@@ -27,13 +27,12 @@ import java.util.function.Predicate;
  * are processed. We suggest using the "at least once" idempotent event pattern as opposed to de-duplication.
  *
  */
+
 public class DeDuper {
 
     static final String nothing = "";
 
     final LinkedHashMap<BigInteger,String> map;
-
-
 
     public DeDuper(final int window) {
         // i.e. evict in Insertion order
@@ -57,7 +56,6 @@ public class DeDuper {
         }
         return Optional.of(event);
     }
-
 
     /**
      * Create a filter that can be used in a stream/flow to deduplicate on the fly

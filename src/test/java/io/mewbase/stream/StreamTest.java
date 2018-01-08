@@ -3,6 +3,7 @@ package io.mewbase.stream;
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
+
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.Test;
@@ -21,6 +22,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(VertxUnitRunner.class)
 public class StreamTest extends MewbaseTestBase {
+
 
     final static String key = "key";
 
@@ -87,6 +89,5 @@ public class StreamTest extends MewbaseTestBase {
         // check remove dups and retained uniques.
         assertEquals(streamLength, events.count());
     }
-
 
 }
