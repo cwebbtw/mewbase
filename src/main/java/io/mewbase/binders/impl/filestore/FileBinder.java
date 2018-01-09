@@ -39,7 +39,7 @@ public class FileBinder implements Binder {
         this.name = name;
         this.binderDir = binderDir;
         createIfDoesntExists(this.binderDir);
-        log.trace("Opened Binder named " + name);
+        log.info("Opened Binder named " + name);
     }
 
 
@@ -106,28 +106,21 @@ public class FileBinder implements Binder {
 
 
     @Override
-    public Stream<KeyVal<String, BsonObject>> getDocuments() {
-        return getDocuments( new HashSet(), document -> true);
-    }
-
+    public Stream<KeyVal<String, BsonObject>> getDocuments() { return getDocuments( kv -> true); }
 
     @Override
-    public Stream<KeyVal<String, BsonObject>> getDocuments(Set<String> keySet, Predicate<BsonObject> filter) {
+    public Stream<KeyVal<String, BsonObject>> getDocuments( Predicate<KeyVal<String, BsonObject>> filter) {
+
         CompletableFuture<Set<KeyVal<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
 
             Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
-
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(binderDir.toPath())) {
                 for (Path entry: stream) {
                     String key = entry.getFileName().toString();
-                    if (keySet.isEmpty() || keySet.contains(key)) {
-                        byte[] buffer = Files.readAllBytes(entry);
-                        final BsonObject doc = new BsonObject(buffer);
-                        if (filter.test(doc)) {
-                            KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
-                            resultSet.add(kv);
-                        }
-                    }
+                    byte[] buffer = Files.readAllBytes(entry);
+                    final BsonObject doc = new BsonObject(buffer);
+                    KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
+                    if (filter.test(kv)) resultSet.add(kv);
                 }
             } catch (Exception ex) {
                 log.error("File based Binder failed to start", ex);
@@ -136,7 +129,6 @@ public class FileBinder implements Binder {
         }, stexec);
         return fut.join().stream();
     }
-
 
     public static void createIfDoesntExists(File dir) {
         if (!dir.exists()) {

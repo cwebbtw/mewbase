@@ -2,7 +2,6 @@ package io.mewbase.example.retail;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.rest.MewbaseRest;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -166,7 +165,7 @@ public class OrderService  {
     private static final String ORDER_PLACED_EVENT_TYPE = "orderPlaced";
 
 
-    public void setupServer(MewbaseRest mewbase) throws Exception {
+ //   public void setupServer(MewbaseRest mewbase) throws Exception {
 
 
 //        mewbase.buildProjection("maintain_basket")                    // projection name
@@ -225,9 +224,9 @@ public class OrderService  {
 //                .exposeCommand("addItem", "/baskets/:customerID/", HttpMethod.PATCH)
 //                .exposeCommand("placeOrder", "/orders/:customerID/", HttpMethod.POST)
 //                .exposeQuery("allBaskets", "/baskets/")
-//                .exposeFindByID("baskets", "/baskets/:customerID/");
+//                .exposeGetDocument("baskets", "/baskets/:customerID/");
 
-    }
+//    }
 
     private CompletableFuture<Void> sendPickCommand(BsonObject state) {
         // Send a pick order command

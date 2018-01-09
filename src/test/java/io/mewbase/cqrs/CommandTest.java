@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(VertxUnitRunner.class)
 public class CommandTest extends MewbaseTestBase {
 
-    final EventSink TEST_EVENT_SINK = new NatsEventSink();
+    final EventSink TEST_EVENT_SINK = EventSink.instance();
 
     final String COMMAND_NAME = "TestCommand";
     final String CHANNEL_NAME = "CommandTestChannel";

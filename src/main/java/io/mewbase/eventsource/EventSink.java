@@ -13,6 +13,8 @@ import java.util.concurrent.CompletableFuture;
 
 public interface EventSink {
 
+    String factoryConfigPath = "mewbase.event.sink.factory";
+
     /**
      * Create an instance using the current config.
      * @return an Instance of an EventSink
@@ -27,8 +29,7 @@ public interface EventSink {
      * @return an Instance of an EventSink
      */
     static EventSink instance(Config cfg) {
-        final String factoryConfigPath = "mewbase.event.sink.factory";
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new NatsEventSink(cfg) );
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new NatsEventSink(cfg) );
     }
 
 

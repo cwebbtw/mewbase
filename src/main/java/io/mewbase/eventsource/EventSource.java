@@ -10,14 +10,14 @@ import java.time.Instant;
 
 public interface EventSource {
 
+    String factoryConfigPath = "mewbase.event.source.factory";
 
     static EventSource instance() {
         return EventSource.instance(ConfigFactory.load());
     }
 
     static EventSource instance(Config cfg) {
-        final String factoryConfigPath = "mewbase.event.source.factory";
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), () -> new NatsEventSource(cfg) );
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new NatsEventSource(cfg) );
     }
 
     /**

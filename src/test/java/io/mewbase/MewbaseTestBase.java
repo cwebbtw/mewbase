@@ -87,11 +87,11 @@ public class MewbaseTestBase {
     }
 
     //
-    protected Config createConfig() throws Exception {
+    protected synchronized Config createConfig() throws Exception {
         final String path = testFolder.newFolder().getPath();
         System.setProperty("mewbase.binders.files.store.basedir", path);
+        ConfigFactory.invalidateCaches();
         Config cfg = ConfigFactory.load();
-        // System.out.println(cfg.root().render());
-        return  cfg;
+        return cfg;
     }
 }

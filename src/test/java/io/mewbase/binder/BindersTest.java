@@ -18,6 +18,7 @@ import java.util.HashSet;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -33,9 +34,8 @@ import static org.junit.Assert.*;
  * <p>
  * Created by tim on 14/10/16.
  */
-@RunWith(VertxUnitRunner.class)
+//@RunWith(JUnitRunner.class)
 public class BindersTest extends MewbaseTestBase {
-
 
 
     @Test
@@ -51,25 +51,26 @@ public class BindersTest extends MewbaseTestBase {
 
         // set up the store and add some binders
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
-        BinderStore store = BinderStore.instance(createConfig());
+        final BinderStore store = BinderStore.instance(createConfig());
 
         final int numBinders = 10;
-        Binder[] all = new Binder[numBinders];
-        IntStream.range(0, all.length).forEach( i -> {
-            all[i] = store.open(testBinderName + i);
-        });
+
+        IntStream.range(0, numBinders).forEach( i -> store.open(testBinderName + i) );
 
         Set<String> bindersSet1 = store.binderNames().collect(toSet());
-        for (int i = 0; i < numBinders; i++) {
-            assertTrue(bindersSet1.contains(testBinderName + i));
-        }
+
+        IntStream.range(0, numBinders).forEach( i -> assertTrue(bindersSet1.contains(testBinderName + i)));
 
         final String name = "YetAnother" + testBinderName;
-        store.open(name);
+        assertEquals( store.open(name).getName(), name);
+
         Set<String> bindersSet2 = store.binderNames().collect(toSet());
         assertTrue(bindersSet2.contains(name));
-        assertEquals(bindersSet1.size() + 1, bindersSet2.size());
 
+        System.out.println(bindersSet1.size());
+        System.out.println(bindersSet2.size());
+
+        assertEquals(bindersSet1.size() + 1, bindersSet2.size());
     }
 
 
@@ -161,7 +162,6 @@ public class BindersTest extends MewbaseTestBase {
         BsonObject docPut = createObject();
         binder.put("id1234", docPut).get();
 
-
         BinderStore store2 = BinderStore.instance(cfg);
         Binder binder2 = store2.open(testBinderName);
         BsonObject docGet = binder2.get("id1234").get();
@@ -192,7 +192,6 @@ public class BindersTest extends MewbaseTestBase {
         BinderStore store = BinderStore.instance(createConfig());
         Binder binder = store.open(testBinderName);
         assertNull(binder.get("id1234").get());
-
     }
 
 
@@ -282,8 +281,10 @@ public class BindersTest extends MewbaseTestBase {
                 return doc;
         };
 
-        Predicate<BsonObject> filter = doc -> doc.getInteger(DOC_ID_KEY) <= HALF_THE_DOCS;
-        Stream<KeyVal<String, BsonObject>> docs = binder.getDocuments(new HashSet(),filter);
+        Predicate<KeyVal<String,BsonObject>> filter = kv ->
+            kv.getValue().getInteger(DOC_ID_KEY) <= HALF_THE_DOCS;
+
+        Stream<KeyVal<String, BsonObject>> docs = binder.getDocuments(filter);
 
         assertEquals(HALF_THE_DOCS, docs.map(checker).collect(toSet()).size());
 
@@ -322,8 +323,8 @@ public class BindersTest extends MewbaseTestBase {
             return doc;
         };
 
-        Predicate<BsonObject> matchAll = doc -> true;
-        Stream<KeyVal<String, BsonObject>> docs = binder.getDocuments(idSet,matchAll);
+        Predicate<KeyVal<String,BsonObject>> filter = kv -> idSet.contains(kv.getKey());
+        Stream<KeyVal<String, BsonObject>> docs = binder.getDocuments(filter);
 
         assertEquals(docs.map(checker).collect(toSet()).size(), HALF_THE_DOCS);
     }

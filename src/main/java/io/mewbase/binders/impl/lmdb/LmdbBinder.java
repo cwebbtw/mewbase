@@ -111,11 +111,11 @@ public class LmdbBinder implements Binder {
 
     @Override
     public Stream<KeyVal<String, BsonObject>> getDocuments() {
-        return getDocuments( new HashSet(), document -> true);
+        return getDocuments( kv -> true);
     }
 
     @Override
-    public Stream<KeyVal<String, BsonObject>> getDocuments(Set<String> keySet, Predicate<BsonObject> filter) {
+    public Stream<KeyVal<String, BsonObject>> getDocuments( Predicate<KeyVal<String, BsonObject>> filter) {
         CompletableFuture<Set<KeyVal<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
 
             Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
@@ -137,13 +137,9 @@ public class LmdbBinder implements Binder {
                     hasNext = itr.hasNext(); // iterator makes reference to the txn
                     txn.reset(); // got data so release the txn
                     final String id = new String(keyBuffer.getBytes());
-                    if (keySet.isEmpty() || keySet.contains(id)) {
-                        final BsonObject doc = new BsonObject(valueBuffer);
-                        if (filter.test(doc)) {
-                            KeyVal<String,BsonObject> entry = KeyVal.create(id, doc);
-                            resultSet.add(entry);
-                        }
-                    }
+                    final BsonObject doc = new BsonObject(valueBuffer);
+                    KeyVal<String,BsonObject> entry = KeyVal.create(id, doc);
+                    if (filter.test(entry)) resultSet.add(entry);
                 }
             }
             return resultSet;

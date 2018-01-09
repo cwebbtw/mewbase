@@ -13,6 +13,8 @@ import org.junit.runner.RunWith;
 
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -49,6 +51,7 @@ public class QueryTest extends MewbaseTestBase {
         assertEquals(0, mgr.getQueries().count()); // no commands registered
     }
 
+
     @Test
     public void testQueryBuilder() throws Exception {
 
@@ -56,7 +59,7 @@ public class QueryTest extends MewbaseTestBase {
         final Binder TEST_BINDER  = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
-        Predicate<BsonObject> identity = document -> true;
+        BiPredicate<BsonObject,KeyVal<String,BsonObject>> identity = (ctx, kv) -> true;
 
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
@@ -69,8 +72,7 @@ public class QueryTest extends MewbaseTestBase {
         Query query = qOpt.get();
         assertEquals(query.getName(),TEST_QUERY_NAME);
         assertEquals(query.getBinder(),TEST_BINDER);
-        assertEquals(query.getDocumentFilter(),identity);
-        assertNull(query.getIdSelector());
+        assertEquals(query.getQueryFilter(),identity);
     }
 
 
@@ -83,7 +85,7 @@ public class QueryTest extends MewbaseTestBase {
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
         final String NON_EXISTENT_BINDER = "Junk";
-        Predicate<BsonObject> identity = document -> true;
+        BiPredicate<BsonObject,KeyVal<String,BsonObject>> identity = (ctx, kv) -> true;
 
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
@@ -110,7 +112,8 @@ public class QueryTest extends MewbaseTestBase {
 
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
-        Predicate<BsonObject> filter = document -> document.getInteger(KEY_TO_MATCH) == VAL_TO_MATCH;
+        BiPredicate<BsonObject,KeyVal<String,BsonObject>> filter = (ctx, kv) ->
+                kv.getValue().getInteger(KEY_TO_MATCH) == VAL_TO_MATCH;
 
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
@@ -135,7 +138,7 @@ public class QueryTest extends MewbaseTestBase {
 
 
     @Test
-    public void testIdSelector() throws Exception {
+    public void testFilterWithParams() throws Exception {
         // Set up the binder
         final BinderStore TEST_BINDER_STORE = BinderStore.instance(createConfig());
         final Binder TEST_BINDER = TEST_BINDER_STORE.open(TEST_BINDER_NAME);
@@ -148,19 +151,25 @@ public class QueryTest extends MewbaseTestBase {
         BsonObject anotherDoc = new BsonObject().put(KEY_TO_MATCH, VAL_TO_NOT_MATCH);
         TEST_BINDER.put(DOC_ID_NOT_TO_MATCH, anotherDoc);
 
+        // parameter to send via context
+        final String param1 = "p1";
+        BsonObject params = new BsonObject();
+        params.put(param1, TEST_DOCUMENT_ID );
+
         QueryManager mgr = QueryManager.instance(TEST_BINDER_STORE);
 
-        Set<String> testId = new HashSet<String>();
-        testId.add(TEST_DOCUMENT_ID);
-        Function<BsonObject, Set<String>> selector = params -> (testId);
+        BiPredicate<BsonObject,KeyVal<String,BsonObject>> filter = (ctx, kv) -> {
+           String idToMatch = ctx.getString(param1);
+           return kv.getKey().equals(idToMatch);
+        };
 
         mgr.queryBuilder().
                 named(TEST_QUERY_NAME).
                 from(TEST_BINDER_NAME).
-                selectedBy(selector).
+                filteredBy(filter).
                 create();
 
-        BsonObject params = new BsonObject(); // no params for identity
+
         Stream<KeyVal<String, BsonObject>> resultStream = mgr.execute(TEST_QUERY_NAME, params);
 
         Set<KeyVal<String, BsonObject>> resultSet = resultStream.map(result -> {

@@ -122,12 +122,12 @@ public class PostgresBinder implements Binder {
 
     @Override
     public Stream<KeyVal<String, BsonObject>> getDocuments() {
-        return getDocuments( new HashSet(), document -> true);
+        return getDocuments( kv -> true);
     }
 
 
     @Override
-    public Stream<KeyVal<String, BsonObject>> getDocuments(Set<String> keySet, Predicate<BsonObject> filter) {
+    public Stream<KeyVal<String, BsonObject>> getDocuments( Predicate<KeyVal<String, BsonObject>> filter) {
         CompletableFuture<Set<KeyVal<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
 
             Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
@@ -137,14 +137,10 @@ public class PostgresBinder implements Binder {
                 final ResultSet dbrs = stmt.executeQuery("SELECT key, data from "+name+";");
                 while(dbrs.next()) {
                     final String key = dbrs.getString("key");
-                    if (keySet.isEmpty() || keySet.contains(key)) {
-                        byte[] bytes = dbrs.getBytes("data");
-                        final BsonObject doc = new BsonObject(bytes);
-                        if (filter.test(doc)) {
-                            KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
-                            resultSet.add(kv);
-                        }
-                    }
+                    byte[] bytes = dbrs.getBytes("data");
+                    final BsonObject doc = new BsonObject(bytes);
+                    KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
+                    if (filter.test(kv)) resultSet.add(kv);
                 }
                 dbrs.close();
                 stmt.close();

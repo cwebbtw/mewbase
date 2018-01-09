@@ -1,5 +1,6 @@
 package io.mewbase.util;
 
+import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,9 +17,9 @@ public final class CanFactoryFrom {
         /** Static use only */
         private CanFactoryFrom() {  }
 
-        public static <T>  T instance(final String implFQCN, Supplier<T> defaultImpl) {
+        public static <T>  T instance(final String implFQCN, final Config cfg, Supplier<T> defaultImpl) {
             try {
-                final T impl = (T)Class.forName(implFQCN).newInstance();
+                final T impl = (T)Class.forName(implFQCN).getDeclaredConstructor(Config.class).newInstance(cfg);
                 if (impl == null) throw new Exception("Attempt to factory "+implFQCN+" resulted in null");
                 return impl;
             } catch (Exception exp ) {
