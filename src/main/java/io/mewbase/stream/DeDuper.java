@@ -33,8 +33,7 @@ public class DeDuper {
     static final String nothing = "";
 
     final LinkedHashMap<BigInteger,String> map;
-
-
+    
 
     public DeDuper(final int window) {
         // i.e. evict in Insertion order
@@ -73,6 +72,7 @@ public class DeDuper {
         };
         return filter;
     }
+
     
     private BigInteger hash(BsonObject event) {
         try { // poss "SHA-512","MD5"

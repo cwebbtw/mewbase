@@ -2,7 +2,6 @@ package io.mewbase.stream;
 
 import io.mewbase.MewbaseTestBase;
 
-
 import io.mewbase.bson.BsonObject;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
@@ -89,5 +88,5 @@ public class StreamTest extends MewbaseTestBase {
         assertEquals(streamLength, events.count());
 
     }
-    
+
 }
