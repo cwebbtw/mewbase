@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -16,7 +17,6 @@ import static org.junit.Assert.*;
 
 
 /**
- * <p>
  * Created by Nige on 8/1/18.
  */
 @RunWith(VertxUnitRunner.class)
@@ -67,5 +67,26 @@ public class StreamTest extends MewbaseTestBase {
         final BsonObject midEvent = new BsonObject().put(key, "event" + streamLength / 2);
         assertEquals(dd.dedupe(midEvent),Optional.empty());
     }
+
+    @Test
+    public void testFilterStream()  {
+
+        final int streamLength = 128;
+        final Predicate<BsonObject> filter = DeDuper.filter(streamLength);
+        // set ensures unique
+        Stream<BsonObject> events = IntStream.range(0, streamLength)
+                    .mapToObj( i -> "" + i)
+                    .flatMap( str -> {
+                        final BsonObject event = new BsonObject().put(key, "event" + str);
+                        final Stream<BsonObject> single = Stream.of(event);
+                        final Stream<BsonObject> duplicate = Stream.of(event, event);
+                        return str.contains("3") ? duplicate : single;
+                        })
+                    .filter(filter);
+
+        // check remove dups and retained uniques.
+        assertEquals(streamLength, events.count());
+    }
+
 
 }
