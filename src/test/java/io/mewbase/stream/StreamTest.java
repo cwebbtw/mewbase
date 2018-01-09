@@ -89,5 +89,5 @@ public class StreamTest extends MewbaseTestBase {
         assertEquals(streamLength, events.count());
 
     }
-
+    
 }
