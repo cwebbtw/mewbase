@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  *
@@ -32,6 +33,8 @@ public class DeDuper {
 
     final LinkedHashMap<BigInteger,String> map;
 
+
+
     public DeDuper(final int window) {
         // i.e. evict in Insertion order
         final Boolean evictInAccessOrder = false;
@@ -50,13 +53,28 @@ public class DeDuper {
         if ( map.get(hash(event)) != null )
             return Optional.empty();
         else {
-            map.put(hash(event),nothing);    // just store the hash risking duplicates from
+            map.put(hash(event),nothing);    // just store the hash risking duplicates from colliding events.
         }
         return Optional.of(event);
     }
 
+
+    /**
+     * Create a filter that can be used in a stream/flow to deduplicate on the fly
+     * @param window
+     * @return a filter
+     */
+    final static Predicate<BsonObject> filter(final int window) {
+        DeDuper dd = new DeDuper(window);
+        Predicate<BsonObject> filter = bson -> {
+            Optional<BsonObject> empty = Optional.empty();
+            return dd.dedupe(bson) != empty;
+        };
+        return filter;
+    }
+
     
-    private static BigInteger hash(BsonObject event) {
+    private BigInteger hash(BsonObject event) {
         try { // poss "SHA-512","MD5"
             final MessageDigest md = MessageDigest.getInstance("MD5");
             return new BigInteger(1,md.digest(event.encode().getBytes()));
