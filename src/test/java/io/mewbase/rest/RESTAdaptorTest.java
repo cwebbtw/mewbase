@@ -90,6 +90,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         assertNotNull(serv);
         serv.start();
 
+        Thread.sleep(100); // let the web server start up
         // test get non route
         RestAssured.given().when().get("/nonexistant").then().statusCode(404);
 
@@ -115,14 +116,16 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         serv.exposeGetDocument(store);
         serv.start();
 
+        Thread.sleep(100); // let the web server start up
+
         // positive
-        Response resp =  RestAssured.
-                given().
-                when().
-                    get("/binders/"+testBinderName+"/"+docId).
-                then().
-                    extract().response();
-        System.out.println(resp.asString());
+//        Response resp =  RestAssured.
+//                given().
+//                when().
+//                    get("/binders/"+testBinderName+"/"+docId).
+//                then().
+//                    extract().response();
+//        System.out.println(resp.asString());
 
         RestAssured.
             given().
@@ -170,6 +173,8 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         RestServiceAdaptor serv = setUpServer();
         serv.exposeGetDocument(store);
         serv.start();
+
+        Thread.sleep(100); // let the web server start up
 
         // List all binders in store
         final ResponseBodyExtractionOptions bindersJson = RestAssured.
@@ -244,6 +249,8 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
          // post to the command
          final String inputJson = "{ "+quotedKey+" : "+quotedValue+" }";
+
+         Thread.sleep(100); // let the web server start up
          RestAssured.
                  given().
                     contentType("application/json").
@@ -291,6 +298,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
         serv.exposeQuery(qmgr,QUERY_NAME);
         serv.start();
 
+        Thread.sleep(100); // let the web server start up
         RestAssured.
                 given().
                     contentType("application/json").
