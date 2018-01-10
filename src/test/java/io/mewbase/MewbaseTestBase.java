@@ -11,6 +11,7 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 
+import java.nio.file.Paths;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
@@ -88,8 +89,9 @@ public class MewbaseTestBase {
 
     //
     protected synchronized Config createConfig() throws Exception {
-        final String path = testFolder.newFolder().getPath();
-        System.setProperty("mewbase.binders.files.store.basedir", path);
+        final String testPath = testFolder.newFolder().getPath();
+        System.setProperty("mewbase.binders.files.store.basedir", Paths.get(testPath,"binders").toString());
+        System.setProperty("mewbase.event.sink.file.basedir", Paths.get(testPath,"events").toString());
         ConfigFactory.invalidateCaches();
         Config cfg = ConfigFactory.load();
         return cfg;

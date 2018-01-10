@@ -57,10 +57,8 @@ class FileEvent implements Event {
     }
 
     public static Path pathFromEventNumber(long eventNumber) {
-        return Paths.get(String.format("%016l", eventNumber));
+        return Paths.get(String.format("%016d", eventNumber));
     }
-
-
 
 
 }

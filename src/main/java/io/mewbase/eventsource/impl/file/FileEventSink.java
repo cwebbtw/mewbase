@@ -37,8 +37,8 @@ public class FileEventSink implements EventSink {
 
     @Override
     public void publish(String channelName, BsonObject event) {
-        FileEventChannel channel = channels.getOrDefault(channelName,
-                new FileEventChannel(baseDir.resolve(channelName)));
+        FileEventChannel channel = channels.computeIfAbsent(channelName,
+                    key -> new FileEventChannel(baseDir.resolve(key)));
         try {
             channel.publish(event);
         } catch (Exception exp) {

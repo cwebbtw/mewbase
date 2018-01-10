@@ -59,9 +59,10 @@ public class FileEventChannel  {
         try {
             // stop racing across threads and use the file create lock across processes
             lock.lock();
-            Path fullPath = channelPath.resolve(FileEvent.pathFromEventNumber(eventNumber.incrementAndGet()));
+            final long assignedEventNumber = eventNumber.getAndIncrement();
+            Path fullPath = channelPath.resolve(FileEvent.pathFromEventNumber(assignedEventNumber));
             Files.createFile(fullPath); // throws exception if another process has just created this file.
-            final long assignedEventNumber = eventNumber.get();
+
             lock.unlock();
             // we have the file set aside so write and close.
             Files.write(fullPath, event.encode().getBytes());
@@ -74,8 +75,6 @@ public class FileEventChannel  {
             logger.error("Error attempting publish event to File Event Channel", exp);
             throw exp;
         }
-
     }
-
 
 }
