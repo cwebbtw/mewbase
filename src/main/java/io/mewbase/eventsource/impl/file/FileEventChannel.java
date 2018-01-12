@@ -14,7 +14,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import java.util.Comparator;
+
 import java.util.Optional;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -27,7 +27,8 @@ public class FileEventChannel  {
 
     private final Path channelPath;
     private final ReentrantLock lock = new ReentrantLock();
-    private final AtomicLong eventNumber;
+    private final AtomicLong nextEventNumber;
+
 
 
     public FileEventChannel(final Path channelPath) {
@@ -35,17 +36,14 @@ public class FileEventChannel  {
         this.channelPath = channelPath;
 
         try {
-            // create the directory if it doenst exist
+            // create the directory if it doesnt exist
             Files.createDirectories(channelPath);
-
-            Optional<Path> mostRecentPath = Files.list(channelPath)
-                    .filter(f -> !Files.isDirectory(f))
-                    .max(Comparator.comparingLong(f -> f.toFile().lastModified()));
+            Optional<Path> mostRecentPath = FileUtils.mostRecentPath(channelPath);
 
             if (mostRecentPath.isPresent()) {
-                eventNumber = new AtomicLong(FileEvent.eventNumberFromPath(mostRecentPath.get()));
+                nextEventNumber = new AtomicLong(FileUtils.eventNumberFromPath(mostRecentPath.get())+1L);
             } else {
-                eventNumber = new AtomicLong();
+                nextEventNumber = new AtomicLong();
             }
             logger.info("Created File Event Channel at path " + channelPath);
         } catch (Exception exp) {
@@ -59,12 +57,10 @@ public class FileEventChannel  {
         try {
             // stop racing across threads and use the file create lock across processes
             lock.lock();
-            final long assignedEventNumber = eventNumber.getAndIncrement();
-            Path fullPath = channelPath.resolve(FileEvent.pathFromEventNumber(assignedEventNumber));
+            final long assignedEventNumber = nextEventNumber.getAndIncrement();
+            Path fullPath = channelPath.resolve(FileUtils.pathFromEventNumber(assignedEventNumber));
             Files.createFile(fullPath); // throws exception if another process has just created this file.
-
-            lock.unlock();
-            // we have the file set aside so write and close.
+            lock.unlock(); // we have the file set aside so write and close.
             Files.write(fullPath, event.encode().getBytes());
             return assignedEventNumber;
         } catch (FileAlreadyExistsException exp) {

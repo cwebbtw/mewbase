@@ -44,7 +44,7 @@ public class FileEventSinkTest extends MewbaseTestBase {
 
         // check that the file has been written
         final long eventNumber = 0;
-        final Path path = Paths.get(eventPath,channelName, FileEvent.pathFromEventNumber(eventNumber).toString());
+        final Path path = Paths.get(eventPath,channelName, FileUtils.pathFromEventNumber(eventNumber).toString());
         final File eventFile  = path.toFile();
         assertTrue(eventFile.exists());
         assertFalse(eventFile.isDirectory());
@@ -65,7 +65,7 @@ public class FileEventSinkTest extends MewbaseTestBase {
         // check that each file has been written
         Set<Path> files =  Files.list(Paths.get(eventPath,channelName)).collect(Collectors.toSet());
         IntStream.range(0, 100).forEach( i -> {
-            final String eventFileName = FileEvent.pathFromEventNumber(i).toString();
+            final String eventFileName = FileUtils.pathFromEventNumber(i).toString();
             final Path path = Paths.get(eventPath, channelName, eventFileName);
             assertTrue(files.contains(path));
         });

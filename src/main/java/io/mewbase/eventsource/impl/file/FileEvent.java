@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 
 
@@ -37,7 +35,7 @@ class FileEvent implements Event {
     public Instant getInstant()  { return Instant.ofEpochMilli(file.lastModified()); }
 
     @Override
-    public Long getEventNumber() { return eventNumberFromPath(file.toPath()); }
+    public Long getEventNumber() { return FileUtils.eventNumberFromPath(file.toPath()); }
 
     @Override
     // Todo
@@ -49,15 +47,6 @@ class FileEvent implements Event {
         return "TimeStamp : " + this.getInstant() +
                 "EventNumber : " + this.getEventNumber() +
                 "PayLoad : " + this.getBson();
-    }
-
-
-    public static long eventNumberFromPath(Path path) {
-        return Long.parseLong(path.getFileName().toString());
-    }
-
-    public static Path pathFromEventNumber(long eventNumber) {
-        return Paths.get(String.format("%016d", eventNumber));
     }
 
 

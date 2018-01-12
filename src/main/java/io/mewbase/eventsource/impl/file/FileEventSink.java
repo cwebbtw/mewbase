@@ -9,12 +9,10 @@ import io.mewbase.eventsource.EventSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-
 
 
 public class FileEventSink implements EventSink {
@@ -54,7 +52,6 @@ public class FileEventSink implements EventSink {
         });
         return fut;
     }
-
 
     @Override
     public void close() {
