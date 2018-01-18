@@ -15,6 +15,7 @@ import io.mewbase.util.AsyncResCF;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -58,9 +59,9 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
     public VertxRestServiceAdaptor(Config cfg) {
         // Get the Vertx rest end point configuration
-        final String host = cfg.getString("mewbase.api.rest.vertex.host");
-        final int port = cfg.getInt("mewbase.api.rest.vertex.port");
-        final Duration timeout = cfg.getDuration("mewbase.api.rest.vertex.timeout");
+        final String host = cfg.getString("mewbase.api.rest.vertx.host");
+        final int port = cfg.getInt("mewbase.api.rest.vertx.port");
+        final Duration timeout = cfg.getDuration("mewbase.api.rest.vertx.timeout");
         final HttpServerOptions opts = new HttpServerOptions().setHost(host).setPort(port);
 
         // Set up the rest server using the config.
@@ -194,8 +195,10 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
             final BsonObject context = new BsonObject();
             final Map pathParams = rc.pathParams();
             context.put("pathParams", new BsonObject(pathParams));
-            final JsonObject body = rc.getBodyAsJson();
-            context.put("body", new BsonObject(body));
+            Buffer bodyBuffer = rc.getBody();
+            // check for empty body
+            final JsonObject bodyJson = bodyBuffer.length() == 0 ? new JsonObject() : rc.getBodyAsJson();
+            context.put("body", new BsonObject(bodyJson));
             // Dispatch the command in context on another thread
             CompletableFuture<BsonObject> cf = commandMgr.execute(commandName, context);
             rc.response().setStatusCode(200).end();
