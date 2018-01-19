@@ -48,7 +48,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         // check the event arrived
         final CountDownLatch latch = new CountDownLatch(1);
-        EventSource eSource = new NatsEventSource();
+        EventSource eSource = EventSource.instance();
         Subscription subs = eSource.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
@@ -79,7 +79,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        EventSource eSource = new NatsEventSource();
+        EventSource eSource = EventSource.instance();
         eSource.subscribe(testChannelName, event -> {
                 BsonObject bson  = event.getBson();
                 long thisEventNum = END_EVENT_NUMBER - latch.getCount();
@@ -111,7 +111,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        EventSource eSource = new NatsEventSource();
+        EventSource eSource = EventSource.instance();
         eSource.subscribe(testChannelName, event -> {
             BsonObject bson  = event.getBson();
             long thisEventNum = END_EVENT_NUMBER - latch.getCount();

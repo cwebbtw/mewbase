@@ -30,7 +30,6 @@ public class FileEventChannel  {
     private final AtomicLong nextEventNumber;
 
 
-
     public FileEventChannel(final Path channelPath) {
 
         this.channelPath = channelPath;

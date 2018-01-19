@@ -60,11 +60,11 @@ public class FileEventSinkTest extends MewbaseTestBase {
 
         final String channelName = "channel";
         final BsonObject evt = new BsonObject().put("key","value");
-        IntStream.range(0, 100).forEach( i -> es.publish(channelName,evt.put("evt",""+i)) );
+        IntStream.range(0, 10).forEach( i -> es.publish(channelName,evt.put("evt",""+i)) );
 
         // check that each file has been written
         Set<Path> files =  Files.list(Paths.get(eventPath,channelName)).collect(Collectors.toSet());
-        IntStream.range(0, 100).forEach( i -> {
+        IntStream.range(0, 10).forEach( i -> {
             final String eventFileName = FileUtils.pathFromEventNumber(i).toString();
             final Path path = Paths.get(eventPath, channelName, eventFileName);
             assertTrue(files.contains(path));
