@@ -90,10 +90,12 @@ public class MewbaseTestBase {
     //
     protected synchronized Config createConfig() throws Exception {
         final String testPath = testFolder.newFolder().getPath();
-        System.setProperty("mewbase.binders.files.store.basedir", Paths.get(testPath,"binders").toString());
-        System.setProperty("mewbase.event.sink.file.basedir", Paths.get(testPath,"events").toString());
+        System.setProperty("mewbase.binders.files.store.basedir", Paths.get(testPath,"binders").toString() );
+        System.setProperty("mewbase.event.sink.file.basedir", Paths.get(testPath,"events").toString() );
+        System.setProperty("mewbase.event.source.file.basedir", Paths.get(testPath,"events").toString() );
         ConfigFactory.invalidateCaches();
         Config cfg = ConfigFactory.load();
         return cfg;
     }
+
 }

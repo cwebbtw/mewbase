@@ -12,8 +12,7 @@ import io.mewbase.bson.BsonObject;
 
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
+
 
 
 import io.mewbase.projection.impl.ProjectionManagerImpl;
@@ -53,16 +52,20 @@ public class ProjectionTest extends MewbaseTestBase {
 
     private BinderStore store = null;
     private EventSource source = null;
+    private EventSink sink = null;
 
     @Before
     public void before() throws Exception {
-        store = BinderStore.instance(createConfig());
-        source = new NatsEventSource();
+        Config cfg = createConfig();
+        store = BinderStore.instance(cfg);
+        source = EventSource.instance(cfg);
+        sink = EventSink.instance(cfg);
     }
 
     @After
     public void after() throws Exception {
         source.close();
+        sink.close();
     }
 
 
@@ -125,7 +128,7 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-        EventSink sink = new NatsEventSink();
+
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(TEST_CHANNEL, evt);
 
@@ -192,7 +195,6 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-        EventSink sink = new NatsEventSink();
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(MULTI_EVENT_CHANNEL, evt);
 
@@ -307,7 +309,6 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-        EventSink sink = new NatsEventSink();
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(UNIQUE_CHANNEL_NAME, evt);
 

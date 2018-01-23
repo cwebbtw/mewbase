@@ -5,7 +5,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import io.mewbase.bson.BsonObject;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
+import io.mewbase.eventsource.impl.file.FileEventSink;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,7 +29,7 @@ public interface EventSink {
      * @return an Instance of an EventSink
      */
     static EventSink instance(Config cfg) {
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new NatsEventSink(cfg) );
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSink(cfg) );
     }
 
 

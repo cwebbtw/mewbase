@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 
 import java.io.File;
+
 import java.nio.file.Files;
 import java.time.Instant;
 
@@ -23,8 +24,8 @@ class FileEvent implements Event {
     @Override
     public BsonObject getBson() {
         try {
-            byte[] buffer = Files.readAllBytes(file.toPath());
-            return new BsonObject(buffer);
+            byte[] rbc = Files.readAllBytes(file.toPath());
+            return new BsonObject(rbc);
         } catch(Exception exp) {
            logger.error("File read failed",exp);
         }
@@ -35,7 +36,7 @@ class FileEvent implements Event {
     public Instant getInstant()  { return Instant.ofEpochMilli(file.lastModified()); }
 
     @Override
-    public Long getEventNumber() { return FileUtils.eventNumberFromPath(file.toPath()); }
+    public Long getEventNumber() { return FileEventUtils.eventNumberFromPath(file.toPath()); }
 
     @Override
     // Todo

@@ -1,5 +1,6 @@
 package io.mewbase.eventsource;
 
+import com.typesafe.config.Config;
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
@@ -28,7 +29,6 @@ import static org.junit.Assert.fail;
 @RunWith(VertxUnitRunner.class)
 public class EventSinkTest extends MewbaseTestBase {
 
-
     @Test
     public void testConnectToEventSink() throws Exception {
         EventSink es = EventSink.instance();
@@ -36,11 +36,13 @@ public class EventSinkTest extends MewbaseTestBase {
         assert(true);
     }
 
-
     @Test
     public void testPublishSingleEvent() throws Exception {
 
-        EventSink eSink = EventSink.instance();
+        // use test local config
+        final Config testConfig = createConfig();
+        final EventSink sink = EventSink.instance(testConfig);
+        final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "singleEventSink";
         final String inputUUID = randomString();
@@ -48,30 +50,34 @@ public class EventSinkTest extends MewbaseTestBase {
 
         // check the event arrived
         final CountDownLatch latch = new CountDownLatch(1);
-        EventSource eSource = EventSource.instance();
-        Subscription subs = eSource.subscribe(testChannelName,  event ->  {
+
+        Subscription subs = source.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
                         latch.countDown();
                         }
                     );
 
-        eSink.publish(testChannelName,bsonEvent);
+        sink.publish(testChannelName,bsonEvent);
 
         latch.await();
 
-        eSource.close();
-        eSink.close();
+        source.close();
+        sink.close();
     }
 
 
     @Test
     public void testManyEventsInOrder() throws Exception {
 
+        // use test local config
+        final Config testConfig = createConfig();
+        final EventSink sink = EventSink.instance(testConfig);
+        final EventSource source = EventSource.instance(testConfig);
+
+
         // Test local event producer to inject events in the event source.
         final String testChannelName = "TestMultiEventChannel";
-        EventSink eSink = EventSink.instance();
-
         final int START_EVENT_NUMBER = 1;
         final int END_EVENT_NUMBER = 128;
 
@@ -79,8 +85,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        EventSource eSource = EventSource.instance();
-        eSource.subscribe(testChannelName, event -> {
+        source.subscribe(testChannelName, event -> {
                 BsonObject bson  = event.getBson();
                 long thisEventNum = END_EVENT_NUMBER - latch.getCount();
                 assert(bson.getLong("num") == thisEventNum);
@@ -89,21 +94,24 @@ public class EventSinkTest extends MewbaseTestBase {
 
         LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).forEach(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
-            eSink.publish(testChannelName,bsonEvent);
+            sink.publish(testChannelName,bsonEvent);
         } );
 
         latch.await();
-        eSource.close();
-        eSink.close();
+        source.close();
+        sink.close();
     }
 
 
     @Test
     public void testManyAsyncEvents() throws Exception {
 
-        final String testChannelName = "TestManyAsyncEventChannel";
-        EventSink eSink = EventSink.instance();
+        // use test local config
+        final Config testConfig = createConfig();
+        final EventSink sink = EventSink.instance(testConfig);
+        final EventSource source = EventSource.instance(testConfig);
 
+        final String testChannelName = "TestManyAsyncEventChannel";
         final int START_EVENT_NUMBER = 1;
         final int END_EVENT_NUMBER = 128;
 
@@ -111,8 +119,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        EventSource eSource = EventSource.instance();
-        eSource.subscribe(testChannelName, event -> {
+        source.subscribe(testChannelName, event -> {
             BsonObject bson  = event.getBson();
             long thisEventNum = END_EVENT_NUMBER - latch.getCount();
             assert(bson.getLong("num") == thisEventNum);
@@ -122,7 +129,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         List<CompletableFuture<BsonObject>> futs = LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
-            return eSink.publishAsync(testChannelName,bsonEvent);
+            return sink.publishAsync(testChannelName,bsonEvent);
         } ).collect(Collectors.toList());
 
         // Ensure all of the futures complete successfully
@@ -133,8 +140,8 @@ public class EventSinkTest extends MewbaseTestBase {
                 }).join();
 
         latch.await();
-        eSource.close();
-        eSink.close();
+        source.close();
+        sink.close();
     }
 
 }

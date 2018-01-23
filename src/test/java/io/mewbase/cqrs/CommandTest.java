@@ -100,7 +100,7 @@ public class CommandTest extends MewbaseTestBase {
 
         //Subscribe to the EventSource
         CountDownLatch cdl = new CountDownLatch(1);
-        EventSource evtSrc = new NatsEventSource();
+        EventSource evtSrc = EventSource.instance();
         EventHandler evtHandler = evt -> {
             BsonObject event = evt.getBson();
             assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));

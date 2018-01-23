@@ -1,13 +1,10 @@
 package io.mewbase.eventsource.impl.file;
 
-
-
 import io.mewbase.bson.BsonObject;
 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -15,10 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 
-import java.util.Optional;
-
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static java.nio.file.StandardOpenOption.*;
 
 
 public class FileEventChannel  {
@@ -37,13 +34,7 @@ public class FileEventChannel  {
         try {
             // create the directory if it doesnt exist
             Files.createDirectories(channelPath);
-            Optional<Path> mostRecentPath = FileUtils.mostRecentPath(channelPath);
-
-            if (mostRecentPath.isPresent()) {
-                nextEventNumber = new AtomicLong(FileUtils.eventNumberFromPath(mostRecentPath.get())+1L);
-            } else {
-                nextEventNumber = new AtomicLong();
-            }
+            nextEventNumber = new AtomicLong(FileEventUtils.nextEventNumberFromPath(channelPath));
             logger.info("Created File Event Channel at path " + channelPath);
         } catch (Exception exp) {
             logger.error("Error creating File Event Channel", exp);
@@ -57,10 +48,14 @@ public class FileEventChannel  {
             // stop racing across threads and use the file create lock across processes
             lock.lock();
             final long assignedEventNumber = nextEventNumber.getAndIncrement();
-            Path fullPath = channelPath.resolve(FileUtils.pathFromEventNumber(assignedEventNumber));
-            Files.createFile(fullPath); // throws exception if another process has just created this file.
+            Path fullPath = channelPath.resolve(FileEventUtils.pathFromEventNumber(assignedEventNumber));
+            Files.write(fullPath, event.encode().getBytes(),
+                    CREATE_NEW, // throws exception if another process has just created this file.
+                    WRITE,      // going to write into the file
+                    SYNC        // write contents and meta data on sync
+                    );
             lock.unlock(); // we have the file set aside so write and close.
-            Files.write(fullPath, event.encode().getBytes());
+
             return assignedEventNumber;
         } catch (FileAlreadyExistsException exp) {
             // just recurse and increment file number again

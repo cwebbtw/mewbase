@@ -46,10 +46,9 @@ public class FileEventSink implements EventSink {
 
     @Override
     public CompletableFuture<BsonObject> publishAsync(final String channelName, final BsonObject event) {
-        CompletableFuture<BsonObject> fut = CompletableFuture.supplyAsync( () -> {
-            publish(channelName,event);
-            return event;
-        });
+        // cuurent impl needs work to write async
+        publish(channelName,event);
+        CompletableFuture<BsonObject> fut = CompletableFuture.supplyAsync( () -> event);
         return fut;
     }
 
