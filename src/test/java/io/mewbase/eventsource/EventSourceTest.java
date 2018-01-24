@@ -106,7 +106,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         final int START_EVENT_NUMBER = 1;
         final long MID_EVENT_NUMBER = 64;
-        final int END_EVENT_NUMBER = 128;
+        final int END_EVENT_NUMBER = 127;
 
         final int eventsToTest = 63;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);

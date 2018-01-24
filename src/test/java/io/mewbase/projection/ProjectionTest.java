@@ -17,6 +17,7 @@ import io.mewbase.eventsource.EventSource;
 
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
+import io.vertx.ext.unit.junit.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -128,7 +129,6 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(TEST_CHANNEL, evt);
 
@@ -166,6 +166,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
 
     @Test
+    //@Repeat(50)
     public void testProjectionRecoversFromEventNumber() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
@@ -199,7 +200,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
 
         latch.await();
-        Thread.sleep(100);
+        Thread.sleep(200);
 
         // Recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -234,7 +235,8 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
         // and wait for the result
         newLatch.await();
-        Thread.sleep(100);
+
+        Thread.sleep(2000);
 
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();

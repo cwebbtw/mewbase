@@ -35,29 +35,32 @@ public class FileEventSubscription implements Subscription {
                     Event evt = waitForEvent(targetEvent);
                     eventQueue.put(evt);
                     targetEvent++;
+                } catch (InterruptedException exp ) {
+                    logger.info("Event reader thread closing");
                 } catch (Exception exp ) {
-                    logger.info("Event reader interrupted",exp);
+                    logger.error("Error in event rerader",exp);
                 }
             }
         });
 
         // process the events
         dispatcher.execute(() -> {
-            while (!Thread.interrupted()) {
+            while (!Thread.interrupted() || !eventQueue.isEmpty()) {
                 try {
                     eventHandler.onEvent(eventQueue.take());
+                } catch (InterruptedException exp) {
+                    logger.info("Event reader thread closing");
                 } catch (Exception exp) {
-                    logger.info("Event dispatcher interrupted",exp);
+                    logger.error("Error in event handler", exp);
                 }
             }
         });
-
     }
 
     @Override
     public void unsubscribe() {
-        reader.shutdownNow();
-        dispatcher.shutdownNow();
+        reader.shutdown();
+        dispatcher.shutdown();
     }
 
     @Override

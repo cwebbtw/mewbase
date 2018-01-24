@@ -46,7 +46,6 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
     private static final String binderParam = "/:" + binderParamKey;
     private static final String documentParam = "/:" + documentParamKey;
 
-
     private final HttpServer httpServer;
     private final Router router;
 
@@ -69,6 +68,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
         router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
         httpServer.requestHandler(router::accept);
+        logger.info("Created Rest Adapter on "+ opts.getHost() + ":" + opts.getPort() );
     }
 
 
@@ -248,12 +248,14 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
     public CompletableFuture<Void> start() {
         AsyncResCF<HttpServer> ar = new AsyncResCF<>();
+        logger.info("Starting Rest Adapter");
         httpServer.listen(ar);
         return ar.thenApply(server -> null);
     }
 
     public CompletableFuture<Void> stop() {
         AsyncResCF<Void> ar = new AsyncResCF<>();
+        logger.info("Stopping Rest Adapter");
         httpServer.close(ar);
         return ar;
     }
