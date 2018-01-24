@@ -2,53 +2,62 @@ package io.mewbase.eventsource.impl.file;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
+import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import java.io.File;
-
-import java.nio.file.Files;
 import java.time.Instant;
+import java.util.Optional;
 
 
 class FileEvent implements Event {
 
     private final static Logger logger = LoggerFactory.getLogger(FileEvent.class);
-    final File file;
 
-    FileEvent(File file) {
-        this.file = file;
+    final long eventNumber;
+    final long epochMillis;
+    final long crc32;
+    final ByteBuf eventBuf;
+
+    BsonObject event = null;
+
+    public FileEvent(long eventNumber, long epochMillis, long crc32, ByteBuf eventBuf) {
+        this.eventNumber = eventNumber;
+        this.epochMillis = epochMillis;
+        this.crc32 = crc32;
+        this.eventBuf = eventBuf;
     }
 
     @Override
     public BsonObject getBson() {
-        try {
-            byte[] rbc = Files.readAllBytes(file.toPath());
-            return new BsonObject(rbc);
-        } catch(Exception exp) {
-           logger.error("File read failed",exp);
-        }
-        return null;
+        if (event == null) event = new BsonObject(eventBuf.array());
+        return event;
     }
 
     @Override
-    public Instant getInstant()  { return Instant.ofEpochMilli(file.lastModified()); }
+    public Instant getInstant() {
+        return Instant.ofEpochMilli(epochMillis);
+    }
 
     @Override
-    public Long getEventNumber() { return FileEventUtils.eventNumberFromPath(file.toPath()); }
+    public Long getEventNumber() {
+        return eventNumber;
+    }
 
     @Override
-    // Todo
-    public int getCrc32() { return 0; }
-
+    public Long getCrc32() {
+        return crc32;
+    }
 
     @Override
     public String toString() {
         return "TimeStamp : " + this.getInstant() +
-                "EventNumber : " + this.getEventNumber() +
-                "PayLoad : " + this.getBson();
+                " EventNumber : " + this.getEventNumber() +
+                " CRC32 : " + this.getCrc32() +
+                " PayLoad : " + this.getBson();
     }
+
 
 
 }

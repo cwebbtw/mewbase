@@ -38,7 +38,7 @@ public class FileEventSubscription implements Subscription {
                 } catch (InterruptedException exp ) {
                     logger.info("Event reader thread closing");
                 } catch (Exception exp ) {
-                    logger.error("Error in event rerader",exp);
+                    logger.error("Error in event reader",exp);
                 }
             }
         });
@@ -72,13 +72,13 @@ public class FileEventSubscription implements Subscription {
     // originally did this with a java.nio.WatchService but it was more complex and
     // did not allow fine grain control of the watchWindow.
     private final int WATCH_WINDOW_MILLIS = 3;
-    private Event waitForEvent(final long eventNumber) throws InterruptedException {
+    private Event waitForEvent(final long eventNumber) throws Exception {
         Path eventFilePath = channelPath.resolve(FileEventUtils.pathFromEventNumber(eventNumber));
         File eventFile = eventFilePath.toFile();
         while (! (eventFile.exists() && eventFile.length() > 0) ) {
             Thread.sleep( WATCH_WINDOW_MILLIS);
         }
-        return new FileEvent( eventFilePath.toFile());
+        return FileEventUtils.fileToEvent( eventFilePath.toFile() );
     }
 
 }

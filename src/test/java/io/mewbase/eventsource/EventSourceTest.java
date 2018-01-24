@@ -46,7 +46,7 @@ public class EventSourceTest extends MewbaseTestBase {
                         assert(inputUUID.equals(bson.getString("data")));
                         long evtNum = event.getEventNumber();
                         Instant evtTime = event.getInstant();
-                        int evtHash = event.getCrc32();
+                        Long evtHash = event.getCrc32();
                         latch.countDown();
                         }
                     );
@@ -182,11 +182,11 @@ public class EventSourceTest extends MewbaseTestBase {
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
 
 
-        Thread.sleep(1000); // give the events time to rest in the event source
+        Thread.sleep(10); // give the events time to rest in the event source
 
         Instant then = Instant.now();
 
-        Thread.sleep(1000); // some room the other side of the time window
+        Thread.sleep(10); // some room the other side of the time window
 
         utils.sendNumberedEvents(testChannelName,(long)MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER);
 
