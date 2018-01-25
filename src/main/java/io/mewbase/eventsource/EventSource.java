@@ -2,7 +2,7 @@ package io.mewbase.eventsource;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
+import io.mewbase.eventsource.impl.file.FileEventSource;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.time.Instant;
@@ -17,7 +17,7 @@ public interface EventSource {
     }
 
     static EventSource instance(Config cfg) {
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new NatsEventSource(cfg) );
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSource(cfg) );
     }
 
     /**

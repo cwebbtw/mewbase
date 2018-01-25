@@ -1,6 +1,8 @@
 package io.mewbase.cqrs;
 
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
@@ -41,8 +43,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(VertxUnitRunner.class)
 public class CommandTest extends MewbaseTestBase {
 
-    final EventSink TEST_EVENT_SINK = EventSink.instance();
-
     final String COMMAND_NAME = "TestCommand";
     final String CHANNEL_NAME = "CommandTestChannel";
 
@@ -55,9 +55,12 @@ public class CommandTest extends MewbaseTestBase {
 
 
     @Test
-    public void testCommandManager() {
+    public void testCommandManager() throws Exception {
 
-        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
+        final Config cfg = createConfig();
+        final EventSink sink = EventSink.instance(cfg);
+        final CommandManager mgr = CommandManager.instance(sink);
+
         assertNotNull(mgr);
         final String COMMAND_NAME = "NotACommand";
         assertNotNull(mgr.commandBuilder());
@@ -76,7 +79,10 @@ public class CommandTest extends MewbaseTestBase {
     @Test
     public void testCommandOK() throws Exception {
 
-        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
+        final Config cfg = createConfig();
+        final EventSink sink = EventSink.instance(cfg);
+        final EventSource source  = EventSource.instance(cfg);
+        final CommandManager mgr = CommandManager.instance(sink);
 
         Function<BsonObject, BsonObject> handler = (params) -> {
             assertNotNull( "Params should be non null", params);
@@ -100,13 +106,13 @@ public class CommandTest extends MewbaseTestBase {
 
         //Subscribe to the EventSource
         CountDownLatch cdl = new CountDownLatch(1);
-        EventSource evtSrc = new NatsEventSource();
+
         EventHandler evtHandler = evt -> {
             BsonObject event = evt.getBson();
             assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));
             cdl.countDown();
         };
-        evtSrc.subscribe(CHANNEL_NAME,evtHandler);
+        source.subscribe(CHANNEL_NAME,evtHandler);
 
         // Execute the command
         BsonObject params = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
@@ -122,7 +128,9 @@ public class CommandTest extends MewbaseTestBase {
     @Test
     public void testCommandFail() throws Exception {
 
-        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
+        final Config cfg =  createConfig();
+        final EventSink sink = EventSink.instance(cfg);
+        final CommandManager mgr = CommandManager.instance(sink);
 
         Function<BsonObject, BsonObject> handler = (params) -> {
             String empty = params.getString("NoExistentKey");
@@ -154,10 +162,12 @@ public class CommandTest extends MewbaseTestBase {
     @Test
     public void testMultipleCommands(TestContext testContext) throws Exception {
 
-        CommandManager mgr = CommandManager.instance(TEST_EVENT_SINK);
-        CommandBuilder builder = mgr.commandBuilder();
+        final Config cfg = createConfig();
+        final EventSink sink = EventSink.instance(cfg);
+        final CommandManager mgr = CommandManager.instance(sink);
+        final CommandBuilder builder = mgr.commandBuilder();
 
-        Stream<String> names = IntStream.rangeClosed(1,16).mapToObj( (index) -> {
+        final Stream<String> names = IntStream.rangeClosed(1,16).mapToObj( (index) -> {
             final String commandName = COMMAND_NAME + index;
             Command cmd = builder.emittingTo(CHANNEL_NAME)
                 .named(commandName)
@@ -180,7 +190,7 @@ public class CommandTest extends MewbaseTestBase {
         assertTrue(generatedNames.containsAll(storedNames));
         assertTrue(storedNames.containsAll(generatedNames));
 
-        BsonObject params = new BsonObject();
+        final BsonObject params = new BsonObject();
         Stream<CompletableFuture<BsonObject>> futs = generatedNames.stream().map(name ->
             mgr.execute(name, params.put(COMMAND_INPUT_KEY,name))
         );

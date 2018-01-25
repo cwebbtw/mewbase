@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Supplier;
 
 /**
- * Cant do this with an interface due to diamond inheritance probs.
+ * Although preferable it is not possible to this with an interface due to diamond inheritance probs.
  * See https://stackoverflow.com/questions/7486012/static-classes-in-java#7486111
  */
 public final class CanFactoryFrom {
@@ -27,5 +27,4 @@ public final class CanFactoryFrom {
                 return defaultImpl.get();
             }
         }
-
-    }
+}
