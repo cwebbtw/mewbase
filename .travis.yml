@@ -6,8 +6,9 @@ services:
 before_install:
 - docker pull nats-streaming
 - docker run -p 4222:4222 -p 8222:8222 -d  nats-streaming
-- docker pull postgres
-- docker run -p 5432:5432 -e POSTGRES_PASSWORD=mewbase -e POSTGRES_USER=mewbase -d postgres
+# Hold the bus while we work out collision with DockerCompose
+# - docker pull postgres
+# - docker run -p 5432:5432 -e POSTGRES_PASSWORD=mewbase -e POSTGRES_USER=mewbase -d
 - docker ps -a
 
 jdk:
