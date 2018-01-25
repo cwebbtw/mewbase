@@ -28,7 +28,7 @@ class NatsEvent implements Event {
     public Long getEventNumber() { return msg.getSequence(); }
 
     @Override
-    public int getCrc32() { return msg.getCrc32(); }
+    public Long getCrc32() { return (long)msg.getCrc32(); }
 
 
     @Override

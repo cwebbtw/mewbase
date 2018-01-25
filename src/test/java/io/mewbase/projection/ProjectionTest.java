@@ -12,12 +12,12 @@ import io.mewbase.bson.BsonObject;
 
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
+
 
 
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
+import io.vertx.ext.unit.junit.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,16 +53,20 @@ public class ProjectionTest extends MewbaseTestBase {
 
     private BinderStore store = null;
     private EventSource source = null;
+    private EventSink sink = null;
 
     @Before
     public void before() throws Exception {
-        store = BinderStore.instance(createConfig());
-        source = new NatsEventSource();
+        Config cfg = createConfig();
+        store = BinderStore.instance(cfg);
+        source = EventSource.instance(cfg);
+        sink = EventSink.instance(cfg);
     }
 
     @After
     public void after() throws Exception {
         source.close();
+        sink.close();
     }
 
 
@@ -125,7 +129,6 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-        EventSink sink = new NatsEventSink();
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(TEST_CHANNEL, evt);
 
@@ -163,6 +166,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
 
     @Test
+    //@Repeat(50)
     public void testProjectionRecoversFromEventNumber() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
@@ -192,12 +196,11 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-        EventSink sink = new NatsEventSink();
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(MULTI_EVENT_CHANNEL, evt);
 
         latch.await();
-        Thread.sleep(100);
+        Thread.sleep(200);
 
         // Recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -232,7 +235,8 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publish(MULTI_EVENT_CHANNEL, evt);
         // and wait for the result
         newLatch.await();
-        Thread.sleep(100);
+
+        Thread.sleep(2000);
 
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();
@@ -307,7 +311,6 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // Send an event to the channel which the projection is subscribed to.
-        EventSink sink = new NatsEventSink();
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publish(UNIQUE_CHANNEL_NAME, evt);
 

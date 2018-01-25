@@ -14,7 +14,7 @@ public interface Event {
 
     Long getEventNumber();
 
-    int getCrc32();
+    Long getCrc32();
 
     default  String asString() {
         return "TimeStamp : " + this.getInstant() +
