@@ -49,11 +49,13 @@ public class DeDuper {
      *  If this Event is not a copy of any in the window then return the event
      *  else return an Empty option.
      */
-    public Optional<BsonObject> dedupe(BsonObject event) {
-        if ( map.get(hash(event)) != null )
-            return Optional.empty();
-        else {
-            map.put(hash(event),nothing);    // just store the hash risking duplicates from colliding events.
+    public  Optional<BsonObject> dedupe(BsonObject event) {
+        synchronized(map) {
+            if ( map.get(hash(event)) != null )
+                return Optional.empty();
+            else {
+                map.put(hash(event),nothing);    // just store the hash risking duplicates from colliding events.
+            }
         }
         return Optional.of(event);
     }
@@ -73,7 +75,11 @@ public class DeDuper {
         return filter;
     }
 
-    
+    /**
+     * Make an MD5 hash of this event - chosen for least collision reasons
+     * @param event
+     * @return
+     */
     private BigInteger hash(BsonObject event) {
         try { // poss "SHA-512","MD5"
             final MessageDigest md = MessageDigest.getInstance("MD5");
