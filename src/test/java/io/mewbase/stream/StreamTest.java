@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -54,14 +55,14 @@ public class StreamTest extends MewbaseTestBase {
     public void testDeDupeStream()  {
         final int streamLength = 128;  // tested to 5m
         DeDuper dd = new DeDuper(streamLength);
-        Stream<Optional<BsonObject>> stream = IntStream.range(0, streamLength).mapToObj(i -> {
+        long count = IntStream.range(0, streamLength).mapToObj(i -> {
             final BsonObject event = new BsonObject().put(key, "event" + i);    // enforce unique
             final Optional<BsonObject> duped = dd.dedupe(new BsonObject().put(key, "event" + i));
             assertEquals(duped,Optional.of(event));
             return duped;
             }
-        );
-        assertEquals(stream.count(), streamLength);
+        ).collect(Collectors.counting()); // force this to complete before testing the assertions.
+        assertEquals(count, streamLength);
 
         // test something in the middle is memorized
         final BsonObject midEvent = new BsonObject().put(key, "event" + streamLength / 2);
