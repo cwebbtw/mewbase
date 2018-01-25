@@ -6,7 +6,7 @@
 
     <groupId>io.mewbase</groupId>
     <artifactId>mewbase</artifactId>
-    <version>0.3.1</version>
+    <version>0.4.0</version>
 
     <repositories>
         <repository>
