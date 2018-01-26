@@ -1,4 +1,4 @@
-## 0.4.0
+## 0.4.0 - Local File Based Event Streams
 
 Fully plugable Binders and Event servers. 
 

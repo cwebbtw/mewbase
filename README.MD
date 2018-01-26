@@ -104,56 +104,27 @@ Facilities assumed in protocols for Document Stores
 * Document streaming
 
 
+### Getting started 
+
+Jump to the [wiki](https://github.com/Tesco/mewbase/wiki) for [code level examples](https://github.com/Tesco/mewbase/wiki#events), 
+[configuring external services](https://github.com/Tesco/mewbase/wiki/Config) and other details.
+
 ### Why the name "mewbase"?
 
 "mew" is the UK pronunciation of the Greek letter μ. This letter is often used in the scientific world to represent
 "micro" i.e. 10^-6 or more loosely "something small". Mewbase is a great choice for event based microservices hence
 the connection.
 
-Also, more importantly, "mew" is the sound made by a kitten, and it would be great to have a logo of a cute kitten for
-the project. (Any volunteers?)
+Did someone mention cats on the internet ?
+
 
 ## Get involved!
 
 This project has a lot of scope and there's a lot to do with some serious engineering challenges.
 
-If you'd like to get involved and be a part of it, please say hi in our
-[google group](https://groups.google.com/forum/#!forum/mewbase).
-
-We also have a gitter channel for general chat. Come and say hi!
-
-[Gitter channel](https://gitter.im/mewbase)
-
-## Roadmap
-
-Roadmap and other pages are on the [wiki](https://github.com/Tesco/mewbase/wiki)
-
-## Install Library and Run Examples
-
-Mewbase can be run embedded in any Java application (see examples package).
-
-The current version of Mewbase depends on a running instance of a [nats-streaming](https://nats.io/documentation/streaming/nats-streaming-intro/) server instance.  Assuming you have [docker](https://www.docker.com/) locally installed, the quickest and easiest way to up and running is via following commands:
-
-    docker pull nats-streaming
-    docker run -p 4222:4222 -p 8222:8222 -d nats-streaming
+We have a [Gitter channel](https://gitter.im/mewbase) for general chat. Come and say hi!
 
 
-Mewbase can then be built and installed into your local maven repository so that 
-you can include it as a library dependency into other client and server projects   
 
-    mvn clean install
- 
- 
-Refer to the maven output for the the current library version number which you can add to 
-maven pom.xml build files, for example, and the example code can be run from the resulting 
-mewbase-<version>.jar file or from your project IDE.
 
-## Generate mewbase project from template
 
-A template Mewbase project can also be generated using the following command:
-
-    mvn archetype:generate 	-DarchetypeGroupId=io.mewbase 	\
-    			-DarchetypeArtifactId=mewbase 	\
-    			-DarchetypeVersion=0.2.1  	\
-    			-DgroupId=[sample.groupId]	\
-    			-DartifactId=[mySampleArtifact]	
