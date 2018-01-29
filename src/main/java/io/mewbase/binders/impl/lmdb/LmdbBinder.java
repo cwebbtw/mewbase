@@ -1,6 +1,7 @@
 package io.mewbase.binders.impl.lmdb;
 import io.mewbase.binders.KeyVal;
 
+import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
@@ -32,7 +33,7 @@ import static org.lmdbjava.DbiFlags.MDB_CREATE;
  * Created by Tim on 29/12/16.
  */
 @Deprecated
-public class LmdbBinder implements Binder {
+public class LmdbBinder extends StreamableBinder implements Binder {
 
     private final static Logger log = LoggerFactory.getLogger(LmdbBinder.class);
 
@@ -95,6 +96,7 @@ public class LmdbBinder implements Binder {
                 dbi.put(key, val);
             }
         }, stexec);
+        streamFunc.ifPresent( func -> func.accept(doc));
         return fut;
     }
 

@@ -8,6 +8,8 @@ import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
+import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.EventSource;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.Test;
@@ -81,8 +83,11 @@ public class BindersTest extends MewbaseTestBase {
        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
        Binder binder = store.open(testBinderName);
+       assertFalse(binder.isStreaming());
+
        BsonObject docPut = createObject();
        assertNull(binder.put("id1234", docPut).get());
+
        BsonObject docGet = binder.get("id1234").get();
        assertEquals(docPut, docGet);
 
@@ -330,9 +335,43 @@ public class BindersTest extends MewbaseTestBase {
     }
 
 
+    @Test
+    public void testStreamsToSink() throws Exception {
+
+        final Config cfg = createConfig();
+        final BinderStore store = BinderStore.instance(cfg);
+        final EventSink sink = EventSink.instance(cfg);
+        final EventSource source = EventSource.instance(cfg);
+
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+        final String eventOutputChannel = "StreamOf" + testBinderName;
+
+        Binder binder = store.open(testBinderName);
+        binder.setStreaming(sink, eventOutputChannel);
+        assertTrue(binder.isStreaming());
+
+        CountDownLatch latch = new CountDownLatch(1);
+        // listen to the stream channel
+        source.subscribe(eventOutputChannel, event -> {
+            BsonObject bson = event.getBson();
+            assertNotNull(bson);
+            assertEquals("bar", bson.getString("foo"));
+            assertEquals(1234, (long)bson.getInteger("bub"));
+            assertTrue(bson.getBoolean("wib"));
+            latch.countDown();
+        });
+
+        BsonObject docPut = createObject();
+        binder.put("id1234", docPut).get();
+        latch.await();
+    }
+
+
+
+
     protected BsonObject createObject() {
         BsonObject obj = new BsonObject();
-        obj.put("foo", "bar").put("quux", 1234).put("wib", true);
+        obj.put("foo", "bar").put("bub", 1234).put("wib", true);
         return obj;
     }
 
