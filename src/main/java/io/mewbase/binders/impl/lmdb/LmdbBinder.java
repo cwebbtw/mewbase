@@ -96,7 +96,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
                 dbi.put(key, val);
             }
         }, stexec);
-        streamFunc.ifPresent( func -> func.accept(doc));
+        streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
     }
 

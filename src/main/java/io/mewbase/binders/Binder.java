@@ -2,11 +2,9 @@ package io.mewbase.binders;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
-import jnr.ffi.Struct;
-
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 

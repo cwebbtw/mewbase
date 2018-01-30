@@ -86,7 +86,7 @@ public class FileBinder extends StreamableBinder implements Binder {
                 throw new CompletionException(exp);
             }
         }, stexec);
-        streamFunc.ifPresent( func -> func.accept(doc));
+        streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
     }
 
