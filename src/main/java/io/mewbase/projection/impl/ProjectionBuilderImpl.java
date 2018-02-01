@@ -5,6 +5,7 @@ import io.mewbase.eventsource.Event;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
 
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -22,6 +23,7 @@ public class ProjectionBuilderImpl implements ProjectionBuilder {
     private Function<Event, Boolean> eventFilter = doc -> true;
     private Function<Event, String> docIDSelector;
     private BiFunction<BsonObject, Event, BsonObject> projectionFunction;
+    private Optional<String> outputEventChannel = Optional.empty();
 
 
     ProjectionBuilderImpl(ProjectionManagerImpl factory) {
@@ -85,10 +87,11 @@ public class ProjectionBuilderImpl implements ProjectionBuilder {
             throw new IllegalStateException("Please specify a projection function");
         }
 
-        // got all of the parts in place. Now check for names
+        // Check for name collisions
         if ( factory.isProjection(projectionName) ) {
-            throw new IllegalStateException("Non unique projection name " + projectionName);
+            throw new IllegalStateException("Projection name is already being used " + projectionName);
         }
+        // TODO if the BinderStore is streaming ensure the input channel is not the output channel
 
         // Use the factory to internal create the Projection.
         return factory.createProjection(projectionName,
@@ -98,4 +101,5 @@ public class ProjectionBuilderImpl implements ProjectionBuilder {
                                         docIDSelector,
                                         projectionFunction);
     }
+
 }

@@ -1,18 +1,17 @@
 package io.mewbase.binders;
 
 import io.mewbase.bson.BsonObject;
+import io.mewbase.eventsource.EventSink;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiPredicate;
+
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
  * Created by tim on 29/12/16.
  *
- * Binders are in essence persistent maps from Document Id's to Documents in teh following form
+ * Binders are in essence persistent maps from Document Id's to Documents in the following form
  *
  * Key - String - Document Ids
  * Value - BsonObject - Document
@@ -66,5 +65,19 @@ public interface Binder {
      * @return A stream of the matching ids and documents in the binder.
      */
     Stream<KeyVal<String, BsonObject>> getDocuments( Predicate<KeyVal<String,BsonObject>> filter);
+
+
+    /**
+     * Set an EventSink and a channel making this binder stream documents that are put
+     * into this binder onto the given channel
+     */
+    Boolean setStreaming(final EventSink sink, final String channel);
+
+
+    /**
+     * Check if this Binder is streaming docs to an EventSink
+     */
+    Boolean isStreaming();
+
 
 }

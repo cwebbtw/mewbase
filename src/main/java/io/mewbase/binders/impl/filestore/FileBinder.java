@@ -3,6 +3,7 @@ package io.mewbase.binders.impl.filestore;
 
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
+import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 
 import org.slf4j.Logger;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
 /**
  * Created by Nige on 15/11/17.
  */
-public class FileBinder implements Binder {
+public class FileBinder extends StreamableBinder implements Binder {
 
     private final static Logger log = LoggerFactory.getLogger(FileBinder.class);
 
@@ -85,6 +86,7 @@ public class FileBinder implements Binder {
                 throw new CompletionException(exp);
             }
         }, stexec);
+        streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
     }
 

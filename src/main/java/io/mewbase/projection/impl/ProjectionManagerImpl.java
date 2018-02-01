@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -76,7 +76,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
                     Binder docBinder = store.open(binderName);
                     docBinder.get(docID).whenComplete((final BsonObject inputDoc, final Throwable innerExp) -> {
                         // Something broke in the store/binder dont try to apply the projection
-                        // and log the error don't apply the
+                        // and log the error
                         if (innerExp != null) {
                             log.error("Attempt to read document from store failed in " +
                                         " Projection:" + projectionName +

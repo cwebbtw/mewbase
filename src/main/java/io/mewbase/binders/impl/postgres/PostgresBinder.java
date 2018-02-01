@@ -3,6 +3,7 @@ package io.mewbase.binders.impl.postgres;
 
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
+import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ import java.util.stream.Stream;
 /**
  * Created by Nige on 4/12/17.
  */
-public class PostgresBinder implements Binder {
+public class PostgresBinder extends StreamableBinder implements Binder {
 
     private final static Logger log = LoggerFactory.getLogger(PostgresBinder.class);
 
@@ -97,6 +98,7 @@ public class PostgresBinder implements Binder {
                 throw new CompletionException(exp);
             }
         }, stexec);
+        streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
     }
 

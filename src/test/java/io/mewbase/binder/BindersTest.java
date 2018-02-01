@@ -5,20 +5,19 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
 
+import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
+import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.EventSource;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-
-import java.util.HashSet;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.BiPredicate;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -81,8 +80,11 @@ public class BindersTest extends MewbaseTestBase {
        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
        Binder binder = store.open(testBinderName);
+       assertFalse(binder.isStreaming());
+
        BsonObject docPut = createObject();
        assertNull(binder.put("id1234", docPut).get());
+
        BsonObject docGet = binder.get("id1234").get();
        assertEquals(docPut, docGet);
 
@@ -330,9 +332,47 @@ public class BindersTest extends MewbaseTestBase {
     }
 
 
+    @Test
+    public void testStreamsToSink() throws Exception {
+
+        final Config cfg = createConfig();
+        final BinderStore store = BinderStore.instance(cfg);
+        final EventSink sink = EventSink.instance(cfg);
+        final EventSource source = EventSource.instance(cfg);
+
+        final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+        final String eventOutputChannel = "StreamOf" + testBinderName;
+        final String documentID = "id1234";
+
+        Binder binder = store.open(testBinderName);
+        binder.setStreaming(sink, eventOutputChannel);
+        assertTrue(binder.isStreaming());
+
+        CountDownLatch latch = new CountDownLatch(1);
+        // listen to the stream channel
+        source.subscribe(eventOutputChannel, event -> {
+            BsonObject bson = event.getBson();
+            assertNotNull(bson);
+            assertEquals(testBinderName, bson.getString(StreamableBinder.BINDER_NAME_KEY));
+            assertEquals(documentID, bson.getString(StreamableBinder.DOCUMENT_ID_KEY));
+            final BsonObject doc = bson.getBsonObject(StreamableBinder.DOCUMENT_CONTENT_KEY);
+            assertNotNull(doc);
+            assertEquals(1234, (long)doc.getInteger("bub"));
+            assertTrue(doc.getBoolean("wib"));
+            latch.countDown();
+        });
+
+        BsonObject docPut = createObject();
+        binder.put(documentID, docPut).get();
+        latch.await();
+    }
+
+
+
+
     protected BsonObject createObject() {
         BsonObject obj = new BsonObject();
-        obj.put("foo", "bar").put("quux", 1234).put("wib", true);
+        obj.put("foo", "bar").put("bub", 1234).put("wib", true);
         return obj;
     }
 
