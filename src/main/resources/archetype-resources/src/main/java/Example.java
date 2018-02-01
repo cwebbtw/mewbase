@@ -27,7 +27,7 @@ public class Example {
         while (!Thread.interrupted() ) {
             final String timeStamp = "Time :" + Instant.now();
             event.put("timestamp", timeStamp);      // overwrite previous value
-            eventSink.publish(CHANNEL_NAME,event);  // publish the event to the sink on the given channel
+            eventSink.publish(CHANNEL_NAME,event);  // publishSync the event to the sink on the given channel
             Thread.sleep( milliSecondWait );
         }
         eventSink.close();

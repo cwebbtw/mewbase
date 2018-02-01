@@ -62,7 +62,7 @@ public class FileEventChannel  {
             return publish(event);
         } catch (Exception exp) {
             lock.unlock();
-            logger.error("Error attempting publish event to File Event Channel", exp);
+            logger.error("Error attempting publishSync event to File Event Channel", exp);
             throw exp;
         }
     }

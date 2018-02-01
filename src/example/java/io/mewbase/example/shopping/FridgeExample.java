@@ -14,6 +14,7 @@ import io.mewbase.eventsource.impl.nats.NatsEventSource;
 import io.mewbase.projection.ProjectionManager;
 
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 
@@ -43,7 +44,7 @@ public class FridgeExample {
     public static void main(String[] args) throws Exception {
 
         // In order to run a projection set up an EventSource and BinderStore.
-        EventSource src = new NatsEventSource();
+        EventSource src = EventSource.instance();
         BinderStore store = BinderStore.instance();
         ProjectionManager mgr = ProjectionManager.instance(src,store);
 
@@ -78,9 +79,7 @@ public class FridgeExample {
 
         // Send some open close events for this fridge
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
-        sink.publish(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
-
-        Thread.sleep(100);
+        CompletableFuture<BsonObject> fut = sink.publishAsync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
 
         // Consumer of the Docuemnt
         Consumer<BsonObject> statusDocumentConsumer = fridgeStateDoc ->
@@ -90,7 +89,9 @@ public class FridgeExample {
         fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );
 
         // Shut that door
-        sink.publish(FRIDGE_EVENT_CHANNEL_NAME,event.copy().put("status", "shut"));
+        sink.publishSync(FRIDGE_EVENT_CHANNEL_NAME,event.copy().put("status", "shut"));
+
+        // wait for the projection to fire
         Thread.sleep(100);
 
         // Now get the fridge state again

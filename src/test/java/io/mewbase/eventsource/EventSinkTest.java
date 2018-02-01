@@ -5,13 +5,9 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
-
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 
 import java.util.List;
 
@@ -58,7 +54,7 @@ public class EventSinkTest extends MewbaseTestBase {
                         }
                     );
 
-        sink.publish(testChannelName,bsonEvent);
+        sink.publishSync(testChannelName,bsonEvent);
 
         latch.await();
 
@@ -94,7 +90,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
         LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).forEach(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
-            sink.publish(testChannelName,bsonEvent);
+            sink.publishSync(testChannelName,bsonEvent);
         } );
 
         latch.await();

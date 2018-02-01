@@ -40,7 +40,7 @@ public class FileEventSinkTest extends MewbaseTestBase {
 
         final String channelName = "channel";
         final BsonObject evt = new BsonObject().put("key","value");
-        es.publish(channelName,evt);
+        es.publishSync(channelName,evt);
 
         // check that the file has been written
         final long eventNumber = 1;
@@ -60,7 +60,7 @@ public class FileEventSinkTest extends MewbaseTestBase {
 
         final String channelName = "channel";
         final BsonObject evt = new BsonObject().put("key","value");
-        IntStream.range(1, 10).forEach( i -> es.publish(channelName,evt.put("evt",""+i)) );
+        IntStream.range(1, 10).forEach( i -> es.publishSync(channelName,evt.put("evt",""+i)) );
 
         // check that each file has been written
         Set<Path> files =  Files.list(Paths.get(eventPath,channelName)).collect(Collectors.toSet());

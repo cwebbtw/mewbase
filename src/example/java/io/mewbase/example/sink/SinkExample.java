@@ -19,7 +19,7 @@ public class SinkExample {
 
     public static void main(String[] args) throws Exception {
 
-        EventSink eventSink = new NatsEventSink();
+        EventSink eventSink = EventSink.instance();
 
         // Change these for channels and rate changes
         final String CHANNEL_NAME  = "TestChannel";
@@ -32,7 +32,7 @@ public class SinkExample {
         while (!Thread.interrupted() ) {
             final String timeStamp = "Time :" + Instant.now();
             event.put("timestamp", timeStamp);      // overwrite previous value
-            eventSink.publish(CHANNEL_NAME,event);  // publish the event to the sink on the given channel
+            eventSink.publishSync(CHANNEL_NAME,event);  // publish the event to the sink on the given channel
             Thread.sleep( milliSecondWait );
         }
         eventSink.close();

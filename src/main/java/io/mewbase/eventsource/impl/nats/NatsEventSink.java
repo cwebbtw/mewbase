@@ -55,11 +55,11 @@ public class NatsEventSink implements EventSink {
 
 
     @Override
-    public void publish(String channelName, BsonObject event) {
+    public void publishSync(String channelName, BsonObject event) {
         try {
             nats.publish(channelName, event.encode().getBytes());
         } catch (Exception exp) {
-            logger.error("Error attempting publish event to Nats Event Sink", exp);
+            logger.error("Error attempting publishSync event to Nats Event Sink", exp);
         }
     }
 

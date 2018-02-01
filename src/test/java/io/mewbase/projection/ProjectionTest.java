@@ -83,7 +83,7 @@ public class ProjectionTest extends MewbaseTestBase {
     public void testProjectionBuilder() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
-        store.delete(TEST_BINDER);
+
 
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
@@ -130,7 +130,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
-        sink.publish(TEST_CHANNEL, evt);
+        sink.publishSync(TEST_CHANNEL, evt);
 
         latch.await();
         Thread.sleep(100);
@@ -149,8 +149,6 @@ public class ProjectionTest extends MewbaseTestBase {
     public void testProjectionNames() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
-        store.delete(TEST_BINDER);
-
 
         ProjectionManager mgr = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = mgr.builder();
@@ -170,7 +168,6 @@ public class ProjectionTest extends MewbaseTestBase {
     public void testProjectionRecoversFromEventNumber() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
-        store.delete(TEST_BINDER);
 
         ProjectionManager factory = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = factory.builder();
@@ -197,7 +194,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
-        sink.publish(MULTI_EVENT_CHANNEL, evt);
+        sink.publishSync(MULTI_EVENT_CHANNEL, evt);
 
         latch.await();
         Thread.sleep(200);
@@ -232,7 +229,7 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // send another event on the same channel
-        sink.publish(MULTI_EVENT_CHANNEL, evt);
+        sink.publishSync(MULTI_EVENT_CHANNEL, evt);
         // and wait for the result
         newLatch.await();
 
@@ -251,8 +248,6 @@ public class ProjectionTest extends MewbaseTestBase {
     public void testPartialWriteFailsStatefullyCorrect() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
-        store.delete(TEST_BINDER);
-
 
         // Patch the Binder so that fails in the most possible nasty way
         class FailingBinder extends FileBinder {
@@ -312,7 +307,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
-        sink.publish(UNIQUE_CHANNEL_NAME, evt);
+        sink.publishSync(UNIQUE_CHANNEL_NAME, evt);
 
         latch.await();
         Thread.sleep(1000);

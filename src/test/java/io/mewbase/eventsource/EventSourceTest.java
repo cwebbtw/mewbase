@@ -5,6 +5,7 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
+import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +52,7 @@ public class EventSourceTest extends MewbaseTestBase {
                         }
                     );
 
-        sink.publish(testChannelName, bsonEvent);
+        sink.publishSync(testChannelName, bsonEvent);
         latch.await();
 
         subs.unsubscribe();
@@ -239,4 +240,26 @@ public class EventSourceTest extends MewbaseTestBase {
     }
 
 
+    long events = 0;
+    final long increment = 1000;
+    @Test
+    //@Repeat(10)
+    public void testManyEvents() throws Exception {
+        final Config testConfig = createConfig();
+        final EventSink sink = EventSink.instance(testConfig);
+        final EventSource source = EventSource.instance(testConfig);
+
+        events += increment;
+
+        final String testChannelName = "TestManyEvents";
+        final EventSinkUtils utils =  new EventSinkUtils(sink);
+        utils.sendNumberedEvents(testChannelName,(long)0, events);
+
+        long start = Instant.now().toEpochMilli();
+        source.subscribe(testChannelName,  event -> {
+            BsonObject bson = event.getBson();
+        });
+        long end = Instant.now().toEpochMilli();
+        System.out.println("Events:" + events + " Time " + (end-start) );
+    }
 }
