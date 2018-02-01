@@ -4,8 +4,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
-import io.mewbase.eventsource.impl.Utils;
-
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -22,8 +20,7 @@ public class KafkaEventSink implements EventSink {
 
     private final static Logger logger = LoggerFactory.getLogger(KafkaEventSink.class);
 
-    private final KafkaProducer<Long, Byte[]> kafkaProducer;
-
+    private final KafkaProducer<String, byte[]> kafkaProducer;
 
     public KafkaEventSink() {
         this( ConfigFactory.load() );
@@ -38,9 +35,9 @@ public class KafkaEventSink implements EventSink {
         kafkaClientProps.put("batch.size", 64);
         kafkaClientProps.put("linger.ms", 0);   // will still batch for very near (in time records)
         kafkaClientProps.put("buffer.memory", 64 * 1024);
-        kafkaClientProps.put("key.serializer", "org.apache.kafka.common.serialization.LongSerializer");
-        kafkaClientProps.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-        kafkaProducer = new KafkaProducer<>(kafkaClientProps);
+        kafkaProducer = new KafkaProducer<>(kafkaClientProps,
+                new org.apache.kafka.common.serialization.StringSerializer(),
+                new org.apache.kafka.common.serialization.ByteArraySerializer());
         logger.info("Set up KafkaEventSink " + kafkaProducer);
     }
 
@@ -70,10 +67,21 @@ public class KafkaEventSink implements EventSink {
     }
 
 
-    private ProducerRecord<Long, Byte[]> producerRecord(final String channelName, final BsonObject event) {
+    /**
+     * The key will essentially delimit partitioning for our purposes the consumer needs to see all events
+     * in order with the correct event number so all event on a topic need to go in the same partition.
+     * Assumption if we set the key to the same name as the parition then we can ensure it hashes to the same
+     * parition is the broker.
+     * BTW we can still replicate the broker for FT purposes.
+     * @param channelName
+     * @param event
+     * @return
+     */
+    private ProducerRecord<String, byte[]> producerRecord(final String channelName, final BsonObject event) {
         final byte [] eventBytes = event.encode().getBytes();
-        return new ProducerRecord(channelName, Utils.checksum(eventBytes),eventBytes);
+        return new ProducerRecord<>(channelName, channelName, eventBytes);
     }
+
 
     @Override
     public void close() {
