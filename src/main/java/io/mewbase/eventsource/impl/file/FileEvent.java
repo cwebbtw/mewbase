@@ -13,8 +13,6 @@ import java.util.Optional;
 
 class FileEvent implements Event {
 
-    private final static Logger logger = LoggerFactory.getLogger(FileEvent.class);
-
     final long eventNumber;
     final long epochMillis;
     final long crc32;

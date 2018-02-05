@@ -27,9 +27,9 @@ public class KafkaEventSink implements EventSink {
     }
 
     public KafkaEventSink(Config cfg) {
-        final String bootstrapServer = cfg.getString("mewbase.event.sink.kafka.bootstrap");
+        final String bootstrapServers = cfg.getString("mewbase.event.sink.kafka.bootstrap");
         final Properties kafkaClientProps = new Properties();
-        kafkaClientProps.put("bootstrap.servers", "localhost:9092");
+        kafkaClientProps.put("bootstrap.servers", bootstrapServers);
         kafkaClientProps.put("acks", "all");
         kafkaClientProps.put("retries", 0);
         kafkaClientProps.put("batch.size", 64);
