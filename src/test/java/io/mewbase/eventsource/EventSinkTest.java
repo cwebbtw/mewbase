@@ -94,6 +94,7 @@ public class EventSinkTest extends MewbaseTestBase {
         } );
 
         latch.await();
+
         source.close();
         sink.close();
     }
@@ -136,6 +137,7 @@ public class EventSinkTest extends MewbaseTestBase {
                 }).join();
 
         latch.await();
+
         source.close();
         sink.close();
     }

@@ -57,15 +57,11 @@ public class FileEventSubscription implements Subscription {
         });
     }
 
-    @Override
-    public void unsubscribe() {
-        reader.shutdown();
-        dispatcher.shutdown();
-    }
 
     @Override
     public void close() {
-        unsubscribe();
+        reader.shutdown();
+        dispatcher.shutdown();
     }
 
     // This will block only the reading thread

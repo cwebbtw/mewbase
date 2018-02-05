@@ -28,7 +28,7 @@ class ProjectionImpl implements Projection {
 
     @Override
     public void stop() {
-        subs.unsubscribe();
+        subs.close();
         log.info("Projection " + name + " stopped.");
     }
 

@@ -54,8 +54,6 @@ public class EventSourceTest extends MewbaseTestBase {
         sink.publishSync(testChannelName, bsonEvent);
         latch.await();
 
-        subs.unsubscribe();
-
         source.close();
         sink.close();
     }
@@ -240,7 +238,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
     long events = 0;
     final long increment = 1000;
-    @Test
+    // @Test
     // @Repeat(10)
     public void testManyEvents() throws Exception {
         final Config testConfig = createConfig();

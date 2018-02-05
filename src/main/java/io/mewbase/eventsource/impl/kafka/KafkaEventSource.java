@@ -23,6 +23,8 @@ public class KafkaEventSource implements EventSource {
 
     private final Properties kafkaConsumerProps;
 
+    private final List<Subscription> subs = new LinkedList<>();
+
     public KafkaEventSource() {
         this( ConfigFactory.load() );
     }
@@ -41,7 +43,7 @@ public class KafkaEventSource implements EventSource {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToEnd(Arrays.asList(partition0));
-        return new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
@@ -51,7 +53,7 @@ public class KafkaEventSource implements EventSource {
         kafkaConsumer.seekToEnd(Arrays.asList(partition0));
         final long offset = kafkaConsumer.position(partition0);
         kafkaConsumer.seek(partition0 , offset-1);
-        return new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
@@ -59,7 +61,7 @@ public class KafkaEventSource implements EventSource {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seek(partition0 , startInclusive);      // to include this jump back one
-        return new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
@@ -68,11 +70,9 @@ public class KafkaEventSource implements EventSource {
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap(1);
         timeForPartition0.put(partition0,startInstant.toEpochMilli());
-        OffsetAndTimestamp ot = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
-        final long offset = ot.offset();
-        final long timestamp = ot.timestamp();
-        kafkaConsumer.seek(partition0 , offset);
-        return new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        OffsetAndTimestamp offsetAndTimestampt = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
+        kafkaConsumer.seek(partition0 , offsetAndTimestampt.offset());
+        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class KafkaEventSource implements EventSource {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToBeginning(Arrays.asList(partition0));
-        return new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
 
@@ -96,9 +96,19 @@ public class KafkaEventSource implements EventSource {
     }
 
 
+    private Subscription createAndRegisterSubscription(final KafkaConsumer<String, byte[]> kafkaConsumer,
+                                                       final EventHandler eventHandler) {
+        Subscription sub = new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        subs.add(sub);
+        return sub;
+    }
+
+
     @Override
     public void close() {
-        // Todo possible close all subscriptions ???
+        for (Subscription sub : subs) {
+            sub.close();
+        }
     }
 
 }
