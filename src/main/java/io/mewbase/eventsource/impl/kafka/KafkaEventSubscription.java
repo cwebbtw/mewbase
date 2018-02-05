@@ -43,7 +43,7 @@ public class KafkaEventSubscription implements Subscription {
                 try {
                     ConsumerRecords<String, byte[]> records = kafkaConsumer.poll(10);
                     Iterator<ConsumerRecord<String, byte[]>> itr = records.iterator();
-                    while (!itr.hasNext()) {
+                    while (itr.hasNext()) {
                         Event evt = new KafkaEvent(itr.next());
                         eventQueue.put(evt);
                     }

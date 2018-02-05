@@ -20,7 +20,6 @@ import java.util.concurrent.CountDownLatch;
 @RunWith(VertxUnitRunner.class)
 public class EventSourceTest extends MewbaseTestBase {
 
-
     @Test
     public void testConnectToEventSource() throws Exception {
         EventSource es = EventSource.instance(createConfig());
@@ -71,8 +70,8 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestMultiEventChannel";
-        final int START_EVENT_NUMBER = 1;
-        final int END_EVENT_NUMBER = 128;
+        final int START_EVENT_NUMBER = 0;
+        final int END_EVENT_NUMBER = 127;
 
         final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER;
 
@@ -105,7 +104,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         final String testChannelName = "TestMostRecentChannel";
 
-        final int START_EVENT_NUMBER = 1;
+        final int START_EVENT_NUMBER = 0;
         final long MID_EVENT_NUMBER = 64;
         final int END_EVENT_NUMBER = 127;
 
@@ -140,9 +139,9 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestFromNumberChannel";
-        final int START_EVENT_NUMBER = 1;
+        final int START_EVENT_NUMBER = 0;
         final long MID_EVENT_NUMBER = 64;
-        final int END_EVENT_NUMBER = 128;
+        final int END_EVENT_NUMBER = 127;
 
         final int eventsToTest = 64;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
@@ -163,7 +162,7 @@ public class EventSourceTest extends MewbaseTestBase {
         sink.close();
     }
 
-    @Test
+   @Test
     public void testSubscribeFromInstant() throws Exception {
 
         // use test local config
@@ -172,16 +171,15 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestFromInstantChannel";
-        final int START_EVENT_NUMBER = 1;
+        final int START_EVENT_NUMBER = 0;
         final long MID_EVENT_NUMBER = 64;
         final int END_EVENT_NUMBER = 128;
 
         final int eventsToTest = 63;
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
-
         final EventSinkUtils utils =  new EventSinkUtils(sink);
-        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
 
+        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
 
         Thread.sleep(10); // give the events time to rest in the event source
 
@@ -214,7 +212,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestAllChannel";
-        final int START_EVENT_NUMBER = 1;
+        final int START_EVENT_NUMBER = 0;
         final long MID_EVENT_NUMBER = 64;
         final int END_EVENT_NUMBER = 128;
 
@@ -243,7 +241,7 @@ public class EventSourceTest extends MewbaseTestBase {
     long events = 0;
     final long increment = 1000;
     @Test
-    //@Repeat(10)
+    // @Repeat(10)
     public void testManyEvents() throws Exception {
         final Config testConfig = createConfig();
         final EventSink sink = EventSink.instance(testConfig);

@@ -6,14 +6,13 @@ import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 
 public class KafkaEventSource implements EventSource {
@@ -59,7 +58,7 @@ public class KafkaEventSource implements EventSource {
     public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
-        kafkaConsumer.seek(partition0 , startInclusive);
+        kafkaConsumer.seek(partition0 , startInclusive);      // to include this jump back one
         return new KafkaEventSubscription(kafkaConsumer,eventHandler);
     }
 
@@ -67,8 +66,12 @@ public class KafkaEventSource implements EventSource {
     public Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
-        java.util.Map<TopicPartition,java.lang.Long> timeForPartion0 = null;
-        kafkaConsumer.offsetsForTimes(timeForPartion0);
+        java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap(1);
+        timeForPartition0.put(partition0,startInstant.toEpochMilli());
+        OffsetAndTimestamp ot = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
+        final long offset = ot.offset();
+        final long timestamp = ot.timestamp();
+        kafkaConsumer.seek(partition0 , offset);
         return new KafkaEventSubscription(kafkaConsumer,eventHandler);
     }
 
@@ -80,7 +83,7 @@ public class KafkaEventSource implements EventSource {
         return new KafkaEventSubscription(kafkaConsumer,eventHandler);
     }
 
-    
+
 
     private KafkaConsumer<String, byte[]> createAndAssignConsumer(TopicPartition partition) {
         kafkaConsumerProps.put("group.id", UUID.randomUUID().toString());

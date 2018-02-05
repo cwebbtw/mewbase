@@ -2,7 +2,6 @@ package io.mewbase.eventsource.impl.kafka;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
-import io.netty.buffer.ByteBuf;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.time.Instant;
