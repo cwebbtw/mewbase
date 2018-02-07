@@ -24,9 +24,7 @@ public class NatsEventSource implements EventSource {
 
     private final static Logger logger = LoggerFactory.getLogger(NatsEventSource.class);
 
-
     private final Connection nats;
-
 
     public NatsEventSource() {
         this(ConfigFactory.load() );
@@ -81,7 +79,8 @@ public class NatsEventSource implements EventSource {
 
     @Override
     public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
-        SubscriptionOptions opts = new SubscriptionOptions.Builder().startAtSequence(startInclusive).build();
+        // Nats events start at 1 and we are 0 based.
+        SubscriptionOptions opts = new SubscriptionOptions.Builder().startAtSequence(startInclusive+1L).build();
         return subscribeWithOptions( channelName, eventHandler, opts );
     }
 

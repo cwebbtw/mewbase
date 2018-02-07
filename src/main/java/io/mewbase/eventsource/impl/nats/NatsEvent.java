@@ -25,7 +25,7 @@ class NatsEvent implements Event {
     public Instant getInstant()  { return msg.getInstant(); }
 
     @Override
-    public Long getEventNumber() { return msg.getSequence(); }
+    public Long getEventNumber() { return msg.getSequence() - 1L;}  // Nats events start at 1 and we are 0 based.
 
     @Override
     public Long getCrc32() { return (long)msg.getCrc32(); }

@@ -44,7 +44,7 @@ public class EventSourceTest extends MewbaseTestBase {
         source.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
-                        long evtNum = event.getEventNumber();
+                        long evtNum = event.getEventNumber(); // println event num
                         Instant evtTime = event.getInstant();
                         Long evtHash = event.getCrc32();
                         latch.countDown();
@@ -145,6 +145,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
 
         final EventSinkUtils utils =  new EventSinkUtils(sink);
+
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
 
         source.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
@@ -238,8 +239,8 @@ public class EventSourceTest extends MewbaseTestBase {
 
     long events = 0;
     final long increment = 1000;
-    // @Test
-    // @Repeat(10)
+   // @Test
+   // @Repeat(10)
     public void testManyEvents() throws Exception {
         final Config testConfig = createConfig();
         final EventSink sink = EventSink.instance(testConfig);

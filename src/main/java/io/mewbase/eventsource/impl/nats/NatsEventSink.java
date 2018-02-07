@@ -56,12 +56,13 @@ public class NatsEventSink implements EventSink {
     @Override
     public long publishSync(String channelName, BsonObject event) {
         try {
-            return publishAsync(channelName, event).get(5, TimeUnit.SECONDS);
+            nats.publish(channelName, event.encode().getBytes());
         } catch (Exception exp) {
             logger.error("Failed to synchronously publish event " + event, exp);
             return -1;
         }
-
+        // TODO - Cant currently get event number from NATS
+        return 0;
     }
 
     @Override
@@ -72,7 +73,7 @@ public class NatsEventSink implements EventSink {
                 if (err != null) {
                     fut.completeExceptionally(err);
                 } else {
-                    // TODO get event number
+                    // TODO get event number - System.out.println(ackedNuid);
                     fut.complete(0L);
                 }
             });
