@@ -60,7 +60,7 @@ public class CommandManagerImpl implements CommandManager {
     }
 
     @Override
-    public CompletableFuture<BsonObject> execute(final String commandName, final BsonObject context) {
+    public CompletableFuture<Long> execute(final String commandName, final BsonObject context) {
 
         return  getCommand(commandName).thenCompose( cmd ->
                     cmd.execute(context).thenCompose( outputEvt ->

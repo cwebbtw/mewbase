@@ -59,7 +59,8 @@ public class FileEventSource implements EventSource
         Path channelPath = ensureChannelExists(baseDir,channelName);
         try {
             long next = nextEventNumberFromPath(channelPath);
-            return new FileEventSubscription(channelPath, max(0L, next - 1), eventHandler);
+            long currentEventNumber = max(0L, next - 1);
+            return new FileEventSubscription(channelPath, currentEventNumber, eventHandler);
         } catch (Exception exp) {
             throw new CompletionException(exp);
         }
@@ -67,7 +68,7 @@ public class FileEventSource implements EventSource
 
     @Override
     public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
-        final long startEvent = max(startInclusive,1l);
+        final long startEvent = max(startInclusive,0L);
         Path channelPath = ensureChannelExists(baseDir,channelName);
         return new FileEventSubscription(channelPath, startEvent, eventHandler);
     }
@@ -86,7 +87,7 @@ public class FileEventSource implements EventSource
     @Override
     public Subscription subscribeAll(String channelName, EventHandler eventHandler) {
         Path channelPath = ensureChannelExists(baseDir,channelName);
-        return new FileEventSubscription(channelPath,1L, eventHandler);
+        return new FileEventSubscription(channelPath,0L, eventHandler);
     }
 
     @Override

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 
 public class KafkaEventSink implements EventSink {
@@ -32,7 +33,7 @@ public class KafkaEventSink implements EventSink {
         kafkaClientProps.put("bootstrap.servers", bootstrapServers);
         kafkaClientProps.put("acks", "all");
         kafkaClientProps.put("retries", 0);
-        kafkaClientProps.put("batch.size", 64);
+        kafkaClientProps.put("batch.size", 16);
         kafkaClientProps.put("linger.ms", 0);   // will still batch for very near (in time records)
         kafkaClientProps.put("buffer.memory", 64 * 1024);
         kafkaProducer = new KafkaProducer<>(kafkaClientProps,
@@ -43,24 +44,27 @@ public class KafkaEventSink implements EventSink {
 
 
     @Override
-    public void publishSync(final String channelName, final BsonObject event) {
-        try {
-            kafkaProducer.send(producerRecord(channelName, event));
+    public long publishSync(final String channelName, final BsonObject event) {
+
+            CompletableFuture<Long> fut = publishAsync(channelName,event);
             kafkaProducer.flush();
-        } catch (Exception exp) {
-            logger.error("Error attempting publishSync synchronous event to Kafka", exp);
-        }
+            try {
+                return fut.get(5, TimeUnit.SECONDS);
+            } catch(Exception exp ) {
+                logger.error("Synchronous publ;ish failed to write event " + event, exp);
+                return -1;
+            }
     }
 
     @Override
-    public CompletableFuture<BsonObject> publishAsync(final String channelName, final BsonObject event) {
-        final CompletableFuture<BsonObject> fut = new CompletableFuture();
+    public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
+        final CompletableFuture<Long> fut = new CompletableFuture();
         kafkaProducer.send(producerRecord(channelName, event),
                 (RecordMetadata recordMetadata, Exception exp) -> {
-                    if (recordMetadata != null) fut.complete(event);
+                    if (recordMetadata != null) fut.complete(recordMetadata.offset());
                     if (exp != null) fut.completeExceptionally(exp);
-                    // if we got here we are in deep stuff
-                    logger.error("Error attempting publishSync asynchronous event to Kafka", new IllegalStateException());
+                    // strange possible case if both are null
+                    if (!fut.isDone()) fut.completeExceptionally(new IllegalStateException());
                     }
                 );
         return fut;
@@ -81,7 +85,6 @@ public class KafkaEventSink implements EventSink {
         final byte [] eventBytes = event.encode().getBytes();
         return new ProducerRecord<>(channelName, channelName, eventBytes);
     }
-
 
     @Override
     public void close() {

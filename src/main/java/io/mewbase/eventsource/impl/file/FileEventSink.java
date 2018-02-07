@@ -34,21 +34,21 @@ public class FileEventSink implements EventSink {
 
 
     @Override
-    public void publishSync(String channelName, BsonObject event) {
+    public long publishSync(String channelName, BsonObject event) {
         FileEventChannel channel = channels.computeIfAbsent(channelName,
                     key -> new FileEventChannel(baseDir.resolve(key)));
         try {
-            channel.publish(event);
+            return channel.publish(event);
         } catch (Exception exp) {
             logger.error("Error attempting publishSync event to FileEventSink", exp);
+            return -1;
         }
     }
 
     @Override
-    public CompletableFuture<BsonObject> publishAsync(final String channelName, final BsonObject event) {
+    public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
         // Todo current impl needs work to write async
-        publishSync(channelName,event);
-        CompletableFuture<BsonObject> fut = CompletableFuture.supplyAsync( () -> event);
+        CompletableFuture<Long> fut = CompletableFuture.completedFuture(publishSync(channelName,event));
         return fut;
     }
 

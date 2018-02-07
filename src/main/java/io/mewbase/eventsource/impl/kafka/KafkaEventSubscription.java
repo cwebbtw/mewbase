@@ -1,8 +1,9 @@
 package io.mewbase.eventsource.impl.kafka;
 
-import io.mewbase.eventsource.Event;
+
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.Subscription;
+import io.mewbase.eventsource.impl.EventDispatcher;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -11,8 +12,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import java.util.Iterator;
 import java.util.concurrent.*;
 
 
@@ -20,70 +19,41 @@ public class KafkaEventSubscription implements Subscription {
 
     private final static Logger logger = LoggerFactory.getLogger(KafkaEventSubscription.class);
 
-    // max queue size
-    private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>(100);
-
-    private final ExecutorService reader = Executors.newSingleThreadExecutor();
-    private Boolean readerRunning = true;
-    private final ExecutorService  dispatcher = Executors.newSingleThreadExecutor();
-    private Boolean dispatcherRunning = true;
-
     private final KafkaConsumer<String, byte[]> kafkaConsumer;
+    private final EventDispatcher<ConsumerRecord<String, byte[]>> dispatcher;
+    private final Future reader;
+
 
     public KafkaEventSubscription(final KafkaConsumer<String, byte[]> kafkaConsumer, EventHandler handler) {
 
         this.kafkaConsumer = kafkaConsumer;
 
-       reader.submit(() -> {
+        dispatcher = new EventDispatcher<ConsumerRecord<String, byte[]>>(
+                (consumerRecord) -> new  KafkaEvent(consumerRecord),
+                handler);
 
-            while (readerRunning) {
+        reader = Executors.newSingleThreadExecutor().submit( () -> {
+            while (!Thread.interrupted()) {
                 try {
                     ConsumerRecords<String, byte[]> records = kafkaConsumer.poll(10);
-                    Iterator<ConsumerRecord<String, byte[]>> itr = records.iterator();
-                    while (itr.hasNext()) {
-                        Event evt = new KafkaEvent(itr.next());
-                        eventQueue.put(evt);
+                     for (ConsumerRecord<String, byte[]> record : records ) {
+                        dispatcher.dispatch(record);
                     }
                 } catch (InterruptedException exp ) {
-                    logger.info("Event reader thread closing");
-                    readerRunning = false;
-                } catch (Exception exp ) {
-                    logger.error("Error in event reader", exp);
+                    logger.info("Closing down Kafka Event Subscription", exp);
                 }
             }
             kafkaConsumer.close();
         });
-
-        // process the events
-        dispatcher.submit(() -> {
-            while (dispatcherRunning || !eventQueue.isEmpty()) {
-                try {
-                    handler.onEvent(eventQueue.take());
-                } catch (InterruptedException exp) {
-                    logger.info("Event reader thread closing");
-                    dispatcherRunning = false;
-                } catch (Exception exp) {
-                    logger.error("Error in event handler", exp);
-                }
-            }
-        });
-        logger.info("Set up KafkaEventSubscription");
+        logger.info("Set up Kafka Event Subscription");
     }
-
 
     @Override
     public void close() {
-        readerRunning = false;
-        dispatcherRunning = false;
-        reader.shutdown();
-        dispatcher.shutdown();
-        try {
-            reader.awaitTermination(500, TimeUnit.MILLISECONDS);
-            dispatcher.awaitTermination(500, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            reader.shutdownNow();
-            dispatcher.shutdownNow();
-        }
+        // cancel and interrupt the reader.
+        reader.cancel(true);
+        // drain and stop the dispatcher.
+        dispatcher.stop();
     }
 
 }

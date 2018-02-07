@@ -65,7 +65,7 @@ public class CommandTest extends MewbaseTestBase {
         final String COMMAND_NAME = "NotACommand";
         assertNotNull(mgr.commandBuilder());
         assertEquals(0, mgr.getCommands().count()); // no commands registered
-        CompletableFuture<BsonObject> futEvt = mgr.execute(COMMAND_NAME, new BsonObject() );
+        CompletableFuture<Long> futEvt = mgr.execute(COMMAND_NAME, new BsonObject() );
         futEvt.handle( (good, bad) -> {
            assertNull("Executing a non command should fail.", good);
            assertNotNull("Executing a non command should not result in an event", bad);
@@ -116,8 +116,8 @@ public class CommandTest extends MewbaseTestBase {
 
         // Execute the command
         BsonObject params = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
-        BsonObject event = mgr.execute(COMMAND_NAME, params).join();
-        assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));
+        mgr.execute(COMMAND_NAME, params).join();
+
 
         // wait for the evtHandler to receive the event and check that the event was placed on
         // the correct channel and was in hte correct transformed state.
@@ -191,7 +191,7 @@ public class CommandTest extends MewbaseTestBase {
         assertTrue(storedNames.containsAll(generatedNames));
 
         final BsonObject params = new BsonObject();
-        Stream<CompletableFuture<BsonObject>> futs = generatedNames.stream().map(name ->
+        Stream<CompletableFuture<Long>> futs = generatedNames.stream().map(name ->
             mgr.execute(name, params.put(COMMAND_INPUT_KEY,name))
         );
 

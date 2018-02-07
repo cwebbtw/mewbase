@@ -41,7 +41,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Subscription subs = source.subscribe(testChannelName,  event ->  {
+        source.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
                         long evtNum = event.getEventNumber();

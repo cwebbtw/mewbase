@@ -2,6 +2,7 @@ package io.mewbase.eventsource.impl.kafka;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
+import io.mewbase.eventsource.impl.EventUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.time.Instant;
@@ -16,12 +17,10 @@ public class KafkaEvent implements Event {
     BsonObject event = null;
 
     public KafkaEvent(ConsumerRecord<String, byte[]> rec) {
-
         eventNumber = rec.offset();
         epochMillis = rec.timestamp();
-        crc32 = 0l;     // Todo compute crc val on ingest
         eventBuf = rec.value();
-
+        crc32 = EventUtils.checksum(eventBuf)  ;
     }
 
     @Override

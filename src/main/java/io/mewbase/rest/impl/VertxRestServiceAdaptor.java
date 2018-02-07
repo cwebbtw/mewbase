@@ -200,7 +200,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
             final JsonObject bodyJson = bodyBuffer.length() == 0 ? new JsonObject() : rc.getBodyAsJson();
             context.put("body", new BsonObject(bodyJson));
             // Dispatch the command in context on another thread
-            CompletableFuture<BsonObject> cf = commandMgr.execute(commandName, context);
+            CompletableFuture<Long> cf = commandMgr.execute(commandName, context);
             rc.response().setStatusCode(200).end();
         });
         return this;

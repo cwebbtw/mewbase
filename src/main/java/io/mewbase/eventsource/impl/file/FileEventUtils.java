@@ -2,7 +2,7 @@ package io.mewbase.eventsource.impl.file;
 
 
 import io.mewbase.bson.BsonObject;
-import io.mewbase.eventsource.impl.Utils;
+import io.mewbase.eventsource.impl.EventUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -50,7 +50,7 @@ public interface FileEventUtils {
                     } )
                     .mapToLong(f -> Long.parseLong(f.toFile().getName()))
                     .max()
-                    .orElse(0) + 1l;   //
+                    .orElse(-1) + 1l;   //
     }
 
 
@@ -91,13 +91,13 @@ public interface FileEventUtils {
     }
 
 
-    static ByteBuf eventToFile(final BsonObject event) {
+    static byte[] eventToByteArray(final BsonObject event) {
         ByteBuf headedBuf = Unpooled.buffer();
         final byte [] bytes =  event.encode().getBytes();
         headedBuf.writeLong(Instant.now().toEpochMilli());
-        headedBuf.writeLong(Utils.checksum(bytes));
+        headedBuf.writeLong(EventUtils.checksum(bytes));
         headedBuf.writeBytes(bytes);
-        return headedBuf;
+        return headedBuf.array();
     }
 
 

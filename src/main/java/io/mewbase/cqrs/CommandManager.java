@@ -53,6 +53,6 @@ public interface CommandManager {
      * @return A future of the resulting event that was sent on the given
      * EventSink's outputChannel.
      */
-    CompletableFuture<BsonObject> execute(String commandName, BsonObject context);
+    CompletableFuture<Long> execute(String commandName, BsonObject context);
 
 }

@@ -70,8 +70,8 @@ public class KafkaEventSource implements EventSource {
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap(1);
         timeForPartition0.put(partition0,startInstant.toEpochMilli());
-        OffsetAndTimestamp offsetAndTimestampt = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
-        kafkaConsumer.seek(partition0 , offsetAndTimestampt.offset());
+        OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
+        kafkaConsumer.seek(partition0 , offsetAndTimestamp.offset());
         return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
@@ -105,11 +105,7 @@ public class KafkaEventSource implements EventSource {
 
 
     @Override
-    public void close() {
-        for (Subscription sub : subs) {
-            sub.close();
-        }
-    }
+    public void close() {  subs.forEach( sub -> sub.close() );  }
 
 }
 

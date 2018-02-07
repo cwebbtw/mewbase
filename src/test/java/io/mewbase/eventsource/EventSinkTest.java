@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -53,9 +54,8 @@ public class EventSinkTest extends MewbaseTestBase {
                         latch.countDown();
                         }
                     );
-
-        sink.publishSync(testChannelName,bsonEvent);
-
+        long eventNumber = sink.publishSync(testChannelName,bsonEvent);
+        assertEquals(0, eventNumber);
         latch.await();
 
         source.close();
@@ -109,8 +109,8 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestManyAsyncEventChannel";
-        final int START_EVENT_NUMBER = 1;
-        final int END_EVENT_NUMBER = 128;
+        final int START_EVENT_NUMBER = 0;
+        final int END_EVENT_NUMBER = 127;
 
         final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER;
 
@@ -124,12 +124,13 @@ public class EventSinkTest extends MewbaseTestBase {
         });
 
 
-        List<CompletableFuture<BsonObject>> futs = LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(l -> {
+        List<CompletableFuture<Long>> futs = LongStream.range(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
             return sink.publishAsync(testChannelName,bsonEvent);
         } ).collect(Collectors.toList());
 
         // Ensure all of the futures complete successfully
+        assertEquals(futs.size(),TOTAL_EVENTS);
         CompletableFuture.allOf((futs.toArray(new CompletableFuture[futs.size()]))).handle(
                 (good, bad) -> {
                     if (bad != null) fail("One or more publishAsync calls failed");

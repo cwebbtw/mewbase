@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -53,23 +54,26 @@ public class NatsEventSink implements EventSink {
 
 
     @Override
-    public void publishSync(String channelName, BsonObject event) {
+    public long publishSync(String channelName, BsonObject event) {
         try {
-            nats.publish(channelName, event.encode().getBytes());
+            return publishAsync(channelName, event).get(5, TimeUnit.SECONDS);
         } catch (Exception exp) {
-            logger.error("Error attempting publishSync event to Nats Event Sink", exp);
+            logger.error("Failed to synchronously publish event " + event, exp);
+            return -1;
         }
+
     }
 
     @Override
-    public CompletableFuture<BsonObject> publishAsync(final String channelName, final BsonObject event) {
-        CompletableFuture<BsonObject> fut = new CompletableFuture<>();
+    public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
+        CompletableFuture<Long> fut = new CompletableFuture<>();
         try {
             nats.publish(channelName, event.encode().getBytes(), (String ackedNuid, Exception err) -> {
                 if (err != null) {
                     fut.completeExceptionally(err);
                 } else {
-                    fut.complete(event);
+                    // TODO get event number
+                    fut.complete(0L);
                 }
             });
         } catch (IOException exp) {

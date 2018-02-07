@@ -79,7 +79,7 @@ public class FridgeExample {
 
         // Send some open close events for this fridge
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
-        CompletableFuture<BsonObject> fut = sink.publishAsync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
+        CompletableFuture<Long> fut = sink.publishAsync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
 
         // Consumer of the Docuemnt
         Consumer<BsonObject> statusDocumentConsumer = fridgeStateDoc ->
