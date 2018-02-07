@@ -24,26 +24,21 @@ public class EventDispatcher<T> {
     private final EventHandler evtHandler;
 
     private final LinkedBlockingQueue<Event> boundedBuffer = new LinkedBlockingQueue<>(16);
-    private Boolean scheduleStop = false;
-    private CountDownLatch stopped = new CountDownLatch(1);
 
+    private final Future dispFut;
 
     public EventDispatcher(Function<T, Event> evtTransformer, EventHandler evtHandler) {
         this.evtTransformer = evtTransformer;
         this.evtHandler = evtHandler;
 
-        Executors.newSingleThreadExecutor().submit( () -> {
-            while (!scheduleStop || !boundedBuffer.isEmpty()) {
+        dispFut = Executors.newSingleThreadExecutor().submit( () -> {
+            while (!Thread.interrupted() ) {
                 try {
                     evtHandler.onEvent(boundedBuffer.take());
                 } catch (InterruptedException exp) {
-                    logger.info("Event dispatcher interrupted");
-                    scheduleStop = true;
-                } catch (Exception exp) {
-                    logger.error("Error event dispatching event", exp);
+                    logger.info("Event dispatcher stopped");
                 }
             }
-            stopped.countDown();
         });
     }
 
@@ -53,18 +48,11 @@ public class EventDispatcher<T> {
      * backlog is cleared
      */
     public void dispatch(T specificRecord) throws InterruptedException {
-        if (!scheduleStop) {
-            boundedBuffer.put(evtTransformer.apply(specificRecord));
-        }
+        boundedBuffer.put(evtTransformer.apply(specificRecord));
     }
 
     public void stop() {
-        scheduleStop = true;
-        try {
-            stopped.await(5, TimeUnit.SECONDS);
-        } catch (Exception exp) {
-            logger.error("Error draining event queue whilst stopping");
-        }
+        dispFut.cancel(true);
     }
 
 }

@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -44,12 +45,14 @@ public class EventSourceTest extends MewbaseTestBase {
         source.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
-                        long evtNum = event.getEventNumber(); // println event num
+                        long evtNum = event.getEventNumber();
                         Instant evtTime = event.getInstant();
                         Long evtHash = event.getCrc32();
                         latch.countDown();
                         }
                     );
+
+        TimeUnit.MILLISECONDS.sleep(10);
 
         sink.publishSync(testChannelName, bsonEvent);
         latch.await();

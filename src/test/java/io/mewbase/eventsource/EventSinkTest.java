@@ -11,8 +11,10 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -41,7 +43,8 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "singleEventSink";
+        // make the channel unique so that the event number is always zero below.
+        final String testChannelName = "SingleEventSink" + UUID.randomUUID();;
         final String inputUUID = randomString();
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
@@ -54,6 +57,9 @@ public class EventSinkTest extends MewbaseTestBase {
                         latch.countDown();
                         }
                     );
+
+        TimeUnit.MILLISECONDS.sleep(10);
+
         long eventNumber = sink.publishSync(testChannelName,bsonEvent);
         assertEquals(0, eventNumber);
         latch.await();

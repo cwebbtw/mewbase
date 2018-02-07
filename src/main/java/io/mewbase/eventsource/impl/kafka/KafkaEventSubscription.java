@@ -40,7 +40,7 @@ public class KafkaEventSubscription implements Subscription {
                         dispatcher.dispatch(record);
                     }
                 } catch (InterruptedException exp ) {
-                    logger.info("Closing down Kafka Event Subscription", exp);
+                    logger.info("Closing down Kafka Event Subscription");
                 }
             }
             kafkaConsumer.close();
@@ -50,9 +50,9 @@ public class KafkaEventSubscription implements Subscription {
 
     @Override
     public void close() {
-        // cancel and interrupt the reader.
+        // cancel and interrupt the reader
         reader.cancel(true);
-        // drain and stop the dispatcher.
+        // drain and stop the dispatcher
         dispatcher.stop();
     }
 
