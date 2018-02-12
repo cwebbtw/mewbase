@@ -173,7 +173,7 @@ public class ProjectionTest extends MewbaseTestBase {
         ProjectionBuilder builder = factory.builder();
 
         final String TEST_BASKET_ID = "TestBasket";
-        final Integer RESULT = new Integer(27);
+        final Integer RESULT = new Integer(1);
 
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -197,6 +197,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publishSync(MULTI_EVENT_CHANNEL, evt);
 
         latch.await();
+
         Thread.sleep(200);
 
         // Recover the new document
@@ -208,13 +209,12 @@ public class ProjectionTest extends MewbaseTestBase {
         projection.stop();
 
         // binder now has offset event and valid current document
-        // rebuild everything as tho' we had restarted.
+        // rebuild everything as though we had restarted.
         ProjectionManager newFactory = ProjectionManager.instance(source,store);
-        ProjectionBuilder newBuilder = newFactory.builder();
 
         final CountDownLatch newLatch = new CountDownLatch(1);
 
-        Projection newProjection = newBuilder
+        Projection newProjection = newFactory.builder()
                 .named(TEST_PROJECTION_NAME)
                 .projecting(MULTI_EVENT_CHANNEL)
                 .onto(TEST_BINDER)
@@ -233,7 +233,7 @@ public class ProjectionTest extends MewbaseTestBase {
         // and wait for the result
         newLatch.await();
 
-        Thread.sleep(2000);
+        Thread.sleep(200);
 
         // Recover the new document
         BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();
@@ -283,14 +283,13 @@ public class ProjectionTest extends MewbaseTestBase {
 
         // copies the code exactly from a previous succeeding test.
         ProjectionManager manager = ProjectionManager.instance(source,failingStore);
-        ProjectionBuilder builder = manager.builder();
 
         final String TEST_BASKET_ID = "TestBasket";
         final Integer RESULT = new Integer(27);
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Projection projection = builder
+        Projection projection = manager.builder()
                 .named(UNIQUE_PROJECTION_NAME)
                 .projecting(UNIQUE_CHANNEL_NAME)
                 .onto(TEST_BINDER)
@@ -310,7 +309,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publishSync(UNIQUE_CHANNEL_NAME, evt);
 
         latch.await();
-        Thread.sleep(1000);
+        Thread.sleep(200);
 
         // Try to recover the new document which should not have been written
         Binder binder = store.open(TEST_BINDER);
