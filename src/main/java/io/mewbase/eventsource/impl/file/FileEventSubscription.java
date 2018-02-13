@@ -23,6 +23,8 @@ public class FileEventSubscription implements Subscription {
 
     private final Path channelPath;
 
+    private Boolean closing = false;
+
     public FileEventSubscription(final Path channelPath, final long firstEventNumber, final EventHandler eventHandler) {
 
         this.channelPath = channelPath;
@@ -32,27 +34,27 @@ public class FileEventSubscription implements Subscription {
 
         reader = Executors.newSingleThreadExecutor().submit( () -> {
             long targetEvent = firstEventNumber;
-            while (!Thread.interrupted()) {
+            while (!closing) {
                 try {
                     FileEvent evt = waitForEvent(targetEvent);
                     dispatcher.dispatch(evt);
                     targetEvent++;
                 } catch (InterruptedException exp ) {
-                    logger.info("Event reader thread closing");
+                    closing = true;
                 } catch (Exception exp ) {
                     logger.error("Error in event reader",exp);
                 }
             }
+            logger.info("Subscription closed for channel "+ channelPath.getFileName());
         });
     }
 
 
     @Override
-    public void close() {
+    public void close()  {
         reader.cancel(true);
         // drain and stop the dispatcher.
         dispatcher.stop();
-
     }
 
     // This will sleep only the reading thread

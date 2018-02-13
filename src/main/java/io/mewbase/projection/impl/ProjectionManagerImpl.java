@@ -68,6 +68,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
                                 final BiFunction<BsonObject, Event, BsonObject> projectionFunction) {
 
         EventHandler eventHandler =  (Event event) -> {
+            try {
                 if (eventFilter.apply(event)) {
                     String docID = docIDSelector.apply(event);
                     if (docID == null) {
@@ -76,7 +77,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
                         try {
                             executeProjection(projectionName, binderName, docID, projectionFunction, event);
                         } catch (Exception exp) {
-                            log.error("Project failed to execute - Stopping" +
+                            log.error("Projection failed to execute - Stopping" +
                                     " Projection:" + projectionName +
                                     " Binder:" + binderName +
                                     " Document ID:" + docID, exp);
@@ -84,7 +85,10 @@ public class ProjectionManagerImpl implements ProjectionManager {
                         }
                     }
                 }
-            };
+            } catch (Exception exp) {
+                log.error("Projection event handler failed", exp);
+            }
+        };
 
         Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 

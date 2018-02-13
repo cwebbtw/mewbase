@@ -13,8 +13,6 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
-
-
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
 import io.vertx.ext.unit.junit.Repeat;
@@ -54,10 +52,11 @@ public class ProjectionTest extends MewbaseTestBase {
     private BinderStore store = null;
     private EventSource source = null;
     private EventSink sink = null;
+    private Config cfg = null;
 
     @Before
     public void before() throws Exception {
-        Config cfg = createConfig();
+        cfg = createConfig();
         store = BinderStore.instance(cfg);
         source = EventSource.instance(cfg);
         sink = EventSink.instance(cfg);
@@ -106,7 +105,6 @@ public class ProjectionTest extends MewbaseTestBase {
 
         ProjectionManager manager = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = manager.builder();
-
 
         final String TEST_BASKET_ID = "TestBasket";
         final Integer RESULT = new Integer(27);
@@ -164,7 +162,60 @@ public class ProjectionTest extends MewbaseTestBase {
 
 
     @Test
-    //@Repeat(50)
+    public void testProjectionStopsOnStop() throws Exception {
+
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+
+        ProjectionManager factory = ProjectionManager.instance(source,store);
+        ProjectionBuilder builder = factory.builder();
+
+        final String TEST_BASKET_ID = "TestBasket";
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final String MULTI_EVENT_CHANNEL = "MultiEventChannel";
+
+        Projection projection = builder
+                .named(TEST_PROJECTION_NAME)
+                .projecting(MULTI_EVENT_CHANNEL)
+                .onto(TEST_BINDER)
+                .filteredBy(event -> true)
+                .identifiedBy(event -> event.getBson().getString(BASKET_ID_FIELD))
+                .as( (basket, event) -> {
+                    int visit = event.getBson().getInteger("counter",0);
+                    BsonObject out = event.getBson().put("output", visit+1);
+                    latch.countDown();
+                    return out;
+                })
+                .create();
+
+        // Send an event to the channel which the projection is subscribed to.
+        BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
+        sink.publishSync(MULTI_EVENT_CHANNEL, evt);
+
+        latch.await();
+        Thread.sleep(100);  // let the projextion fire off the event
+
+        Binder binder = store.open(TEST_BINDER);
+        BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
+        assertNotNull(basketDoc);
+        assertEquals(1,(long)basketDoc.getInteger("output"));
+
+        projection.stop();
+        Thread.sleep(100);  // let the projection stop.
+
+        BsonObject evt2 = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
+        sink.publishSync(MULTI_EVENT_CHANNEL, evt2);
+        Thread.sleep(100);  // let the event write and allow time to be processed (which should not happen)
+
+        // ensure that the above event hasnt triggered another write.
+        BsonObject sameBasketDoc = binder.get(TEST_BASKET_ID).get();
+        assertNotNull(sameBasketDoc);
+        assertEquals(1,(long)sameBasketDoc.getInteger("output"));
+    }
+
+
+    @Test
     public void testProjectionRecoversFromEventNumber() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
@@ -198,7 +249,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         latch.await();
 
-        Thread.sleep(200);
+        Thread.sleep(100);
 
         // Recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -207,9 +258,12 @@ public class ProjectionTest extends MewbaseTestBase {
         assertEquals(RESULT,basketDoc.getInteger("output"));
 
         projection.stop();
+        Thread.sleep(100);
 
         // binder now has offset event and valid current document
         // rebuild everything as though we had restarted.
+        source = EventSource.instance(cfg);
+        sink = EventSink.instance(cfg);
         ProjectionManager newFactory = ProjectionManager.instance(source,store);
 
         final CountDownLatch newLatch = new CountDownLatch(1);
@@ -230,17 +284,19 @@ public class ProjectionTest extends MewbaseTestBase {
 
         // send another event on the same channel
         sink.publishSync(MULTI_EVENT_CHANNEL, evt);
-        // and wait for the result
+
         newLatch.await();
 
-        Thread.sleep(200);
+        Thread.sleep(100);
 
         // Recover the new document
-        BsonObject newBasketDoc = binder.get(TEST_BASKET_ID).get();
+        CompletableFuture<BsonObject> f = binder.get(TEST_BASKET_ID);
+        BsonObject newBasketDoc = f.get();
         assertNotNull(newBasketDoc);
         assertEquals(RESULT+RESULT,(long)newBasketDoc.getInteger("output"));
 
         newProjection.stop();
+
     }
 
 

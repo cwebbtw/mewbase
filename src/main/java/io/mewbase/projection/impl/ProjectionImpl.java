@@ -31,7 +31,7 @@ class ProjectionImpl implements Projection {
     @Override
     public void stop() {
         subs.close();
-        log.info("Projection " + name + " stopped.");
+        log.info("Projection " + name + " closing down.");
     }
 
 }

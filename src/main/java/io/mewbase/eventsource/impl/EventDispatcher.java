@@ -18,7 +18,7 @@ import java.util.function.Function;
  */
 public class EventDispatcher<T> {
 
-    private final static Logger logger = LoggerFactory.getLogger(KafkaEventSubscription.class);
+    private final static Logger logger = LoggerFactory.getLogger(EventDispatcher.class);
 
     private final Function<T, Event> evtTransformer;
     private final EventHandler evtHandler;
@@ -27,21 +27,23 @@ public class EventDispatcher<T> {
 
     private final Future dispFut;
 
+    private Boolean closing = false;
+
     public EventDispatcher(Function<T, Event> evtTransformer, EventHandler evtHandler) {
         this.evtTransformer = evtTransformer;
         this.evtHandler = evtHandler;
 
         dispFut = Executors.newSingleThreadExecutor().submit( () -> {
-            while (!Thread.interrupted() ) {
+            while (!closing ) {
                 try {
                     evtHandler.onEvent(boundedBuffer.take());
                 } catch (InterruptedException exp) {
-                    logger.info("Event dispatcher stopped");
+                    closing = true;
                 }
             }
+            logger.info("Event dispatcher stopped.");
         });
     }
-
 
     /**
      * Dispatch will queue a number of events and then block the calling thread while the
