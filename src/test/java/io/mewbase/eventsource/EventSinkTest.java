@@ -5,22 +5,21 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
-
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 import java.util.List;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -44,7 +43,8 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "singleEventSink";
+        // make the channel unique so that the event number is always zero below.
+        final String testChannelName = "SingleEventSink" + UUID.randomUUID();;
         final String inputUUID = randomString();
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
@@ -58,8 +58,10 @@ public class EventSinkTest extends MewbaseTestBase {
                         }
                     );
 
-        sink.publish(testChannelName,bsonEvent);
+        TimeUnit.MILLISECONDS.sleep(10);
 
+        long eventNumber = sink.publishSync(testChannelName,bsonEvent);
+        assertEquals(0, eventNumber);
         latch.await();
 
         source.close();
@@ -94,10 +96,11 @@ public class EventSinkTest extends MewbaseTestBase {
 
         LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).forEach(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
-            sink.publish(testChannelName,bsonEvent);
+            sink.publishSync(testChannelName,bsonEvent);
         } );
 
         latch.await();
+
         source.close();
         sink.close();
     }
@@ -112,8 +115,8 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestManyAsyncEventChannel";
-        final int START_EVENT_NUMBER = 1;
-        final int END_EVENT_NUMBER = 128;
+        final int START_EVENT_NUMBER = 0;
+        final int END_EVENT_NUMBER = 127;
 
         final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER;
 
@@ -127,12 +130,13 @@ public class EventSinkTest extends MewbaseTestBase {
         });
 
 
-        List<CompletableFuture<BsonObject>> futs = LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(l -> {
+        List<CompletableFuture<Long>> futs = LongStream.range(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
             return sink.publishAsync(testChannelName,bsonEvent);
         } ).collect(Collectors.toList());
 
         // Ensure all of the futures complete successfully
+        assertEquals(futs.size(),TOTAL_EVENTS);
         CompletableFuture.allOf((futs.toArray(new CompletableFuture[futs.size()]))).handle(
                 (good, bad) -> {
                     if (bad != null) fail("One or more publishAsync calls failed");
@@ -140,6 +144,7 @@ public class EventSinkTest extends MewbaseTestBase {
                 }).join();
 
         latch.await();
+
         source.close();
         sink.close();
     }

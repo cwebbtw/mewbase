@@ -12,15 +12,6 @@ public class NatsSubscription implements io.mewbase.eventsource.Subscription {
     }
 
     @Override
-    public void unsubscribe()   {
-        try {
-            subs.unsubscribe();
-        } catch (Exception e) {
-            // TODO log it
-        }
-    }
-
-    @Override
     public void close() {
         subs.close();
     }

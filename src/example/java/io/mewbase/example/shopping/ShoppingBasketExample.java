@@ -82,11 +82,12 @@ public class ShoppingBasketExample {
         BsonObject addEvent = event.copy().put(EVENT_TYPE_KEY, ADD_EVENT);
         BsonObject remEvent = event.copy().put(EVENT_TYPE_KEY, REMOVE_EVENT);
 
-        sink.publish(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod1234").put("quantity", 2));
-        sink.publish(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod2341").put("quantity", 1));
-        sink.publish(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod5432").put("quantity", 3));
-        sink.publish(ORDERS_EVENT_CHANNEL, remEvent.copy().put("productID", "prod5432").put("quantity", 1));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod1234").put("quantity", 2));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod2341").put("quantity", 1));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod5432").put("quantity", 3));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, remEvent.copy().put("productID", "prod5432").put("quantity", 1));
 
+        // Todo await the CompleteableFutures rather than
         Thread.sleep(100);
 
         // Consumer of the Basket

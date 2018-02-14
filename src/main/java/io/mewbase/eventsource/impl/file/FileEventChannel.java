@@ -49,7 +49,7 @@ public class FileEventChannel  {
             lock.lock();
             final long assignedEventNumber = nextEventNumber.getAndIncrement();
             Path fullPath = channelPath.resolve(FileEventUtils.pathFromEventNumber(assignedEventNumber));
-            Files.write(fullPath, FileEventUtils.eventToFile(event).array(),
+            Files.write(fullPath, FileEventUtils.eventToByteArray(event),
                     CREATE_NEW, // throws exception if another process has just created this file.
                     WRITE,      // going to write into the file
                     SYNC        // write contents and meta data on sync
@@ -62,7 +62,7 @@ public class FileEventChannel  {
             return publish(event);
         } catch (Exception exp) {
             lock.unlock();
-            logger.error("Error attempting publish event to File Event Channel", exp);
+            logger.error("Error attempting publishSync event to File Event Channel", exp);
             throw exp;
         }
     }

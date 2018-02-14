@@ -26,10 +26,12 @@ class ProjectionImpl implements Projection {
         return name;
     }
 
+
+
     @Override
     public void stop() {
-        subs.unsubscribe();
-        log.info("Projection " + name + " stopped.");
+        subs.close();
+        log.info("Projection " + name + " closing down.");
     }
 
 }

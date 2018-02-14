@@ -5,10 +5,13 @@ services:
 
 before_install:
 - docker pull nats-streaming
+- docker pull spotify/kafka
+- docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=localhost --env ADVERTISED_PORT=9092 -d spotify/kafka
 - docker run -p 4222:4222 -p 8222:8222 -d  nats-streaming
+
 # Hold the bus while we work out collision with DockerCompose
 # - docker pull postgres
-# - docker run -p 5432:5432 -e POSTGRES_PASSWORD=mewbase -e POSTGRES_USER=mewbase -d
+# - docker run -p 5432:5432 -e POSTGRES_PASSWORD=mewbase -e POSTGRES_USER=mewbase
 - docker ps -a
 
 jdk:

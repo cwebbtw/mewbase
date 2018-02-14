@@ -2,6 +2,7 @@ package io.mewbase.eventsource.impl.file;
 
 
 import io.mewbase.bson.BsonObject;
+import io.mewbase.eventsource.impl.EventUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -14,9 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
-
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public interface FileEventUtils {
@@ -34,16 +33,24 @@ public interface FileEventUtils {
     /**
      * Look at all the files in the channel and return the event number of the next one
      * to be created.
-     * Events are numbered starting from 1
      * @param channelPath
      * @return theNextValidEventNumber
      */
     static long nextEventNumberFromPath(final Path channelPath) throws IOException {
+        AtomicLong currentlyMostRecent = new AtomicLong();
         return Files.list(channelPath)
-                    .filter(f -> Files.isRegularFile(f))
+                    //.filter(f -> Files.isRegularFile(f))
+                    .filter( f ->  {
+                        if  (f.toFile().lastModified() >= currentlyMostRecent.get()) {
+                            currentlyMostRecent.set(f.toFile().lastModified());
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } )
                     .mapToLong(f -> Long.parseLong(f.toFile().getName()))
                     .max()
-                    .orElse(0) + 1l;
+                    .orElse(-1) + 1l;   //
     }
 
 
@@ -84,13 +91,13 @@ public interface FileEventUtils {
     }
 
 
-    static ByteBuf eventToFile(final BsonObject event) {
+    static byte[] eventToByteArray(final BsonObject event) {
         ByteBuf headedBuf = Unpooled.buffer();
         final byte [] bytes =  event.encode().getBytes();
         headedBuf.writeLong(Instant.now().toEpochMilli());
-        headedBuf.writeLong(checksum(bytes));
+        headedBuf.writeLong(EventUtils.checksum(bytes));
         headedBuf.writeBytes(bytes);
-        return headedBuf;
+        return headedBuf.array();
     }
 
 
@@ -103,14 +110,6 @@ public interface FileEventUtils {
         headedBuf.readBytes(eventBuf);
         return new FileEvent(eventNumber,epochMillis,crc32,eventBuf);
         }
-
-
-    static long checksum(byte [] evt) {
-        Checksum crc = new CRC32();
-        crc.update(evt,0, evt.length);
-        return crc.getValue();
-    }
-
 
     static long fileToEpochMillis(File file)  {
         try {

@@ -1,11 +1,12 @@
 package io.mewbase.eventsource.impl.file;
 
-import io.mewbase.eventsource.Event;
+
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.Subscription;
+import io.mewbase.eventsource.impl.EventDispatcher;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.io.File;
 import java.nio.file.*;
@@ -16,63 +17,51 @@ public class FileEventSubscription implements Subscription {
 
     private final static Logger logger = LoggerFactory.getLogger(FileEventSource.class);
 
-    // max queue size
-    private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>(100);
+    private final Future reader;
 
-    private final ExecutorService reader = Executors.newSingleThreadExecutor();
-    private final ExecutorService  dispatcher = Executors.newSingleThreadExecutor();
+    private final EventDispatcher<FileEvent> dispatcher;
 
     private final Path channelPath;
+
+    private Boolean closing = false;
 
     public FileEventSubscription(final Path channelPath, final long firstEventNumber, final EventHandler eventHandler) {
 
         this.channelPath = channelPath;
 
-        reader.execute(() -> {
+        // a FileEvent is an Event hence i -> i is identity.
+        this.dispatcher = new EventDispatcher<>( i -> i, eventHandler );
+
+        reader = Executors.newSingleThreadExecutor().submit( () -> {
             long targetEvent = firstEventNumber;
-            while (!Thread.interrupted()) {
+            while (!closing) {
                 try {
-                    Event evt = waitForEvent(targetEvent);
-                    eventQueue.put(evt);
+                    FileEvent evt = waitForEvent(targetEvent);
+                    dispatcher.dispatch(evt);
                     targetEvent++;
                 } catch (InterruptedException exp ) {
-                    logger.info("Event reader thread closing");
+                    closing = true;
                 } catch (Exception exp ) {
                     logger.error("Error in event reader",exp);
                 }
             }
-        });
-
-        // process the events
-        dispatcher.execute(() -> {
-            while (!Thread.interrupted() || !eventQueue.isEmpty()) {
-                try {
-                    eventHandler.onEvent(eventQueue.take());
-                } catch (InterruptedException exp) {
-                    logger.info("Event reader thread closing");
-                } catch (Exception exp) {
-                    logger.error("Error in event handler", exp);
-                }
-            }
+            logger.info("Subscription closed for channel "+ channelPath.getFileName());
         });
     }
 
-    @Override
-    public void unsubscribe() {
-        reader.shutdown();
-        dispatcher.shutdown();
-    }
 
     @Override
-    public void close() {
-        unsubscribe();
+    public void close()  {
+        reader.cancel(true);
+        // drain and stop the dispatcher.
+        dispatcher.stop();
     }
 
-    // This will block only the reading thread
+    // This will sleep only the reading thread
     // originally did this with a java.nio.WatchService but it was more complex and
     // did not allow fine grain control of the watchWindow.
     private final int WATCH_WINDOW_MILLIS = 3;
-    private Event waitForEvent(final long eventNumber) throws Exception {
+    private FileEvent waitForEvent(final long eventNumber) throws Exception {
         Path eventFilePath = channelPath.resolve(FileEventUtils.pathFromEventNumber(eventNumber));
         File eventFile = eventFilePath.toFile();
         while (! (eventFile.exists() && eventFile.length() > 0) ) {

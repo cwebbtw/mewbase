@@ -6,8 +6,6 @@ import com.typesafe.config.ConfigFactory;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
-
-import io.nats.stan.AckHandler;
 import io.nats.stan.Connection;
 import io.nats.stan.ConnectionFactory;
 
@@ -17,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -55,26 +54,29 @@ public class NatsEventSink implements EventSink {
 
 
     @Override
-    public void publish(String channelName, BsonObject event) {
+    public long publishSync(String channelName, BsonObject event) {
         try {
             nats.publish(channelName, event.encode().getBytes());
         } catch (Exception exp) {
-            logger.error("Error attempting publish event to Nats Event Sink", exp);
+            logger.error("Failed to synchronously publish event " + event, exp);
+            return -1;
         }
+        // TODO - Cant currently get event number from NATS
+        return 0;
     }
 
     @Override
-    public CompletableFuture<BsonObject> publishAsync(final String channelName, final BsonObject event) {
-        CompletableFuture<BsonObject> fut = new CompletableFuture<>();
-        AckHandler ackHandler = (String ackedNuid, Exception err) -> {
-            if (err != null) {
-                fut.completeExceptionally(err);
-            } else {
-                fut.complete(event);
-            }
-        };
+    public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
+        CompletableFuture<Long> fut = new CompletableFuture<>();
         try {
-            nats.publish(channelName, event.encode().getBytes(), ackHandler);
+            nats.publish(channelName, event.encode().getBytes(), (String ackedNuid, Exception err) -> {
+                if (err != null) {
+                    fut.completeExceptionally(err);
+                } else {
+                    // TODO get event number - System.out.println(ackedNuid);
+                    fut.complete(0L);
+                }
+            });
         } catch (IOException exp) {
             fut.completeExceptionally(exp);
         }

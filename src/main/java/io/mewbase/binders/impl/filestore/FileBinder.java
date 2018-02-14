@@ -54,21 +54,22 @@ public class FileBinder extends StreamableBinder implements Binder {
     public CompletableFuture<BsonObject> get(final String id) {
         final File file = new File(binderDir,id);
 
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        CompletableFuture fut = new CompletableFuture();
+        stexec.submit( () -> {
+            BsonObject doc = null;
             if (file.exists()) {
-                BsonObject doc = null;
                 try {
                     byte[] buffer = Files.readAllBytes(file.toPath());
                     doc = new BsonObject(buffer);
+                    log.debug("Read Document " + id + " : " + doc);
                 } catch (Exception exp) {
-                    log.error("Error getting document with key : "+ id);
-                    throw new CompletionException(exp);
+                    log.error("Error getting document with key : " + id);
+                    fut.completeExceptionally(exp);
                 }
-                return doc;
-            } else {
-                return null;
             }
-        }, stexec);
+            fut.complete(doc);
+
+        });
         return fut;
     }
 
@@ -78,14 +79,17 @@ public class FileBinder extends StreamableBinder implements Binder {
         final File file = new File(binderDir, id);
         final byte[] valBytes = doc.encode().getBytes();
 
-        CompletableFuture fut = CompletableFuture.runAsync( () -> {
+        CompletableFuture fut = new CompletableFuture();
+        stexec.submit( () -> {
             try {
                 Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE;
+                log.debug("Written Document " + id + " : " + doc);
             } catch (Exception exp) {
                 log.error("Error writing document key : " + id + " value : " + doc);
-                throw new CompletionException(exp);
+                fut.completeExceptionally(exp);
             }
-        }, stexec);
+            fut.complete(null);
+        });
         streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
     }
@@ -95,14 +99,15 @@ public class FileBinder extends StreamableBinder implements Binder {
     public CompletableFuture<Boolean> delete(final String id) {
         final File file = new File(binderDir, id);
 
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        CompletableFuture fut = new CompletableFuture();
+        stexec.submit(  () -> {
             try {
-                return Files.deleteIfExists(file.toPath());
+                fut.complete( Files.deleteIfExists(file.toPath()) );
             } catch (Exception exp) {
                 log.error("Error deleting document " + id );
-                throw new CompletionException(exp);
+                fut.completeExceptionally(exp);
             }
-        }, stexec);
+        });
         return fut;
     }
 

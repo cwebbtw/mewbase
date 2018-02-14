@@ -1,35 +1,31 @@
-package io.mewbase.eventsource.impl.file;
+package io.mewbase.eventsource.impl.kafka;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
-import io.netty.buffer.ByteBuf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mewbase.eventsource.impl.EventUtils;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.time.Instant;
-import java.util.Optional;
 
-
-class FileEvent implements Event {
+public class KafkaEvent implements Event {
 
     final long eventNumber;
     final long epochMillis;
     final long crc32;
-    final ByteBuf eventBuf;
+    final byte[] eventBuf;
 
     BsonObject event = null;
 
-    public FileEvent(long eventNumber, long epochMillis, long crc32, ByteBuf eventBuf) {
-        this.eventNumber = eventNumber;
-        this.epochMillis = epochMillis;
-        this.crc32 = crc32;
-        this.eventBuf = eventBuf;
+    public KafkaEvent(ConsumerRecord<String, byte[]> rec) {
+        eventNumber = rec.offset();
+        epochMillis = rec.timestamp();
+        eventBuf = rec.value();
+        crc32 = EventUtils.checksum(eventBuf)  ;
     }
 
     @Override
     public BsonObject getBson() {
-        if (event == null) event = new BsonObject(eventBuf.array());
+        if (event == null) event = new BsonObject(eventBuf);
         return event;
     }
 
@@ -56,6 +52,5 @@ class FileEvent implements Event {
                 " PayLoad : " + this.getBson();
     }
 
-
-
 }
+

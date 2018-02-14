@@ -9,6 +9,7 @@ import io.mewbase.eventsource.impl.file.FileEventSink;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 
 public interface EventSink {
@@ -37,15 +38,15 @@ public interface EventSink {
      * Publish an Event in the form of a byte array to a named channel.
      * Any new Events that arrive at the source will be sent to the event handler.
      *
-     * This function is intended to block until the associated EventSink implemetnation
+     * This function is intended to block until the associated EventSink implementation
      * acknowledges that the event as been received. For async Events please see the
      * @EventSink:publishAsync
      *
      * @param channelName
      * @param event as a BsonObject.
+     * @return the Event Number.
      */
-    void publish(String channelName, BsonObject event);
-
+    long publishSync(String channelName, BsonObject event);
 
     /**
      * Publish an Event in the form of a byte array to a named channel returning a
@@ -53,12 +54,12 @@ public interface EventSink {
      * the event that was successfully sent or will terminate Exceptionally with the
      * associated Exception.
      *
-     * For blocking version see @EventSink:publish
+     * For blocking version see @EventSink:publishSync
      *
      * @param channelName String of the channel name.
      * @param event as a BsonObject.
      */
-    CompletableFuture<BsonObject> publishAsync(String channelName, BsonObject event);
+    CompletableFuture<Long> publishAsync(String channelName, BsonObject event);
 
 
     /**

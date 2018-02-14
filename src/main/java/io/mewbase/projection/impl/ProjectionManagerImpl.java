@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-import java.util.Optional;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -68,59 +68,27 @@ public class ProjectionManagerImpl implements ProjectionManager {
                                 final BiFunction<BsonObject, Event, BsonObject> projectionFunction) {
 
         EventHandler eventHandler =  (Event event) -> {
-            if (eventFilter.apply(event)) {
-                String docID = docIDSelector.apply(event);
-                if (docID == null) {
-                    log.error("In projection " + projectionName + " document id selector returned null");
-                } else {
-                    Binder docBinder = store.open(binderName);
-                    docBinder.get(docID).whenComplete((final BsonObject inputDoc, final Throwable innerExp) -> {
-                        // Something broke in the store/binder dont try to apply the projection
-                        // and log the error
-                        if (innerExp != null) {
-                            log.error("Attempt to read document from store failed in " +
-                                        " Projection:" + projectionName +
-                                        " Binder:" + binderName +
-                                        " Document ID:" + docID, innerExp);
-                        } else {
-                            // Check that the document exists and provide an empty one if it doesnt.
-                            // should never pass a null to the projection apply function
-                            final BsonObject validDoc = (inputDoc == null) ? new BsonObject() : inputDoc;
-
-                            BsonObject outputDoc = projectionFunction.apply(validDoc, event);
-                            BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
-
-                            // Now attempt attempt to write the result of the projection and
-                            // if this succeeds write the state (EventNumber) update.
-                            docBinder.put(docID, outputDoc).whenComplete(
-                                    (final Void doc, final Throwable docWriteExp) -> {
-                                        if (docWriteExp == null) {
-                                            stateBinder.put(projectionName, projStateDoc).whenComplete(
-                                                    (final Void state, final Throwable stateWriteExp) -> {
-                                                        if (stateWriteExp != null) {
-                                                            // Doc succeeded and state failed - panic
-                                                            log.error("State Write failed possible out of sync error at " +
-                                                                    " Projection:" + projectionName +
-                                                                    " Binder:" + binderName +
-                                                                    " Document ID:" + docID, innerExp, stateWriteExp);
-                                                            projections.get(projectionName).stop();
-                                                        }
-                                                    } );
-                                        } else {
-                                            log.error("Document write failed hence stopping projection at " +
-                                                    " Projection:" + projectionName +
-                                                    " Binder:" + binderName +
-                                                    " Document ID:" + docID, docWriteExp);
-                                            projections.get(projectionName).stop();
-                                        }
-                                    }
-                            );
+            try {
+                if (eventFilter.apply(event)) {
+                    String docID = docIDSelector.apply(event);
+                    if (docID == null) {
+                        log.error("In projection " + projectionName + " document id selector returned null");
+                    } else {
+                        try {
+                            executeProjection(projectionName, binderName, docID, projectionFunction, event);
+                        } catch (Exception exp) {
+                            log.error("Projection failed to execute - Stopping" +
+                                    " Projection:" + projectionName +
+                                    " Binder:" + binderName +
+                                    " Document ID:" + docID, exp);
+                            projections.get(projectionName).stop();
                         }
-                    });
+                    }
                 }
+            } catch (Exception exp) {
+                log.error("Projection event handler failed", exp);
             }
         };
-
 
         Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 
@@ -128,6 +96,32 @@ public class ProjectionManagerImpl implements ProjectionManager {
         ProjectionImpl proj = new ProjectionImpl(projectionName,subs);
         projections.put(projectionName,proj);
         return proj;
+    }
+
+
+    private BsonObject  executeProjection(String projectionName,
+                                     String binderName,
+                                     String docID,
+                                     BiFunction<BsonObject, Event, BsonObject> projectionFunction,
+                                     Event event ) throws Exception {
+
+        // as sequential for reasons of preserving sanity
+        final Binder docBinder = store.open(binderName);
+        final BsonObject inputDoc = docBinder.get(docID).get();
+        final BsonObject validDoc = (inputDoc == null) ? new BsonObject() : inputDoc;
+        final BsonObject outputDoc = projectionFunction.apply(validDoc, event);
+        final BsonObject projStateDoc = new BsonObject().put(EVENT_NUM_FIELD, event.getEventNumber());
+
+        // if doc binder fails then the state fails
+        docBinder.put(docID, outputDoc).get();
+        try {
+            stateBinder.put(projectionName, projStateDoc).get();
+        } catch (Exception exp) {
+            // Doc succeeded and state failed
+            log.error("State Write failed possible sync error",  exp);
+            throw exp;
+        }
+        return outputDoc;
     }
 
 
