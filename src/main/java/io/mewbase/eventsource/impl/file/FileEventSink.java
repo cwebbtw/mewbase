@@ -34,14 +34,14 @@ public class FileEventSink implements EventSink {
 
 
     @Override
-    public long publishSync(String channelName, BsonObject event) {
+    public Long publishSync(String channelName, BsonObject event) {
         FileEventChannel channel = channels.computeIfAbsent(channelName,
                     key -> new FileEventChannel(baseDir.resolve(key)));
         try {
             return channel.publish(event);
         } catch (Exception exp) {
             logger.error("Error attempting publishSync event to FileEventSink", exp);
-            return -1;
+            return -1l;
         }
     }
 
