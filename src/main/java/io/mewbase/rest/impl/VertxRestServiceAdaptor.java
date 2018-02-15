@@ -11,7 +11,6 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.QueryManager;
 import io.mewbase.rest.RestServiceAdaptor;
-import io.mewbase.util.AsyncResCF;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
