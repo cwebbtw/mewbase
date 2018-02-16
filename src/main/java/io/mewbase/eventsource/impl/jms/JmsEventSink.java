@@ -7,8 +7,7 @@ import io.mewbase.eventsource.EventSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+
 import java.lang.reflect.Constructor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -27,8 +26,6 @@ public class JmsEventSink implements EventSink {
 
     final static Long SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER = -1L;
 
-    //final static String defaultUserName = "admin";
-    //final static String defaultPassword = "admin";
 
     private final static Logger logger = LoggerFactory.getLogger(JmsEventSink.class);
 
@@ -45,7 +42,6 @@ public class JmsEventSink implements EventSink {
 
         try {
             final ConnectionFactory factory = factoryConnection(cfg);
-
             final String username = cfg.getString(USERNAME_CONFIG_PATH);
             final String password = cfg.getString(PASSWORD_CONFIG_PATH);
             final Connection connection = factory.createConnection(username, password);
@@ -62,7 +58,7 @@ public class JmsEventSink implements EventSink {
         try {
             final String factoryFQCN = cfg.getString(FACTORY_CONFIG_PATH);
             final Class factoryClass = Class.forName(factoryFQCN);
-            final Constructor<ConnectionFactory> ctor = factoryClass.getDeclaredConstructor(Config.class);
+            final Constructor<ConnectionFactory> ctor = factoryClass.getDeclaredConstructor(String.class);
 
             final String serverUrl = cfg.getString(SERVER_CONFIG_PATH);
             final ConnectionFactory jmsFactory =  ctor.newInstance(serverUrl);
@@ -102,7 +98,7 @@ public class JmsEventSink implements EventSink {
 
 
     /**
-     * Encapsulate message send and capture exception
+     * Encapsulate message send and capture exceptions
      */
     private final Long sendMessage(String channelName, BsonObject event) throws JMSException {
         final Destination destination = jmsSession.createQueue(channelName);
