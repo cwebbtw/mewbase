@@ -2,21 +2,19 @@ package io.mewbase.eventsource.impl.jms;
 
 
 import io.mewbase.bson.BsonObject;
-import io.mewbase.eventsource.EventSink;
 
 import javax.jms.*;
 import java.lang.reflect.Constructor;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 
-public class JmsChannelTunnel {
+public class JmsEventCollector {
 
-        public static final String testChannelName = "tunnelTestChannel";
+        private final List<BsonObject> list = new ArrayList<BsonObject>();
 
-        AtomicLong messageCount = new AtomicLong(0);
-
-
-        public JmsChannelTunnel() throws Exception {
+        public JmsEventCollector(final String channelName) throws Exception {
 
             /* Set up a consumer for the JMS queue channel */
             final Class factoryClass = Class.forName("org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory");
@@ -24,11 +22,8 @@ public class JmsChannelTunnel {
             final ConnectionFactory jmsFactory =  ctor.newInstance("tcp://localhost:61616");
             final Connection connection = jmsFactory.createConnection("admin", "admin");
             final Session jmsSession = connection.createSession(javax.jms.Session.AUTO_ACKNOWLEDGE);
-            final Destination destination = jmsSession.createQueue(testChannelName);
+            final Destination destination = jmsSession.createQueue(channelName);
             final MessageConsumer consumer = jmsSession.createConsumer(destination);
-
-            /* Set up the sink for the file system which is the default in the test config */
-            EventSink sink = EventSink.instance();
 
             consumer.setMessageListener(message -> {
                 try {
@@ -36,11 +31,8 @@ public class JmsChannelTunnel {
                     byte[] body = new byte[(int) byteMsg.getBodyLength()];
                     ((BytesMessage) message).readBytes(body);
 
-                    // Forward event to file based sink
-                    BsonObject event = new BsonObject(body);
-                    sink.publishAsync(testChannelName,event);
-                    messageCount.getAndIncrement();
-
+                    // Store the event for test purposes
+                    list.add(new BsonObject(body));
                 } catch(Exception exp ) {
                     System.out.println("Boom " + exp.toString());
                 }
@@ -48,9 +40,7 @@ public class JmsChannelTunnel {
             connection.start();
         }
 
-    public long messageCount() {
-        return messageCount.get();
-    }
+    public long eventCount() { return list.size(); }
 
-
+    public Stream<BsonObject> events()  { return list.stream(); }
 }
