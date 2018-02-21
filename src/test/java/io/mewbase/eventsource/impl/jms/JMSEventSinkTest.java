@@ -1,6 +1,6 @@
 package io.mewbase.eventsource.impl.jms;
 
-import com.typesafe.config.Config;
+
 import com.typesafe.config.ConfigFactory;
 import io.mewbase.MewbaseTestBase;
 
@@ -9,12 +9,10 @@ import io.mewbase.eventsource.EventSink;
 
 import org.junit.Test;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -25,8 +23,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class JMSEventSinkTest extends MewbaseTestBase {
 
-    // Requires Apache Artemis to be running see mewbase wiki
-    @Test
+    @Test  // Requires Apache Artemis to be runing see mewbase wiki
     public void testCreatesJMSEventSink()  {
 
         // over-ride the sink settings to make a JMS sink
@@ -41,15 +38,14 @@ public class JMSEventSinkTest extends MewbaseTestBase {
         jmsSink.close();
     }
 
-    // Requires Apache Artemis to be runing see mewbase wiki
-    @Test
+
+    @Test  // Requires Apache Artemis to be runing see mewbase wiki
     public void testJMSPublishesEvent() throws Exception {
 
         // create the test config to set up the file paths for this test
         final String eventDataKey = "data";
 
         final String testChannelName = "JMSTestChannel" + UUID.randomUUID();
-        // create a bridge from a JMS to a file based event Sink
         JmsEventCollector collector = new JmsEventCollector(testChannelName);
         setUpJMSConfiguration();
 
@@ -61,7 +57,7 @@ public class JMSEventSinkTest extends MewbaseTestBase {
         final long eventNumber = jmsSink.publishSync(testChannelName, bsonEvent);
         assertEquals(-1, eventNumber);
 
-        Thread.sleep(200);
+        Thread.sleep(100);
 
         assertEquals(1, collector.eventCount());
         assertEquals( inputUUID, collector.events().findFirst().get().getString(eventDataKey));
@@ -70,35 +66,41 @@ public class JMSEventSinkTest extends MewbaseTestBase {
     }
 
 
-    @Test
+    @Test  // Requires Apache Artemis to be runing see mewbase wiki
     public void testJMSAsyncInOrder() throws Exception {
 
         final String eventDataKey = "data";
-        final String testChannelName = "JMSTestChannel" + UUID.randomUUID();
 
-        // create a bridge from a JMS to a file based event Sink
+        final String testChannelName = "JMSTestChannel" + UUID.randomUUID();
         JmsEventCollector collector = new JmsEventCollector(testChannelName);
         setUpJMSConfiguration();
 
         final JmsEventSink jmsSink = (JmsEventSink) EventSink.instance();
 
-        List<BsonObject> events = new LinkedList<>();
+        final int totalEvents = 64;
 
-        IntStream.range(0,10).sequential().
-                mapToObj(in-> UUID.randomUUID().toString()).
-                        forEach(  (String uuidStr) -> {
-                            final BsonObject bsonEvent = new BsonObject().put(eventDataKey, uuidStr);
-                            jmsSink.publishAsync(testChannelName, bsonEvent);
-                            events.add(bsonEvent);
-                        });
+        final List<BsonObject> eventsToSend = IntStream.range(0,totalEvents).
+                sequential().
+                mapToObj( i -> UUID.randomUUID().toString() ).
+                map( uuidStr -> new BsonObject().put(eventDataKey, uuidStr)).
+                collect(Collectors.toList());
 
-        Thread.sleep(200);
+        final List<CompletableFuture<Long>> futs = eventsToSend.stream().sequential().
+                map( evt -> jmsSink.publishAsync(testChannelName, evt) ).
+                collect(Collectors.toList());
+
+        // collect all the completed futures
+        futs.forEach( f -> f.join() );
+
+        // give the events time to be collected.
+        Thread.sleep(500);
 
         Iterator<BsonObject> collectedEvents = collector.events().iterator();
-        events.forEach( evt -> assertEquals( evt, collectedEvents.next()));
+        eventsToSend.forEach( evt -> assertEquals( evt, collectedEvents.next()));
 
         jmsSink.close();
     }
+
 
     private void setUpJMSConfiguration() {
         // over-ride the sink settings to make a JMS sink
