@@ -7,8 +7,6 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
-import org.junit.Test;
-
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -16,7 +14,6 @@ import java.util.stream.IntStream;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
-
 
 /**
  * Created by Nige on 16/2/2018.
