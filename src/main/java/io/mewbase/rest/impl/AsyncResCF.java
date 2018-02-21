@@ -1,4 +1,4 @@
-package io.mewbase.util;
+package io.mewbase.rest.impl;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -8,8 +8,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Created by tim on 12/10/16.
  */
-@Deprecated
-public class AsyncResCF<T> extends CompletableFuture<T> implements Handler<AsyncResult<T>> {
+class AsyncResCF<T> extends CompletableFuture<T> implements Handler<AsyncResult<T>> {
 
     @Override
     public void handle(AsyncResult<T> ar) {
@@ -19,4 +18,5 @@ public class AsyncResCF<T> extends CompletableFuture<T> implements Handler<Async
             completeExceptionally(ar.cause());
         }
     }
+
 }

@@ -15,7 +15,7 @@ import io.mewbase.eventsource.EventSource;
 
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
-import io.vertx.ext.unit.junit.Repeat;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -46,7 +46,7 @@ public interface EventSink {
      * @param event as a BsonObject.
      * @return the Event Number.
      */
-    long publishSync(String channelName, BsonObject event);
+    Long publishSync(String channelName, BsonObject event);
 
     /**
      * Publish an Event in the form of a byte array to a named channel returning a

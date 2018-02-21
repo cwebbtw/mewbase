@@ -9,6 +9,12 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.jms.BytesMessage;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 import java.util.UUID;
@@ -19,13 +25,14 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
  * Created by Nige on 7/9/2017.
  */
-@RunWith(VertxUnitRunner.class)
+//@RunWith(VertxUnitRunner.class)
 public class EventSinkTest extends MewbaseTestBase {
 
     @Test
@@ -34,6 +41,18 @@ public class EventSinkTest extends MewbaseTestBase {
         es.close();
         assert(true);
     }
+
+
+    //@Test
+    public void testSupplyAsyncCapturesUncheckedException() {
+        CompletableFuture<Long> fut = CompletableFuture.supplyAsync( () -> {
+             //throw new IOException(new IOException("Boom!"));
+            return 1L;
+        });
+        fut.join();
+        assert(fut.isCompletedExceptionally());
+    }
+
 
     @Test
     public void testPublishSingleEvent() throws Exception {

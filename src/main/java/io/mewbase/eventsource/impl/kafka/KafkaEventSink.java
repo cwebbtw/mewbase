@@ -44,15 +44,15 @@ public class KafkaEventSink implements EventSink {
 
 
     @Override
-    public long publishSync(final String channelName, final BsonObject event) {
+    public Long publishSync(final String channelName, final BsonObject event) {
 
             CompletableFuture<Long> fut = publishAsync(channelName,event);
             kafkaProducer.flush();
             try {
                 return fut.get(5, TimeUnit.SECONDS);
             } catch(Exception exp ) {
-                logger.error("Synchronous publ;ish failed to write event " + event, exp);
-                return -1;
+                logger.error("Synchronous publish failed to write event " + event, exp);
+                return -1l;
             }
     }
 

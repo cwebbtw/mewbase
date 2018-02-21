@@ -13,9 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+
 
 
 /**
@@ -25,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 public class NatsEventSink implements EventSink {
 
     private final static Logger logger = LoggerFactory.getLogger(NatsEventSink.class);
+    // TODO - Cant currently get event number from NATS
+    private final static Long SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER = -1L;
 
     private final Connection nats;
 
@@ -54,16 +57,15 @@ public class NatsEventSink implements EventSink {
 
 
     @Override
-    public long publishSync(String channelName, BsonObject event) {
+    public Long publishSync(String channelName, BsonObject event) {
         try {
             nats.publish(channelName, event.encode().getBytes());
         } catch (Exception exp) {
-            logger.error("Failed to synchronously publish event " + event, exp);
-            return -1;
+            logger.error("Error sending event " + event, exp);
         }
-        // TODO - Cant currently get event number from NATS
-        return 0;
+        return SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
     }
+
 
     @Override
     public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
@@ -73,8 +75,7 @@ public class NatsEventSink implements EventSink {
                 if (err != null) {
                     fut.completeExceptionally(err);
                 } else {
-                    // TODO get event number - System.out.println(ackedNuid);
-                    fut.complete(0L);
+                    fut.complete(SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER);
                 }
             });
         } catch (IOException exp) {
