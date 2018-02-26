@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 public class MultiEventSinkImpl implements MultiEventSink {
 
     private final static Logger logger = LoggerFactory.getLogger(MultiEventSinkImpl.class);
@@ -20,19 +21,22 @@ public class MultiEventSinkImpl implements MultiEventSink {
     final Set<EventSink> sinks;
     final ExecutorService exec = Executors.newWorkStealingPool();
 
-    MultiEventSinkImpl(Set<EventSink> sinks) {
+    public MultiEventSinkImpl(Set<EventSink> sinks) {
         this.sinks = sinks;
     }
 
     @Override
     public Stream<Long> publishSync(String channelName, BsonObject event) {
-        return sinks.parallelStream().map ( sink -> {
-            try {
-                return sink.publishSync(channelName, event);
-            } catch (Exception exp ) {
-                logger.error("Sink " + sink + "failed to publish event" + event);
-            }
-         ).collect(Collectors.toList());
+        return sinks.parallelStream().map( sink -> {
+                    try {
+                        return sink.publishSync(channelName, event);
+                    } catch (Exception exp) {
+                        logger.error("Sink " + sink + "failed to publish event" + event);
+                    }
+                    return -1L;
+                })
+                .collect(Collectors.toList())
+                .stream();
     }
 
     @Override
@@ -51,6 +55,6 @@ public class MultiEventSinkImpl implements MultiEventSink {
     }
 
     @Override
-    public void close() { sinks.forEach( sink -> sink.close() );
+    public void close() { sinks.forEach( sink -> sink.close() ); }
 
 }
