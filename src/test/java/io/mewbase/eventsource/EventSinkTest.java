@@ -5,16 +5,9 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import javax.jms.BytesMessage;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import org.junit.Test;
+
 import java.util.List;
 
 import java.util.UUID;
@@ -24,8 +17,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
