@@ -113,7 +113,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
     libraryDependencies ++= Dependencies.test(
       junit, junitIntf, vertxUnit, restAssured
     ),
-    testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
+    testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
     crossPaths := false,
     autoScalaLibrary := false
   )
@@ -136,7 +136,6 @@ lazy val examplesJava = Project("examples-java", file("examples-java"))
   .dependsOn(mewbaseJava)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
-
 
 
 lazy val examplesScala = Project("examples-scala", file("examples-scala"))
