@@ -184,6 +184,7 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
 
 
     @Override
+    @SuppressWarnings("unchecked") // becuase (Map<String, String>) is contravariant in (Map<String, Object>)
     public RestServiceAdaptor exposeCommand(final CommandManager commandMgr, String commandName, String uriPathPrefix) {
         // Todo - Check that command manager has the named command
         // the command url is any prefix plus the command name
@@ -213,13 +214,15 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
     }
 
     @Override
+    @SuppressWarnings("unchecked") // becuase (Map<String, String>) is contravariant in (Map<String, Object>)
     public RestServiceAdaptor exposeQuery(final QueryManager qmgr, String queryName, String uriPathPrefix) {
 
         final String uri = uriPathPrefix + "/" + queryName;
         router.route(HttpMethod.GET, uri).handler(rc -> {
            // dispatch the query
            BsonObject context = new BsonObject();
-           context.put("pathParams", new BsonObject(rc.pathParams()));
+            final Map pathParams = rc.pathParams();
+           context.put("pathParams", new BsonObject(pathParams));
            Stream<KeyVal<String, BsonObject>> binders = qmgr.execute(queryName,context);
 
            // assemble the response

@@ -1,16 +1,13 @@
 package io.mewbase.binders.impl.lmdb;
-import io.mewbase.binders.KeyVal;
 
+import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
 import io.vertx.core.buffer.Buffer;
 
-import org.lmdbjava.CursorIterator;
-import org.lmdbjava.Dbi;
-import org.lmdbjava.Env;
-import org.lmdbjava.Txn;
+import org.lmdbjava.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +22,6 @@ import java.util.stream.Stream;
 
 
 import static java.nio.ByteBuffer.allocateDirect;
-import static org.lmdbjava.CursorIterator.IteratorType.FORWARD;
 import static org.lmdbjava.DbiFlags.MDB_CREATE;
 
 
@@ -123,7 +119,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
             Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
 
             try (final Txn<ByteBuffer> txn = env.txnRead()) {
-                final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, FORWARD);
+                final CursorIterator<ByteBuffer> cursorItr = dbi.iterate(txn, KeyRange.all());
                 final Iterator<CursorIterator.KeyVal<ByteBuffer>> itr = cursorItr.iterable().iterator();
                 boolean hasNext = itr.hasNext();
                 txn.reset();

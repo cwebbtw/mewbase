@@ -71,7 +71,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * Create a new, empty instance
      */
     public BsonObject() {
-        map = new LinkedHashMap<>();
+        map = new LinkedHashMap<String, Object>();
     }
 
     /**
@@ -79,7 +79,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      *
      * @param map the map to create the instance from.
      */
-    public BsonObject(Map map) {
+    public BsonObject(Map<String, Object> map) {
         this.map = map;
     }
 
@@ -204,7 +204,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         Objects.requireNonNull(key);
         Object val = map.get(key);
         if (val instanceof Map) {
-            val = new BsonObject((Map)val);
+            val = new BsonObject((Map<String, Object>)val);
         }
         return (BsonObject)val;
     }
@@ -273,7 +273,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         Objects.requireNonNull(key);
         Object val = map.get(key);
         if (val instanceof Map) {
-            val = new BsonObject((Map)val);
+            val = new BsonObject((Map<String, Object>)val);
         } else if (val instanceof List) {
             val = new BsonArray((List)val);
         }
@@ -889,7 +889,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
     }
 
     private void fromBson(InputStream inputStream) {
-        map = Bson.decodeValue(inputStream, Map.class);
+        map = (Map<String, Object>) Bson.decodeValue(inputStream, Map.class);
     }
 
     private class Iter implements Iterator<Map.Entry<String, Object>> {

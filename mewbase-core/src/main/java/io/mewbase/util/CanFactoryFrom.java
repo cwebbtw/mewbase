@@ -17,6 +17,7 @@ public final class CanFactoryFrom {
         /** Static use only */
         private CanFactoryFrom() {  }
 
+        @SuppressWarnings("unchecked")  // becasue T is  capture#1 of ?
         public static <T>  T instance(final String implFQCN, final Config cfg, Supplier<T> defaultImpl) {
             try {
                 final T impl = (T)Class.forName(implFQCN).getDeclaredConstructor(Config.class).newInstance(cfg);

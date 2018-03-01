@@ -60,7 +60,7 @@ public class BsonArray implements Iterable<Object> {
      * Create an empty instance
      */
     public BsonArray() {
-        list = new ArrayList<>();
+        list = new ArrayList<Object>();
     }
 
     /**
@@ -68,7 +68,7 @@ public class BsonArray implements Iterable<Object> {
      *
      * @param list
      */
-    public BsonArray(List list) {
+    public BsonArray(List<Object> list) {
         this.list = list;
     }
 
@@ -184,7 +184,7 @@ public class BsonArray implements Iterable<Object> {
     public BsonArray getBsonArray(int pos) {
         Object val = list.get(pos);
         if (val instanceof List) {
-            val = new BsonArray((List)val);
+            val = new BsonArray((List<Object>)val);
         }
         return (BsonArray)val;
     }
@@ -240,9 +240,9 @@ public class BsonArray implements Iterable<Object> {
     public Object getValue(int pos) {
         Object val = list.get(pos);
         if (val instanceof Map) {
-            val = new BsonObject((Map)val);
+            val = new BsonObject((Map<String,Object>)val);
         } else if (val instanceof List) {
-            val = new BsonArray((List)val);
+            val = new BsonArray((List<Object>)val);
         }
         return val;
     }
@@ -505,7 +505,7 @@ public class BsonArray implements Iterable<Object> {
      *
      * @return the underlying List
      */
-    public List getList() {
+    public List<Object> getList() {
         return list;
     }
 
