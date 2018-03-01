@@ -9,9 +9,7 @@ import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.impl.nats.NatsEventSink;
 
-
 import io.mewbase.projection.ProjectionManager;
-
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
