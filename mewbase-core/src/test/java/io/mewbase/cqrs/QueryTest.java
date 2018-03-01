@@ -6,21 +6,15 @@ import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
-
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.*;
 
 /**

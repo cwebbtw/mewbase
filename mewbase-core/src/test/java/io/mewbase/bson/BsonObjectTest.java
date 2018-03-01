@@ -18,7 +18,6 @@
 
 package io.mewbase.bson;
 
-
 import io.mewbase.TestUtils;
 
 import io.vertx.core.buffer.Buffer;

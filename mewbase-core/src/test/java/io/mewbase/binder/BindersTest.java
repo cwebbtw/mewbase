@@ -11,7 +11,6 @@ import io.mewbase.binders.Binder;
 
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.Test;
 
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 
@@ -33,7 +31,6 @@ import static org.junit.Assert.*;
  * <p>
  * Created by tim on 14/10/16.
  */
-//@RunWith(JUnitRunner.class)
 public class BindersTest extends MewbaseTestBase {
 
 

@@ -2,7 +2,6 @@ package io.mewbase.cqrs;
 
 import io.mewbase.bson.BsonObject;
 
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**

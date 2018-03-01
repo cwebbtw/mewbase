@@ -1,9 +1,7 @@
 package io.mewbase.cqrs.impl;
 
 import io.mewbase.bson.BsonObject;
-
 import io.mewbase.cqrs.Command;
-
 import io.mewbase.cqrs.CommandBuilder;
 
 import java.util.function.Function;

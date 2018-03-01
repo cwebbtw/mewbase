@@ -1,6 +1,5 @@
 package io.mewbase.eventsource.impl.kafka;
 
-
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.Subscription;
 import io.mewbase.eventsource.impl.EventDispatcher;

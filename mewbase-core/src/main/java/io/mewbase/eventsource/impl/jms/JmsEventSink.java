@@ -7,7 +7,6 @@ import io.mewbase.eventsource.EventSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import java.lang.reflect.Constructor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;

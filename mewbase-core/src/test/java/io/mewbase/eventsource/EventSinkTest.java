@@ -5,7 +5,6 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-
 import org.junit.Test;
 
 import java.util.List;

@@ -2,7 +2,6 @@ package io.mewbase.eventsource.impl.file;
 
 import io.mewbase.bson.BsonObject;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

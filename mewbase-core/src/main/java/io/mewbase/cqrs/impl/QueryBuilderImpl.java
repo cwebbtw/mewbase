@@ -2,7 +2,7 @@ package io.mewbase.cqrs.impl;
 
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
-import io.mewbase.binders.impl.lmdb.LmdbBinder;
+
 import io.mewbase.bson.BsonObject;
 
 import io.mewbase.cqrs.Query;
@@ -10,12 +10,8 @@ import io.mewbase.cqrs.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Predicate;
+
 
 /**
  * Created by tim on 10/01/17.

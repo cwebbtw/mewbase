@@ -4,29 +4,22 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
-import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.cqrs.Command;
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.QueryManager;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 import io.restassured.RestAssured;
-import io.restassured.response.Response;
 import io.restassured.response.ResponseBodyExtractionOptions;
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
-import junit.framework.TestCase;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,15 +33,12 @@ import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-
 import static io.restassured.RestAssured.*;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.*;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 
 /**

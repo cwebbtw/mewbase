@@ -9,7 +9,7 @@ import io.mewbase.eventsource.impl.file.FileEventSink;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+
 
 
 public interface EventSink {

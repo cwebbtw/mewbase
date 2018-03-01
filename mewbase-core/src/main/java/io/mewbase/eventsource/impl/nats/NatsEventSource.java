@@ -7,7 +7,6 @@ import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 
-
 import io.nats.stan.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

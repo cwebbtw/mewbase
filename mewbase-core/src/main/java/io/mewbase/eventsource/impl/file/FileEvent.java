@@ -3,12 +3,8 @@ package io.mewbase.eventsource.impl.file;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.netty.buffer.ByteBuf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 import java.time.Instant;
-import java.util.Optional;
 
 
 class FileEvent implements Event {

@@ -2,7 +2,6 @@ package io.mewbase.cqrs;
 
 
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
@@ -10,16 +9,11 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
 
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +22,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 
 import static junit.framework.TestCase.assertNull;
 

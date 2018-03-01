@@ -1,6 +1,5 @@
 package io.mewbase.binders;
 
-
 import java.util.Objects;
 
 /**

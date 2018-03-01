@@ -3,10 +3,8 @@ package io.mewbase.stream;
 import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -20,7 +18,6 @@ import static org.junit.Assert.*;
 /**
  * Created by Nige on 8/1/18.
  */
-@RunWith(VertxUnitRunner.class)
 public class StreamTest extends MewbaseTestBase {
 
     final static String key = "key";

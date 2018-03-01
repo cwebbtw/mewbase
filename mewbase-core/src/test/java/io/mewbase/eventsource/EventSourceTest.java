@@ -5,7 +5,6 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
-import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;

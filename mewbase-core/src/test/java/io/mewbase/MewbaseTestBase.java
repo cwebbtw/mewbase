@@ -4,12 +4,10 @@ package io.mewbase;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-
 import io.vertx.ext.unit.junit.RepeatRule;
 
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-
 
 import java.nio.file.Paths;
 import java.util.Random;

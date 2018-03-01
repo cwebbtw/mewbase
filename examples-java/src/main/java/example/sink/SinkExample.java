@@ -1,20 +1,23 @@
-{groupId};
+package example.sink;
 
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-
 import java.time.Instant;
 
 /**
- * Template showing the SinkExample (also available in exmaples)
+ *
+ * Run this example to generate timestamped events until it is cancelled by an OS signal
+ * You can set the rate or events (per second) and event channel where given.
+ * java -cp  <libraries>/mewbase-<version>-jar-with-dependencies.jar
+ *                  SinkExample
  *
  */
-public class Example {
+public class SinkExample {
+
     public static void main(String[] args) throws Exception {
 
-        EventSink eventSink = new NatsEventSink();
+        EventSink eventSink = EventSink.instance();
 
         // Change these for channels and rate changes
         final String CHANNEL_NAME  = "TestChannel";
@@ -27,7 +30,7 @@ public class Example {
         while (!Thread.interrupted() ) {
             final String timeStamp = "Time :" + Instant.now();
             event.put("timestamp", timeStamp);      // overwrite previous value
-            eventSink.publish(CHANNEL_NAME,event);  // publishSync the event to the sink on the given channel
+            eventSink.publishSync(CHANNEL_NAME,event);  // publish the event to the sink on the given channel
             Thread.sleep( milliSecondWait );
         }
         eventSink.close();

@@ -5,17 +5,16 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-
-import java.nio.file.*;
-import java.util.*;
-
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;

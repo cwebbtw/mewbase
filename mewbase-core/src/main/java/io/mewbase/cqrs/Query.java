@@ -4,10 +4,8 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.bson.BsonObject;
 
-import java.util.Set;
+
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**

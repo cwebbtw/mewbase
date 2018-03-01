@@ -1,13 +1,13 @@
 package io.mewbase.eventsource.impl.nats;
 
-import io.nats.stan.Subscription;
 
+import io.mewbase.eventsource.Subscription;
 
-public class NatsSubscription implements io.mewbase.eventsource.Subscription {
+public class NatsSubscription implements Subscription {
 
-    final Subscription subs;
+    final io.nats.stan.Subscription subs;
 
-    NatsSubscription(Subscription subs) {
+    NatsSubscription(io.nats.stan.Subscription subs) {
         this.subs = subs;
     }
 
@@ -15,6 +15,5 @@ public class NatsSubscription implements io.mewbase.eventsource.Subscription {
     public void close() {
         subs.close();
     }
-
 
 }

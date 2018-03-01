@@ -10,7 +10,6 @@ import io.mewbase.cqrs.Query;
 import io.mewbase.cqrs.QueryBuilder;
 import io.mewbase.cqrs.QueryManager;
 
-
 import java.util.Map;
 
 
