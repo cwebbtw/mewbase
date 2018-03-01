@@ -110,6 +110,10 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       postgres , lmdb  ,   // Binder implementations
       vertx, vertxAuth, vertxWeb // REST frameworks
     ),
+    libraryDependencies ++= Dependencies.test(
+      junit, junitIntf, vertxUnit, restAssured
+    ),
+    testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
     crossPaths := false,
     autoScalaLibrary := false
   )

@@ -18,7 +18,7 @@ jdk:
 - oraclejdk9
 
 script:
-- mvn clean package
+- sbt clean compile test package
 
 branches:
   only:

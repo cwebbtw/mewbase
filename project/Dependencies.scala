@@ -35,10 +35,11 @@ object Dependencies {
   val vertx       = "io.vertx" % "vertx-core" % "3.4.2"
   val vertxAuth   = "io.vertx" % "vertx-auth-common" % "3.4.2"
 
-  // Java Testmvn
-  val junit     = "junit" % "junit" % "4.12"
-  val vertxUnit = "io.vertx" % "vertx-unit" % "3.4.2"
-  val restAssured  = "io.rest-assured" % "rest-assured" % "3.0.6"
+  // Java Test frameworks
+  val junit       = "junit" % "junit" % "4.12"
+  val junitIntf   = "com.novocode" % "junit-interface" % "0.11"
+  val vertxUnit   = "io.vertx" % "vertx-unit" % "3.4.2"
+  val restAssured = "io.rest-assured" % "rest-assured" % "3.0.6"
 
   // Scala Test
   def scalatest(scalaVersion: String) = "org.scalatest" %% "scalatest" % "3.0.4"
