@@ -312,7 +312,7 @@ public class ProjectionTest extends MewbaseTestBase {
             }
             @Override
             public CompletableFuture<Void> put(final String id, final BsonObject doc) {
-                CompletableFuture fut = new CompletableFuture();
+                CompletableFuture<Void> fut = new CompletableFuture<Void>();
                 fut.completeExceptionally(new Exception("partial failure nightmare"));
                 return fut;
             }

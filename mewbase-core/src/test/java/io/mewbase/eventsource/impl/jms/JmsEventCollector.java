@@ -14,6 +14,7 @@ public class JmsEventCollector {
 
         private final List<BsonObject> list = new ArrayList<BsonObject>();
 
+        @SuppressWarnings("unchecked")
         public JmsEventCollector(final String channelName) throws Exception {
 
             /* Set up a consumer for the JMS queue channel */

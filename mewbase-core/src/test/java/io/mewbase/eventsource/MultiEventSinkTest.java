@@ -8,12 +8,14 @@ import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -82,7 +84,7 @@ public class MultiEventSinkTest extends MewbaseTestBase {
 
 
     @Test
-    public void testPublishMultiEventMultiply()  {
+    public void testPublishMultiEventMultiply() {
 
         final long numEventSinks = 7;
         final EventSink[] eventSinks = new EventSink[(int)numEventSinks];
@@ -95,12 +97,16 @@ public class MultiEventSinkTest extends MewbaseTestBase {
         LongStream.range(0, numEventsToPublish)
                 .mapToObj( l -> {
                     final BsonObject event = new BsonObject().put("data", UUID.randomUUID().toString());
-                    final CompletableFuture<Stream<Long>> evtNums = (CompletableFuture)mes.publishAsync(channelName, event);
-                    evtNums.thenAccept( (Stream<Long> sl ) ->
-                            assertEquals( sl.map( (Long p) -> {
-                                        assertEquals((long) p, l);
-                                        return 1;
-                                    } ).count(),  numEventSinks ) );
+                    final Future<Stream<Long>> evtNums = mes.publishAsync(channelName, event);
+                    try {
+                        final Stream<Long> sl = evtNums.get();
+                        assertEquals(sl.map((Long p) -> {
+                            assertEquals((long) p, l);
+                            return 1;
+                        }).count(), numEventSinks);
+                    } catch (Exception exp) {
+                        fail(exp.getMessage());
+                    }
                     return null;
                 } );
         mes.close();
