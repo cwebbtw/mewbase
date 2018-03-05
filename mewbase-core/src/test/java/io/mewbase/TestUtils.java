@@ -21,10 +21,12 @@ package io.mewbase;
 
 import java.util.Arrays;
 
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TestUtils {
+
     /**
      * Create an array of random bytes
      *

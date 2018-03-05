@@ -18,7 +18,7 @@ object Dependencies {
 
   val slf4j       = "org.slf4j" % "slf4j-log4j12" % "1.7.21"
   val slf4jAPI    = "org.slf4j" % "slf4j-api" % "1.7.21"
-  val lbConfig      = "com.typesafe" % "config" % "1.3.1"
+  val lbConfig    = "com.typesafe" % "config" % "1.3.1"
 
   // Various dependencies for implementations of Event and Binder servers
   // EventSource and/or Sink implementations

@@ -360,7 +360,7 @@ public class BindersTest extends MewbaseTestBase {
         });
 
         BsonObject docPut = createObject();
-        binder.put(documentID, docPut).get();
+        binder.put(documentID, docPut).join();
         latch.await();
     }
 

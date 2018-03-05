@@ -101,7 +101,6 @@ public class ProjectionTest extends MewbaseTestBase {
     public void testSimpleProjectionRuns() throws Exception {
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
-        store.delete(TEST_BINDER);
 
         ProjectionManager manager = ProjectionManager.instance(source,store);
         ProjectionBuilder builder = manager.builder();
@@ -131,7 +130,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publishSync(TEST_CHANNEL, evt);
 
         latch.await();
-        Thread.sleep(100);
+        Thread.sleep(200);
 
         // try to recover the new document
         Binder binder = store.open(TEST_BINDER);
@@ -194,7 +193,7 @@ public class ProjectionTest extends MewbaseTestBase {
         sink.publishSync(MULTI_EVENT_CHANNEL, evt);
 
         latch.await();
-        Thread.sleep(100);  // let the projextion fire off the event
+        Thread.sleep(200);  // let the projextion fire off the event
 
         Binder binder = store.open(TEST_BINDER);
         BsonObject basketDoc = binder.get(TEST_BASKET_ID).get();
@@ -202,11 +201,11 @@ public class ProjectionTest extends MewbaseTestBase {
         assertEquals(1,(long)basketDoc.getInteger("output"));
 
         projection.stop();
-        Thread.sleep(100);  // let the projection stop.
+        Thread.sleep(200);  // let the projection stop.
 
         BsonObject evt2 = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publishSync(MULTI_EVENT_CHANNEL, evt2);
-        Thread.sleep(100);  // let the event write and allow time to be processed (which should not happen)
+        Thread.sleep(200);  // let the event write and allow time to be processed (which should not happen)
 
         // ensure that the above event hasnt triggered another write.
         BsonObject sameBasketDoc = binder.get(TEST_BASKET_ID).get();

@@ -53,8 +53,8 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         // make the channel unique so that the event number is always zero below.
-        final String testChannelName = "SingleEventSink" + UUID.randomUUID();;
-        final String inputUUID = randomString();
+        final String testChannelName = "SingleEventSink" + UUID.randomUUID();
+        final String inputUUID = UUID.randomUUID().toString();
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
         // check the event arrived

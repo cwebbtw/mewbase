@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +38,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestSingleEventChannel";
-        final String inputUUID = randomString();
+        final String inputUUID = UUID.randomUUID().toString();
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
         final CountDownLatch latch = new CountDownLatch(1);

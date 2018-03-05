@@ -63,6 +63,8 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
 
     public RestServiceAdaptor setUpServer() {
+        // Disable the dns to stop if failing over
+        System.setProperty("vertx.disableDnsResolver","true");
         sequential.lock();
         RestAssured.baseURI = "http://localhost:8080";
         return RestServiceAdaptor.instance();
