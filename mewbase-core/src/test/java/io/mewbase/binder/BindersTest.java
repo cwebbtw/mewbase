@@ -12,6 +12,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
+import io.vertx.ext.unit.junit.Repeat;
 import org.junit.Test;
 
 import java.util.Set;
@@ -375,6 +376,7 @@ public class BindersTest extends MewbaseTestBase {
 
 
     // @Test
+    // @Repeat(value = 10)
     public void testPerformance() throws Exception {
 
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
