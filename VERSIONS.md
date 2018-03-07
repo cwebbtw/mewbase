@@ -1,3 +1,11 @@
+## 0.5.0 - Modularised including Scala and Java builds
+
+Modules for Examples in Java and Scala
+Moduels for Scala and Java interface depending on core module
+Added JMS EventSink (Apache Artemis and Tibco EMS facrtories)
+MultiEventSink forwards events to multiple sinks
+
+
 ## 0.4.0 - Local File Based Event Streams
 
 Fully plugable Binders and Event servers. 
@@ -23,8 +31,8 @@ hence it is possible to switch the builtin implementation or indeed to create ne
 and dynamically load these, by name, as plug in replacements for the provided ones.
 
 
-
 ## 0.2.1 - Various Refactors, Bug fixes
+
 
 ## 0.2.0 - Experimental - External Services
 

@@ -1,4 +1,4 @@
-language: java
+language: scala
 
 services:
   - docker
@@ -14,11 +14,16 @@ before_install:
 # - docker ps -a
 
 jdk:
-- oraclejdk8
-- oraclejdk9
+  - oraclejdk8
+  - oraclejdk9
+
+scala:
+  - 2.10.7
+  - 2.11.12
+  - 2.12.4
 
 script:
-- mvn clean package
+- sbt clean compile test package
 
 branches:
   only:
