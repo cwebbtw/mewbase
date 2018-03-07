@@ -6,6 +6,7 @@ import io.mewbase.eventsource.impl.MultiEventSinkImpl;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
@@ -22,7 +23,7 @@ public interface MultiEventSink  {
 
     Stream<Long> publishSync(String channelName, BsonObject event);
 
-    Future<Stream<Long>> publishAsync(String channelName, BsonObject event);
+    CompletableFuture<Stream<Long>> publishAsync(String channelName, BsonObject event);
 
     void close();
 }

@@ -1,15 +1,14 @@
 package io.mewbase.eventsource.impl;
 
-
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventHandler;
-import io.mewbase.eventsource.impl.kafka.KafkaEventSubscription;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
 import java.util.function.Function;
+
 
 /**
  * EventDispatcher factors out the common element of receiving various types of EventSource specific event types and

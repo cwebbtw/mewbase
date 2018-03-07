@@ -7,9 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,17 +40,15 @@ public class MultiEventSinkImpl implements MultiEventSink {
     }
 
     @Override
-    public Future<Stream<Long>> publishAsync(String channelName, BsonObject event) {
-        Future<Stream<Long>> fut = exec.submit( () -> {
-             Stream<Long> nums = sinks
+    public CompletableFuture<Stream<Long>> publishAsync(String channelName, BsonObject event) {
+        CompletableFuture<Stream<Long>> fut = CompletableFuture.supplyAsync( () ->
+                sinks
                     .stream()
                     .parallel()
                     .map(sink -> sink.publishAsync(channelName,event) )
                     .map( futOfLong -> futOfLong.join() )
                     .collect(Collectors.toList())
-                    .stream();
-             return nums;
-        });
+                    .stream() );
         return fut;
     }
 

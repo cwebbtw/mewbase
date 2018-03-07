@@ -50,7 +50,7 @@ public interface EventSink {
 
     /**
      * Publish an Event in the form of a byte array to a named channel returning a
-     * CompletableFuture Future that at some point in the future will complete returning
+     * CompletableFuture that at some point in the future will complete returning
      * the event that was successfully sent or will terminate Exceptionally with the
      * associated Exception.
      *
