@@ -60,7 +60,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
     @Override
     public CompletableFuture<BsonObject> get(final String id) {
 
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        CompletableFuture<BsonObject>  fut = CompletableFuture.supplyAsync( () -> {
             // in order to do a read we have to do it under a txn so use
             // try with resource to get the auto close magic.
             try (Txn<ByteBuffer> txn = env.txnRead()) {
@@ -83,7 +83,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
 
     @Override
     public CompletableFuture<Void> put(final String id, final BsonObject doc) {
-        CompletableFuture fut = CompletableFuture.runAsync( () -> {
+        CompletableFuture<Void> fut = CompletableFuture.runAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
             byte[] valBytes = doc.encode().getBytes();
             final ByteBuffer val = allocateDirect(valBytes.length);
@@ -99,7 +99,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
 
     @Override
     public CompletableFuture<Boolean> delete(final String id) {
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        CompletableFuture<Boolean> fut = CompletableFuture.supplyAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
             boolean deleted = dbi.delete(key);
             return deleted;
@@ -156,7 +156,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
 
     private ByteBuffer makeKeyBuffer(String id) {
         final ByteBuffer key = allocateDirect(env.getMaxKeySize());
-        // between jdk 8 and 9  flip has been moved hence apparently redundant cast
+        // between jdk 8 and 9  flip has been moved hence apparently redundant cast however essential
         ((java.nio.Buffer)key.put(id.getBytes(StandardCharsets.UTF_8))).flip();
         return key;
     }

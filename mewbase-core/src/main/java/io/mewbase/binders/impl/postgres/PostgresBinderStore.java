@@ -54,7 +54,7 @@ public class PostgresBinderStore implements BinderStore {
 
     @Override
     public Optional<Binder> get(String name) {
-        return Optional.ofNullable(binders.get(name));
+        return Optional.of(binders.get(name));
     }
 
     @Override
@@ -75,7 +75,7 @@ public class PostgresBinderStore implements BinderStore {
 
 
     private Stream<String> listAllTables() {
-        Set<String> names = new HashSet();
+        Set<String> names = new HashSet<>();
         try {
             final String sql = "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'mewbase';";
             final Statement stmt = connection.createStatement();

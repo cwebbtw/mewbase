@@ -45,7 +45,7 @@ public class CommandManagerImpl implements CommandManager {
 
     @Override
     public CompletableFuture<Command> getCommand(String commandName) {
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<Command> fut = new CompletableFuture<>();
         if (commands.containsKey(commandName)) {
             fut.complete(commands.get(commandName));
         } else {

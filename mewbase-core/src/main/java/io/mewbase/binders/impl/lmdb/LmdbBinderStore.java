@@ -14,13 +14,13 @@ import java.io.File;
 import java.nio.ByteBuffer;
 
 import java.util.List;
-import java.util.Optional;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import java.util.stream.Stream;
-
 
 import static org.lmdbjava.EnvFlags.MDB_NOTLS;
 
@@ -65,13 +65,13 @@ public class LmdbBinderStore implements BinderStore {
 
     @Override
     public Binder open(String name) {
-        return binders.computeIfAbsent(name, k -> new LmdbBinder(k,env)) ;
+        return binders.computeIfAbsent(name, k -> new LmdbBinder(k,env));
     }
 
 
     @Override
     public Optional<Binder> get(String name) {
-        return Optional.ofNullable(binders.get(name));
+        return Optional.of(binders.get(name));
     }
 
     @Override

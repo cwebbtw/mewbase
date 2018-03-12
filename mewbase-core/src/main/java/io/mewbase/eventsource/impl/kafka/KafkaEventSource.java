@@ -40,16 +40,16 @@ public class KafkaEventSource implements EventSource {
 
     @Override
     public Subscription subscribe(String channelName, EventHandler eventHandler) {
-        TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
-        KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
+        final TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
+        final KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToEnd(Arrays.asList(partition0));
         return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
     public Subscription subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
-        TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
-        KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
+        final TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
+        final KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToEnd(Arrays.asList(partition0));
         final long offset = kafkaConsumer.position(partition0);
         kafkaConsumer.seek(partition0 , offset-1);
@@ -58,27 +58,27 @@ public class KafkaEventSource implements EventSource {
 
     @Override
     public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
-        TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
-        KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
+        final TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
+        final KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seek(partition0 , startInclusive);      // to include this jump back one
         return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
     public Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
-        TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
-        KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
-        java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap(1);
+        final TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
+        final KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
+        final java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap<>(1);
         timeForPartition0.put(partition0,startInstant.toEpochMilli());
-        OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
+        final OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
         kafkaConsumer.seek(partition0 , offsetAndTimestamp.offset());
         return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
 
     @Override
     public Subscription subscribeAll(String channelName, EventHandler eventHandler) {
-        TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
-        KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
+        final TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
+        final KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToBeginning(Arrays.asList(partition0));
         return createAndRegisterSubscription(kafkaConsumer,eventHandler);
     }
@@ -87,7 +87,7 @@ public class KafkaEventSource implements EventSource {
 
     private KafkaConsumer<String, byte[]> createAndAssignConsumer(TopicPartition partition) {
         kafkaConsumerProps.put("group.id", UUID.randomUUID().toString());
-        KafkaConsumer<String, byte[]> kafkaConsumer =
+        final KafkaConsumer<String, byte[]> kafkaConsumer =
                         new KafkaConsumer<String, byte[]>(kafkaConsumerProps,
                                 new org.apache.kafka.common.serialization.StringDeserializer(),
                                 new org.apache.kafka.common.serialization.ByteArrayDeserializer());
@@ -98,7 +98,7 @@ public class KafkaEventSource implements EventSource {
 
     private Subscription createAndRegisterSubscription(final KafkaConsumer<String, byte[]> kafkaConsumer,
                                                        final EventHandler eventHandler) {
-        Subscription sub = new KafkaEventSubscription(kafkaConsumer,eventHandler);
+        final Subscription sub = new KafkaEventSubscription(kafkaConsumer,eventHandler);
         subs.add(sub);
         return sub;
     }

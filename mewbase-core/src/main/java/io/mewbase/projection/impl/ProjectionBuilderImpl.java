@@ -23,7 +23,6 @@ public class ProjectionBuilderImpl implements ProjectionBuilder {
     private Function<Event, Boolean> eventFilter = doc -> true;
     private Function<Event, String> docIDSelector;
     private BiFunction<BsonObject, Event, BsonObject> projectionFunction;
-    private Optional<String> outputEventChannel = Optional.empty();
 
 
     ProjectionBuilderImpl(ProjectionManagerImpl factory) {

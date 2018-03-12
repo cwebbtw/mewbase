@@ -55,9 +55,7 @@ public class FileBinderStore implements BinderStore {
     }
 
     @Override
-    public Optional<Binder> get(String name) {
-        return Optional.ofNullable(binders.get(name));
-    }
+    public Optional<Binder> get(String name) { return Optional.ofNullable(binders.get(name)); }
 
     @Override
     public Stream<Binder> binders() {
@@ -70,8 +68,9 @@ public class FileBinderStore implements BinderStore {
     }
 
     @Override
+    // Todo impl although deprecated
     public Boolean delete(String name) {
-        return null;
+        return true;
     }
 
 

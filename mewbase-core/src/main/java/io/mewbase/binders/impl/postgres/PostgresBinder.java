@@ -56,7 +56,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
     @Override
     public CompletableFuture<BsonObject> get(final String id) {
 
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        CompletableFuture<BsonObject> fut = CompletableFuture.supplyAsync( () -> {
             BsonObject doc = null;
             try {
                 final Statement stmt = connection.createStatement();
@@ -83,7 +83,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
 
         final byte[] valBytes = doc.encode().getBytes();
 
-        CompletableFuture fut = CompletableFuture.runAsync( () -> {
+        CompletableFuture<Void> fut = CompletableFuture.runAsync( () -> {
             try {
                 final String sql = "INSERT INTO "+name+" VALUES( ?, ? )" +
                         " ON CONFLICT (key) DO UPDATE SET data = ? ;";
@@ -107,7 +107,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
     @Deprecated
     public CompletableFuture<Boolean> delete(final String id) {
 
-        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
+        CompletableFuture<Boolean>  fut = CompletableFuture.supplyAsync( () -> {
             try {
                 final Statement stmt = connection.createStatement();
                 stmt.executeUpdate("DELETE FROM "+name+" WHERE key = '"+id+"';");
