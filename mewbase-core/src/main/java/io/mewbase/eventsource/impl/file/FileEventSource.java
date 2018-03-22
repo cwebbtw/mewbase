@@ -27,9 +27,8 @@ public class FileEventSource implements EventSource
 
     private final static Logger logger = LoggerFactory.getLogger(FileEventSource.class);
 
-    private final TreeMap<String,FileEventChannel> channels = new TreeMap<>();
-
     private final Path baseDir;
+
 
 
     public FileEventSource() {

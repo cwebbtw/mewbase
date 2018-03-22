@@ -15,6 +15,8 @@ import java.util.concurrent.CompletableFuture;
 public interface EventSink {
 
     String factoryConfigPath = "mewbase.event.sink.factory";
+    Long SYNC_WRITE_FAILED = -1l;
+    Long SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER = Long.MIN_VALUE;
 
     /**
      * Create an instance using the current config.

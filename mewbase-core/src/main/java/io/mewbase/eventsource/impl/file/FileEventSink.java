@@ -41,7 +41,7 @@ public class FileEventSink implements EventSink {
             return channel.publish(event);
         } catch (Exception exp) {
             logger.error("Error attempting publishSync event to FileEventSink", exp);
-            return -1l;
+            return SYNC_WRITE_FAILED;
         }
     }
 
