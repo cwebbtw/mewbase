@@ -50,6 +50,7 @@ public class HttpEventSink implements EventSink {
         logger.info("Created HTTP Event Sink for "+hostname+":"+port);
     }
 
+
     @Override
     public Long publishSync(String channelName, BsonObject event) {
         CompletableFuture<Long> fut = publishAsync(channelName,event);
