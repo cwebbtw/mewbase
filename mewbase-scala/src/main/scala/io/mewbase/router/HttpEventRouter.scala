@@ -2,21 +2,33 @@ package io.mewbase.router
 
 
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 
-import io.mewbase.Port
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpEntity.ChunkStreamPart
+import akka.stream.scaladsl.Source
+import akka.stream.{ActorMaterializer, Attributes, Outlet, SourceShape}
+import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives.{entity, _}
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class HttpEventRouter extends App with LazyLogging
+object HttpEventRouter extends App
 {
 
   implicit val system = ActorSystem("server")
   implicit val materializer = ActorMaterializer()
+
+  val HOSTNAME_CONFIG_PATH = "mewbase.http.router.hostname"
+  val PORT_CONFIG_PATH = "mewbase.http.router.port"
+
 
   // Store a killSwitch associated with each
   val killSwitches = mutable.Map[String, Promise[Unit]]()
@@ -77,7 +89,7 @@ class HttpEventRouter extends App with LazyLogging
       path("publish" / Segment ) { channelName =>
         entity(as[String]) { json =>
           println(channelName + " published " + json)
-          complete(HttpEntity("Event number:"+ 0))
+          complete(HttpEntity(0L toString() ))
         }
       }
     }
@@ -107,8 +119,12 @@ class HttpEventRouter extends App with LazyLogging
 
   val allRoutes =  { pingRoute ~ publishRoute ~ subscribeRoute ~ unsubscribeRoute }
 
-  val serverSource = Http().bindAndHandle(allRoutes, interface = "localhost", getPortNumber)
+  val config = ConfigFactory.load()
+  val hostname = config.getString(HOSTNAME_CONFIG_PATH)
+  val port = config.getInt(PORT_CONFIG_PATH)
 
-  println (s"Server Started on port $getPortNumber")
+  val serverSource = Http().bindAndHandle(allRoutes, interface = hostname, port)
+
+  println (s"Server Started on $hostname:$port")
 
 }

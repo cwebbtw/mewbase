@@ -45,6 +45,7 @@ public class HttpEventSink implements EventSink {
                     .setDefaultHost(hostname)
                     .setDefaultPort(port);
                     // TODO lookup and set various security / protocol options here
+        // TODO - replace with Java 10 SE Library for HttpClient when able
         client = Vertx.vertx().createHttpClient(options);
 
         logger.info("Created HTTP Event Sink for "+hostname+":"+port);
