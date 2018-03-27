@@ -92,7 +92,8 @@ public class LmdbBinderStore implements BinderStore {
     }
 
 
-    public Boolean close() {
+    @Override
+    public void close() {
         try {
             binders().forEach(binder -> ((LmdbBinder)binder).close());
         } catch (Exception e) {
@@ -101,7 +102,6 @@ public class LmdbBinderStore implements BinderStore {
             env.close();
         }
         logger.info("Closed LMDB binder store at " + docsDir);
-        return true;
     }
 
 
@@ -112,6 +112,7 @@ public class LmdbBinderStore implements BinderStore {
             }
         }
     }
+
 
 
 }
