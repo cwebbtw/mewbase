@@ -120,11 +120,11 @@ object HttpEventRouter extends App
   val allRoutes =  { pingRoute ~ publishRoute ~ subscribeRoute ~ unsubscribeRoute }
 
   val config = ConfigFactory.load()
-  val hostname = config.getString(HOSTNAME_CONFIG_PATH)
+  val interfaces = "0.0.0.0"
   val port = config.getInt(PORT_CONFIG_PATH)
 
-  val serverSource = Http().bindAndHandle(allRoutes, interface = hostname, port)
+  val serverSource = Http().bindAndHandle(allRoutes, interfaces, port)
 
-  println (s"Server Started on $hostname:$port")
+  println (s"Server Started on Port :$port")
 
 }

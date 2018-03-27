@@ -13,7 +13,7 @@ import org.scalatest.{AsyncFlatSpec, FlatSpec}
 
 class RouterSpec extends AsyncFlatSpec {
 
-  val router = HttpEventRouter
+  val router = HttpEventRouter.executionStart
 
   Thread sleep 1000
 
@@ -26,7 +26,7 @@ class RouterSpec extends AsyncFlatSpec {
 
     val config = ConfigFactory.load()
     val hostname = "localhost"
-    val port = 8080
+    val port = 8081
 
     val ping = s"http://$hostname:$port/ping"
 
@@ -53,5 +53,6 @@ class RouterSpec extends AsyncFlatSpec {
 ////  }
 //
 //  }
+
 
 }
