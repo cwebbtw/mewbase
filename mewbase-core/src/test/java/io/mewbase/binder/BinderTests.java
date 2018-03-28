@@ -1,15 +1,19 @@
 package io.mewbase.binder;
 
 import com.google.common.base.Throwables;
-import io.mewbase.binder.session.BinderTestSession;
-import io.mewbase.binder.session.PostgresBinderTestSession;
-import io.mewbase.binder.session.TempDirectoryFileBinderTestSession;
+import com.typesafe.config.Config;
+import io.mewbase.MewbaseTestBase;
+import io.mewbase.binder.session.TestBinderStoreSession;
+import io.mewbase.binder.session.TempDirectoryTestBinderStoreSessionSupplier;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
 
+import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
+import io.mewbase.eventsource.EventSink;
+import io.mewbase.eventsource.EventSource;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,27 +54,31 @@ interface ThrowingConsumer<T> extends Consumer<T> {
  * Created by tim on 14/10/16.
  */
 @RunWith(Parameterized.class)
-public class BinderTests {
+public class BinderTests extends MewbaseTestBase {
 
     @Parameterized.Parameters(name = "Test binder store session")
     public static Iterable<Object[]> data () {
-//        final Supplier<BinderTestSession> postgres
-//                = new PostgresBinderTestSession("jdbc:postgresql://localhost/mewbase", "mewbase", "mewbase");
+        /**
+         *  Note: Postgres tests are disabled currently as we probably need an agreement
+         *  for how to locate a postgres server for integration testing
+         */
+//      final Supplier<TestBinderStoreSession> postgres
+//              = new PostgresTestBinderStoreSessionSupplier("jdbc:postgresql://localhost/mewbase", "mewbase", "mewbase");
 
-        final Supplier<BinderTestSession> file
-                = new TempDirectoryFileBinderTestSession();
+        final Supplier<TestBinderStoreSession> file
+                = new TempDirectoryTestBinderStoreSessionSupplier();
 
-        return Arrays.asList( new Object[][] { /* { postgres }, */ { file }});
+        return Arrays.asList( new Object[][] { /*{ postgres }, */ { file } });
     }
 
-    private final Supplier<BinderTestSession> binderStoreSupplier;
+    private final Supplier<TestBinderStoreSession> testBinderStoreSessionSupplier;
 
-    public BinderTests(Supplier<BinderTestSession> binderStoreSupplier) {
-        this.binderStoreSupplier = binderStoreSupplier;
+    public BinderTests(Supplier<TestBinderStoreSession> testBinderStoreSessionSupplier) {
+        this.testBinderStoreSessionSupplier = testBinderStoreSessionSupplier;
     }
 
     private void singleStoreTest(ThrowingConsumer<BinderStore> test) throws Exception {
-        try (final BinderTestSession session = binderStoreSupplier.get()) {
+        try (final TestBinderStoreSession session = testBinderStoreSessionSupplier.get()) {
             try (final BinderStore binderStore = session.get()) {
                 test.accept(binderStore);
             }
@@ -85,7 +93,7 @@ public class BinderTests {
 
     @Test
     public void testListBinders() throws Exception {
-        try (final BinderTestSession session = binderStoreSupplier.get()) {
+        try (final TestBinderStoreSession session = testBinderStoreSessionSupplier.get()) {
             try (final BinderStore store = session.get()) {
                 store.open("wibble");
                 store.open("wobble");
@@ -369,42 +377,42 @@ public class BinderTests {
         });
     }
 
-//
-//    @Test
-//    public void testStreamsToSink() throws Exception {
-//        singleStoreTest(store -> {
-//            final Config cfg = createConfig();
-//            final EventSink sink = EventSink.instance(cfg);
-//            final EventSource source = EventSource.instance(cfg);
-//
-//            final String testBinderName = new Object() {
-//            }.getClass().getEnclosingMethod().getName();
-//            final String eventOutputChannel = "StreamOf" + testBinderName;
-//            final String documentID = "id1234";
-//
-//            Binder binder = store.open(testBinderName);
-//            binder.setStreaming(sink, eventOutputChannel);
-//            assertTrue(binder.isStreaming());
-//
-//            CountDownLatch latch = new CountDownLatch(1);
-//            // listen to the stream channel
-//            source.subscribe(eventOutputChannel, event -> {
-//                BsonObject bson = event.getBson();
-//                assertNotNull(bson);
-//                assertEquals(testBinderName, bson.getString(StreamableBinder.BINDER_NAME_KEY));
-//                assertEquals(documentID, bson.getString(StreamableBinder.DOCUMENT_ID_KEY));
-//                final BsonObject doc = bson.getBsonObject(StreamableBinder.DOCUMENT_CONTENT_KEY);
-//                assertNotNull(doc);
-//                assertEquals(1234, (long) doc.getInteger("bub"));
-//                assertTrue(doc.getBoolean("wib"));
-//                latch.countDown();
-//            });
-//
-//            BsonObject docPut = createObject();
-//            binder.put(documentID, docPut).join();
-//            latch.await();
-//        });
-//    }
+
+    @Test
+    public void testStreamsToSink() throws Exception {
+        singleStoreTest(store -> {
+            final Config cfg = createConfig();
+            final EventSink sink = EventSink.instance(cfg);
+            final EventSource source = EventSource.instance(cfg);
+
+            final String testBinderName = new Object() {
+            }.getClass().getEnclosingMethod().getName();
+            final String eventOutputChannel = "StreamOf" + testBinderName;
+            final String documentID = "id1234";
+
+            Binder binder = store.open(testBinderName);
+            binder.setStreaming(sink, eventOutputChannel);
+            assertTrue(binder.isStreaming());
+
+            CountDownLatch latch = new CountDownLatch(1);
+            // listen to the stream channel
+            source.subscribe(eventOutputChannel, event -> {
+                BsonObject bson = event.getBson();
+                assertNotNull(bson);
+                assertEquals(testBinderName, bson.getString(StreamableBinder.BINDER_NAME_KEY));
+                assertEquals(documentID, bson.getString(StreamableBinder.DOCUMENT_ID_KEY));
+                final BsonObject doc = bson.getBsonObject(StreamableBinder.DOCUMENT_CONTENT_KEY);
+                assertNotNull(doc);
+                assertEquals(1234, (long) doc.getInteger("bub"));
+                assertTrue(doc.getBoolean("wib"));
+                latch.countDown();
+            });
+
+            BsonObject docPut = createObject();
+            binder.put(documentID, docPut).join();
+            latch.await();
+        });
+    }
 
     private BsonObject createObject() {
         BsonObject obj = new BsonObject();

@@ -13,10 +13,10 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.function.Supplier;
 
-public class TempDirectoryFileBinderTestSession implements Supplier<BinderTestSession> {
+public class TempDirectoryTestBinderStoreSessionSupplier implements Supplier<TestBinderStoreSession> {
 
     @Override
-    public BinderTestSession get() {
+    public TestBinderStoreSession get() {
         final Path tempDirectory;
         try {
             tempDirectory = Files.createTempDirectory("mewbase");
@@ -28,7 +28,7 @@ public class TempDirectoryFileBinderTestSession implements Supplier<BinderTestSe
 
         final Config config = ConfigFactory.load(ConfigFactory.parseProperties(properties));
 
-        return new BinderTestSession() {
+        return new TestBinderStoreSession() {
             @Override
             public void close() throws Exception {
                 FileUtils.deleteDirectory(tempDirectory.toFile());

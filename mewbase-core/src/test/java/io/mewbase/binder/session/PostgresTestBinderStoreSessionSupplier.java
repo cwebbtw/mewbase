@@ -5,7 +5,12 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.impl.postgres.PostgresBinderStore;
+import org.apache.commons.io.IOUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -13,19 +18,29 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.function.Supplier;
 
-public class PostgresBinderTestSession implements Supplier<BinderTestSession> {
+public class PostgresTestBinderStoreSessionSupplier implements Supplier<TestBinderStoreSession> {
 
-    private final Config config;
     private final String uri;
     private final String username;
     private final String password;
 
-    private static String binderTableDDL() {
-        return "CREATE TABLE " + PostgresBinderStore.MEWBASE_BINDER_DATA_TABLE_NAME + "(binder_name VARCHAR(200), key TEXT, data bytea, PRIMARY KEY ( binder_name, key ));" +
-               "CREATE TABLE " + PostgresBinderStore.MEWBASE_BINDER_META_TABLE_NAME + "(binder_name VARCHAR(200), PRIMARY KEY ( binder_name ));";
+    private final Config config;
+
+    private String binderTableDDL() {
+        final String referenceDDLLocation = "./postgres-schema.sql";
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        try {
+            try (final InputStream inputStream = classLoader.getResourceAsStream(referenceDDLLocation)) {
+                final StringWriter stringWriter = new StringWriter();
+                IOUtils.copy(inputStream, stringWriter, Charset.defaultCharset());
+                return stringWriter.toString();
+            }
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
-    public PostgresBinderTestSession(String uri, String username, String password) {
+    public PostgresTestBinderStoreSessionSupplier(String uri, String username, String password) {
         this.uri = uri;
         this.username = username;
         this.password = password;
@@ -37,7 +52,7 @@ public class PostgresBinderTestSession implements Supplier<BinderTestSession> {
     }
 
     @Override
-    public BinderTestSession get() {
+    public TestBinderStoreSession get() {
         final Connection connection;
         try {
             connection = DriverManager.getConnection(uri, username, password);
@@ -54,7 +69,7 @@ public class PostgresBinderTestSession implements Supplier<BinderTestSession> {
             throw Throwables.propagate(e);
         }
 
-        return new BinderTestSession() {
+        return new TestBinderStoreSession() {
             @Override
             public void close() throws Exception {
                 connection.close();
@@ -70,5 +85,4 @@ public class PostgresBinderTestSession implements Supplier<BinderTestSession> {
             }
         };
     }
-
 }

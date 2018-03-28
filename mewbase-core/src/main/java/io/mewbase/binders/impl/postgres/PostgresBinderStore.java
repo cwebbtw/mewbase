@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class PostgresBinderStore implements BinderStore {
 
     public static final String MEWBASE_BINDER_DATA_TABLE_NAME = "mewbase_binder_data";
-    public static final String MEWBASE_BINDER_META_TABLE_NAME = "mewbase_binder_meta";
+    public static final String MEWBASE_BINDER_TABLE_NAME = "mewbase_binder";
 
     private final static Logger logger = LoggerFactory.getLogger(PostgresBinderStore.class);
 
@@ -74,7 +74,7 @@ public class PostgresBinderStore implements BinderStore {
     private Stream<String> listAllTables() {
         Set<String> names = new HashSet<>();
         try {
-            final String sql = "SELECT binder_name FROM " + MEWBASE_BINDER_META_TABLE_NAME;
+            final String sql = "SELECT name FROM " + MEWBASE_BINDER_TABLE_NAME;
             try (final Statement stmt = connection.createStatement()) {
                 try (ResultSet dbrs = stmt.executeQuery(sql)) {
                     while (dbrs.next()) {
