@@ -15,6 +15,7 @@ import akka.http.scaladsl.server.Directives.{entity, _}
 import com.typesafe.config.ConfigFactory
 import io.mewbase.bson.BsonObject
 import io.mewbase.eventsource.EventSink
+import io.mewbase.eventsource.impl.http.HttpEventSink
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -86,21 +87,23 @@ object HttpEventRouter extends App
   val pingRoute =
     get {
       path ( "ping" ) {
-        logRequest("ping") {
+          log.debug(s"get - ping")
           complete("pong")
         }
       }
-    }
+
 
 
   val publishRoute =
     post {
-      path("publish" / Segment ) { channelName =>
-        logRequest("publish on channel" + channelName) {
-          entity(as[Array[Byte]]) { bson =>
-            val eventNumber = sink.publishSync(channelName, new BsonObject(bson))
+      path(HttpEventSink.publishRoute ) {
+          entity(as[Array[Byte]]) { body =>
+            val bson = new BsonObject(body)
+            val channelName = bson.getString(HttpEventSink.CHANNEL_TAG)
+            val event = bson.getBsonObject(HttpEventSink.EVENT_TAG)
+            val eventNumber = sink.publishSync(channelName, event)
+            log.debug(s"post - ${HttpEventSink.publishRoute} $channelName" )
             complete(HttpEntity(eventNumber.toString()))
-          }
         }
       }
     }
@@ -108,12 +111,14 @@ object HttpEventRouter extends App
 
   val subscribeRoute =
     post {
-      path ("subscribe" / Segment ) { channelName =>
-        logRequest("subscribe on channel" + channelName) {
+      path ("subscribe"  ) {
+        entity(as[Array[Byte]]) { body =>
+          val bson = new BsonObject(body)
+          val channelName = bson.getString(HttpEventSink.CHANNEL_TAG)
           val source = createStringSource(channelName).map {
             str => ChunkStreamPart(s"Channel : $channelName EventNumber :$str")
           }
-        complete(HttpEntity.Chunked(ContentTypes.`application/json`, source))
+        complete(HttpEntity.Chunked(ContentTypes.`application/octet-stream`, source))
         }
       }
     }
