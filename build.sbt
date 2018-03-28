@@ -31,7 +31,7 @@ val basicSettings = Seq(
     }
   },
 
-  libraryDependencies  ++= Dependencies.test( junit, vertxUnit, restAssured, scalatest(scalaVersion.value)),
+  libraryDependencies  ++= Dependencies.test( junit, vertxUnit, restAssured, scalatest(scalaVersion.value), commonsIo),
 
   // scaladoc settings
   (scalacOptions in doc) ++= Seq("-doc-title", name.value, "-doc-version", version.value),

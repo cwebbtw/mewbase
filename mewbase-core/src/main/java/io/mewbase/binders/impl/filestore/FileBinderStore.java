@@ -75,4 +75,7 @@ public class FileBinderStore implements BinderStore {
     }
 
 
+    @Override
+    public void close() throws Exception {
+    }
 }

@@ -1,6 +1,7 @@
 package io.mewbase.binders.impl.postgres;
 
 
+import com.google.common.base.Throwables;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import java.math.BigInteger;
 import java.sql.*;
 
 import java.util.HashSet;
@@ -29,23 +31,24 @@ public class PostgresBinder extends StreamableBinder implements Binder {
     private final static Logger log = LoggerFactory.getLogger(PostgresBinder.class);
 
     private final String name;
+    private final long id;
 
     private final ExecutorService stexec = Executors.newSingleThreadExecutor();
 
     private final Connection connection;
 
-
     public PostgresBinder(Connection connection, String name) {
         this.connection = connection;
         this.name = name;
         try {
-            createIfDoesntExists(name);
             log.info("Opened Binder named " + name);
+            addToBinderStore();
+            id = queryBinderId();
         } catch (Exception exp) {
             log.error("Failed to open binder " + name, exp);
+            throw Throwables.propagate(exp);
         }
     }
-
 
     @Override
     public String getName() {
@@ -54,22 +57,26 @@ public class PostgresBinder extends StreamableBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<BsonObject> get(final String id) {
+    public CompletableFuture<BsonObject> get(final String key) {
 
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             BsonObject doc = null;
             try {
                 final Statement stmt = connection.createStatement();
-                final ResultSet resultSet = stmt.executeQuery("SELECT data FROM "+name+" WHERE key = '"+id+"';");
-                if (resultSet.next()) {
-                    byte[] buffer = resultSet.getBytes("data");
-                    doc = new BsonObject(buffer);
+                final String sql = "SELECT data FROM " + PostgresBinderStore.MEWBASE_BINDER_DATA_TABLE_NAME + " WHERE key = ? AND binder_id = ?";
+                try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, key);
+                    statement.setLong(2, id);
 
+                    try (final ResultSet resultSet = statement.executeQuery()) {
+                        if (resultSet.next()) {
+                            byte[] buffer = resultSet.getBytes("data");
+                            doc = new BsonObject(buffer);
+                        }
+                    }
                 }
-                resultSet.close();
-                stmt.close();
             } catch (Exception exp) {
-                    log.error("Error getting document with key : " + id);
+                    log.error("Error getting document with key : " + key);
                     throw new CompletionException(exp);
             }
             return doc;
@@ -77,44 +84,69 @@ public class PostgresBinder extends StreamableBinder implements Binder {
         return fut;
     }
 
+    private void addToBinderStore() throws SQLException {
+        final String sql =
+                "INSERT INTO " + PostgresBinderStore.MEWBASE_BINDER_TABLE_NAME + "(name) VALUES (?) ON CONFLICT DO NOTHING";
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, name);
+            statement.execute();
+        }
+    }
+
+    private long queryBinderId() throws SQLException {
+        final String sql =
+                "SELECT id FROM " + PostgresBinderStore.MEWBASE_BINDER_TABLE_NAME + " WHERE name = ?";
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, name);
+            try (final ResultSet rs = statement.executeQuery()) {
+                if (rs.next())
+                    return rs.getLong(1);
+                else
+                    throw new IllegalStateException("Binder with name " + name + " not found");
+            }
+        }
+    }
 
     @Override
-    public CompletableFuture<Void> put(final String id, final BsonObject doc) {
-
+    public CompletableFuture<Void> put(final String key, final BsonObject doc) {
         final byte[] valBytes = doc.encode().getBytes();
 
         CompletableFuture fut = CompletableFuture.runAsync( () -> {
             try {
-                final String sql = "INSERT INTO "+name+" VALUES( ?, ? )" +
-                        " ON CONFLICT (key) DO UPDATE SET data = ? ;";
-                final PreparedStatement stmt = connection.prepareStatement(sql);
-                stmt.setString(1,id);
-                stmt.setBytes(2,valBytes);
-                stmt.setBytes(3,valBytes);
-                stmt.executeUpdate();
-                stmt.close();
+                final String sql = "INSERT INTO "+ PostgresBinderStore.MEWBASE_BINDER_DATA_TABLE_NAME +"(binder_id, key, data)  VALUES( ?, ?, ? )" +
+                        " ON CONFLICT (binder_id, key) DO UPDATE SET data = ? ;";
+                try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
+                    stmt.setLong(1, id);
+                    stmt.setString(2, key);
+                    stmt.setBytes(3, valBytes);
+                    stmt.setBytes(4, valBytes);
+                    stmt.executeUpdate();
+                }
             } catch (Exception exp) {
-                log.error("Error writing document key : " + id + " value : " + doc);
+                log.error("Error writing document key : " + key + " value : " + doc);
                 throw new CompletionException(exp);
             }
         }, stexec);
-        streamFunc.ifPresent( func -> func.accept(id,doc));
+        streamFunc.ifPresent( func -> func.accept(key,doc));
         return fut;
     }
 
 
     @Override
     @Deprecated
-    public CompletableFuture<Boolean> delete(final String id) {
+    public CompletableFuture<Boolean> delete(final String key) {
 
         CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             try {
-                final Statement stmt = connection.createStatement();
-                stmt.executeUpdate("DELETE FROM "+name+" WHERE key = '"+id+"';");
-                stmt.close();
-                return true;
+                final String sql = "DELETE FROM " + PostgresBinderStore.MEWBASE_BINDER_DATA_TABLE_NAME + " WHERE key = ? AND binder_id = ?";
+                try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, key);
+                    statement.setLong(2, id);
+                    statement.executeUpdate();
+                    return true;
+                }
             } catch (Exception exp) {
-                log.error("Error deleting document " + id );
+                log.error("Error deleting document " + key );
                 throw new CompletionException(exp);
             }
         }, stexec);
@@ -131,37 +163,29 @@ public class PostgresBinder extends StreamableBinder implements Binder {
     @Override
     public Stream<KeyVal<String, BsonObject>> getDocuments( Predicate<KeyVal<String, BsonObject>> filter) {
         CompletableFuture<Set<KeyVal<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
-
             Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
 
             try {
-                final Statement stmt = connection.createStatement();
-                final ResultSet dbrs = stmt.executeQuery("SELECT key, data from "+name+";");
-                while(dbrs.next()) {
-                    final String key = dbrs.getString("key");
-                    byte[] bytes = dbrs.getBytes("data");
-                    final BsonObject doc = new BsonObject(bytes);
-                    KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
-                    if (filter.test(kv)) resultSet.add(kv);
-                }
-                dbrs.close();
-                stmt.close();
+                final String sql = "SELECT key, data FROM " + PostgresBinderStore.MEWBASE_BINDER_DATA_TABLE_NAME + " WHERE binder_id = ?";
+                try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                    preparedStatement.setLong(1, id);
 
+                    try (final ResultSet dbrs = preparedStatement.executeQuery()) {
+                        while(dbrs.next()) {
+                            final String key = dbrs.getString("key");
+                            byte[] bytes = dbrs.getBytes("data");
+                            final BsonObject doc = new BsonObject(bytes);
+                            KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
+                            if (filter.test(kv)) resultSet.add(kv);
+                        }
+                    }
+                }
             } catch (Exception ex) {
                 log.error("Postgres Binder failed to get documents", ex);
             }
             return resultSet;
         }, stexec);
         return fut.join().stream();
-    }
-
-
-    public void createIfDoesntExists(final String name) throws SQLException {
-        final String schemaSql = "CREATE SCHEMA IF NOT EXISTS mewbase;";
-        connection.createStatement().executeUpdate(schemaSql);
-        final String tableSql =  "CREATE TABLE IF NOT EXISTS mewbase."+ name +
-                                    " (key TEXT, data bytea, PRIMARY KEY ( key ))";
-        connection.createStatement().executeUpdate(tableSql);
     }
 
 }
