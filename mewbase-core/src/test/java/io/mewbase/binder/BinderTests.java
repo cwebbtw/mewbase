@@ -3,6 +3,7 @@ package io.mewbase.binder;
 import com.google.common.base.Throwables;
 import com.typesafe.config.Config;
 import io.mewbase.MewbaseTestBase;
+import io.mewbase.binder.session.PostgresTestBinderStoreSessionSupplier;
 import io.mewbase.binder.session.TestBinderStoreSession;
 import io.mewbase.binder.session.TempDirectoryTestBinderStoreSessionSupplier;
 import io.mewbase.binders.BinderStore;
@@ -68,7 +69,7 @@ public class BinderTests extends MewbaseTestBase {
         final Supplier<TestBinderStoreSession> file
                 = new TempDirectoryTestBinderStoreSessionSupplier();
 
-        return Arrays.asList( new Object[][] { /*{ postgres }, */ { file } });
+        return Arrays.asList( new Object[][] { /* { postgres } ,*/ { file } });
     }
 
     private final Supplier<TestBinderStoreSession> testBinderStoreSessionSupplier;
@@ -89,6 +90,26 @@ public class BinderTests extends MewbaseTestBase {
     public void canCreateBinder() throws Exception {
         // doesnt throw exceptions and does return a valid handle to store
         singleStoreTest(Assert::assertNotNull);
+    }
+
+    /*
+    Failure of this case would indicate a `TestBinderStoreSession` supplier isn't cleaning up
+    between sessions, and odd things might happen in other tests
+     */
+    @Test
+    public void testSessionIsolation() throws Exception {
+        try (final TestBinderStoreSession session = testBinderStoreSessionSupplier.get()) {
+            try (final BinderStore store = session.get()) {
+                store.open("wibble");
+                store.open("wobble");
+            }
+        }
+        try (final TestBinderStoreSession session = testBinderStoreSessionSupplier.get()) {
+            try (final BinderStore store = session.get()) {
+                final List<String> binderNames = store.binderNames().collect(Collectors.toList());
+                assertTrue(binderNames.isEmpty());
+            }
+        }
     }
 
     @Test
