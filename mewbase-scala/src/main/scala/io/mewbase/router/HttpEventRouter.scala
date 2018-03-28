@@ -13,6 +13,9 @@ import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.{entity, _}
 import com.typesafe.config.ConfigFactory
+import io.mewbase.bson.BsonObject
+import io.mewbase.eventsource.EventSink
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
@@ -26,11 +29,15 @@ object HttpEventRouter extends App
   implicit val system = ActorSystem("server")
   implicit val materializer = ActorMaterializer()
 
-  val HOSTNAME_CONFIG_PATH = "mewbase.http.router.hostname"
   val PORT_CONFIG_PATH = "mewbase.http.router.port"
 
 
-  // Store a killSwitch associated with each
+  val log = LoggerFactory.getLogger(getClass.getName)
+
+  val sink = EventSink.instance()
+
+
+  // Store a killSwitch associated with each subscription
   val killSwitches = mutable.Map[String, Promise[Unit]]()
 
 
@@ -79,52 +86,63 @@ object HttpEventRouter extends App
   val pingRoute =
     get {
       path ( "ping" ) {
-        println("pinged")
-        complete("pong")
+        logRequest("ping") {
+          complete("pong")
+        }
       }
     }
+
 
   val publishRoute =
     post {
       path("publish" / Segment ) { channelName =>
-        entity(as[String]) { json =>
-          println(channelName + " published " + json)
-          complete(HttpEntity(0L toString() ))
+        logRequest("publish on channel" + channelName) {
+          entity(as[Array[Byte]]) { bson =>
+            val eventNumber = sink.publishSync(channelName, new BsonObject(bson))
+            complete(HttpEntity(eventNumber.toString()))
+          }
         }
       }
     }
+
 
   val subscribeRoute =
     post {
       path ("subscribe" / Segment ) { channelName =>
-        println("subscribe to " + channelName)
-        val source = createStringSource(channelName).map {
-          str => ChunkStreamPart(s"Channel : $channelName EventNumber :$str")
-        }
+        logRequest("subscribe on channel" + channelName) {
+          val source = createStringSource(channelName).map {
+            str => ChunkStreamPart(s"Channel : $channelName EventNumber :$str")
+          }
         complete(HttpEntity.Chunked(ContentTypes.`application/json`, source))
+        }
       }
     }
 
+
   val unsubscribeRoute =
     post {
-      path ("unsubscribe" / Segment ) {  subscriptionID =>
-        println("unsubscribing " + subscriptionID)
-        killSwitches.get(subscriptionID).foreach {  kSwitch =>
-          kSwitch.complete( Try { () => () }  )
-          killSwitches.remove(subscriptionID)
+      path ("unsubscribe" / Segment ) { subscriptionID =>
+        val responseMsg = "unsubscribe :" + subscriptionID
+        logRequest(responseMsg) {
+          killSwitches.get(subscriptionID).foreach { kSwitch =>
+            kSwitch.complete(Try { () => () })
+            killSwitches.remove(subscriptionID)
+          }
+          complete(responseMsg)
         }
-        complete( "Unsubscribe:"+subscriptionID )
       }
     }
+
 
   val allRoutes =  { pingRoute ~ publishRoute ~ subscribeRoute ~ unsubscribeRoute }
 
   val config = ConfigFactory.load()
-  val interfaces = "0.0.0.0"
   val port = config.getInt(PORT_CONFIG_PATH)
+  val interfaces = "0.0.0.0"
 
   val serverSource = Http().bindAndHandle(allRoutes, interfaces, port)
 
-  println (s"Server Started on Port :$port")
+  log.info(s"Server Started on Port :$port")
+
 
 }

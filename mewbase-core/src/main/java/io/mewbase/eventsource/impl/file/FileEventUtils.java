@@ -41,7 +41,9 @@ public interface FileEventUtils {
         return Files.list(channelPath)
                     //.filter(f -> Files.isRegularFile(f))
                     .filter( f ->  {
-                        if  (f.toFile().lastModified() >= currentlyMostRecent.get()) {
+                        // FileName must contain only digits and be written more recently than others
+                        if (f.toFile().getName().chars().allMatch(x -> Character.isDigit(x)) &&
+                            f.toFile().lastModified() >= currentlyMostRecent.get()) {
                             currentlyMostRecent.set(f.toFile().lastModified());
                             return true;
                         } else {
