@@ -31,12 +31,7 @@ public class HttpEventSink implements EventSink {
     public final static String CHANNEL_TAG = "channel";
 
 
-    private final String hostname;
-    private final int port;
-
-
     private final long syncWriteTimeOut = 10;
-
 
     private final HttpClient client;
 
@@ -47,8 +42,8 @@ public class HttpEventSink implements EventSink {
 
 
     public HttpEventSink(Config cfg) {
-        hostname = cfg.getString(HOSTNAME_CONFIG_PATH);
-        port = cfg.getInt(PORT_CONFIG_PATH);
+        String hostname = cfg.getString(HOSTNAME_CONFIG_PATH);
+        int port = cfg.getInt(PORT_CONFIG_PATH);
 
         HttpClientOptions options = new HttpClientOptions()
                     .setDefaultHost(hostname)
