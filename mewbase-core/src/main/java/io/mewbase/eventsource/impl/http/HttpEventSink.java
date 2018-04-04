@@ -75,7 +75,7 @@ public class HttpEventSink implements EventSink {
                 .put(CHANNEL_TAG, channelName)
                 .put(EVENT_TAG, event);
 
-        CompletableFuture<Long> fut = new CompletableFuture();
+        CompletableFuture<Long> fut = new CompletableFuture<>();
         client.post(publishRoute, response ->
                 response.bodyHandler(totalBuffer -> {
                     try {
