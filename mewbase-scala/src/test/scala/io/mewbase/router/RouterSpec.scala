@@ -1,26 +1,28 @@
 package io.mewbase.router
 
+import java.time.Instant
+import java.util.concurrent.CountDownLatch
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.stream.ActorMaterializer
-
+import akka.util.ByteString
 import io.mewbase.bson.BsonObject
-import io.mewbase.eventsource.impl.http.HttpEventSink
+import io.mewbase.eventsource.impl.http.{HttpEventSink, HttpEventSource, SubscriptionRequest}
 import io.vertx.core.json.JsonObject
-import org.scalatest.{Assertion, AsyncFlatSpec, FlatSpec}
+import org.scalatest.{Assertion, AsyncFlatSpec, BeforeAndAfterAll, FlatSpec}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-
 import scala.language.postfixOps
 
 /*
 Test Requires a router running on a local machine on 8081
  */
 
-class RouterSpec extends AsyncFlatSpec {
+class RouterSpec extends AsyncFlatSpec with BeforeAndAfterAll {
 
 
   implicit val system = ActorSystem("tests")
@@ -29,6 +31,12 @@ class RouterSpec extends AsyncFlatSpec {
 
   val hostname = "localhost"
   val port = 8081
+
+
+  override def beforeAll() {
+    HttpEventRouter.main(Array(""))
+    Thread.sleep(2000)
+  }
 
 
   "The router" should "ping on configured host and port" in {
@@ -60,12 +68,72 @@ class RouterSpec extends AsyncFlatSpec {
   }
 
 
-//  it should "subscribe on channel" in  {
+    it should "subscribe on channel" in  {
+
+      import SubscriptionRequest.SubscriptionType._
+      val subsRq = new SubscriptionRequest("bbc 7", FromStart, 0, Instant.EPOCH)
+      val subscribeRoute = s"http://$hostname:$port/${HttpEventSource.subscribeRoute}"
+
+      val cdl = new CountDownLatch(1)
+      val httpRequest = HttpRequest(POST,  subscribeRoute, entity = subsRq.toBson.encode().getBytes)
+      val t = Http().singleRequest(httpRequest).flatMap { response =>
+        response.entity.dataBytes.runForeach { chunk: ByteString =>
+          val bson = new BsonObject(chunk.toArray[Byte])
+          val event = bson.getBsonObject("Event")
+          assert(event != null)
+          assert(event.getString("name") === "Fred")
+          cdl.countDown()
+        }
+      }
+
+     cdl.await()
+      //keep async happy
+      Future.successful(assert(true))
+
+  }
+
+
+  it should "send no event then new events on channel" in {
+
+//    val channelName = "TestChannel"
 //
-//    val publish = s"http://$hostname:$port/publish/" + URLEncoder.encode("bbc 7", "UTF-8")
 //
+//    // set up a subscription from now
+//    import SubscriptionRequest.SubscriptionType._
+//    val subsRq = new SubscriptionRequest(channelName, FromNow, 0, Instant.EPOCH)
+//    val subscribeRoute = s"http://$hostname:$port/${HttpEventSource.subscribeRoute}"
 //
-//  }
+//    val cdl = new CountDownLatch(1)
+//    val httpRequest = HttpRequest(POST, subscribeRoute, entity = subsRq.toBson.encode().getBytes)
+//    val t = Http().singleRequest(httpRequest).flatMap { response =>
+//      response.entity.dataBytes.runForeach { chunk: ByteString =>
+//        val bson = new BsonObject(chunk.toArray[Byte])
+//        val event = bson.getBsonObject("Event")
+//        assert(event != null)
+//        assert(event.getString("name") === "Fred")
+//        cdl.countDown()
+//      }
+//    }
+//
+//    Thread.sleep(1000)
+//    println("Set up subscription")
+//    // write a new event
+//    val publish = s"http://$hostname:$port/${HttpEventSink.publishRoute}"
+//
+//    val event = new BsonObject(new JsonObject("""{ "name" : "Fred" }"""))
+//    val body = new BsonObject()
+//      .put(HttpEventSink.CHANNEL_TAG, channelName)
+//      .put(HttpEventSink.EVENT_TAG, event)
+//    val entity = body.encode().getBytes()
+//
+//    val responseFut = Http().singleRequest(HttpRequest(POST, publish, entity = entity))
+//
+//    // wait for the event to turn up in the chunks
+//    cdl.await()
+
+    //keep async happy
+    Future.successful(assert(true))
+  }
 
 
 }

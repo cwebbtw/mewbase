@@ -6,10 +6,10 @@ import java.util.concurrent.LinkedBlockingQueue
 import akka.http.scaladsl.model.HttpEntity.ChunkStreamPart
 import akka.stream.{Attributes, Outlet, SourceShape}
 import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
-import io.mewbase.bson.BsonObject
 import io.mewbase.eventsource.{Event, EventHandler, EventSource, Subscription}
 import io.mewbase.eventsource.impl.http.SubscriptionRequest
 import io.mewbase.eventsource.impl.http.SubscriptionRequest.SubscriptionType
+import io.mewbase.router.HttpEventRouter.log
 
 
 case class SubscriptionChunkSource(eventSource : EventSource, subsRq : SubscriptionRequest ) extends GraphStage[SourceShape[ChunkStreamPart]] {
@@ -29,27 +29,25 @@ case class SubscriptionChunkSource(eventSource : EventSource, subsRq : Subscript
 
       setHandler(out, new OutHandler {
         override def onPull() : Unit = {
-           push(out, queue.poll() )
+           push(out, queue.take() )
         }
 
         override def onDownstreamFinish(): Unit = {
           super.onDownstreamFinish()
           subs.close()
+          log.info("Cleaning up ChunkSource subscription")
           complete(out)
         }
       })
     }
 
+ import  io.mewbase.eventsource.impl.http.HttpEvent
 
   def subscribe() : Subscription = {
     val handler =  new EventHandler {
       override def onEvent(evt: Event): Unit = {
-        val boj = new BsonObject()
-          .put("EventNumber",evt.getEventNumber)
-          .put("EpochMillis",evt.getInstant.toEpochMilli)
-          .put("Crc32",evt.getCrc32)
-          .put("Event",evt.getBson)
-        queue.offer(boj.encode.getBytes)
+        val httpEvent = new HttpEvent(evt)
+        queue.offer(httpEvent.toBson().encode.getBytes)
       }
     }
 

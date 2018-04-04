@@ -4,7 +4,6 @@ package io.mewbase.router
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpEntity.ChunkStreamPart
 import akka.stream._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.{entity, _}
