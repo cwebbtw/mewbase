@@ -64,9 +64,11 @@ public class FileEventSubscription implements Subscription {
     private FileEvent waitForEvent(final long eventNumber) throws Exception {
         Path eventFilePath = channelPath.resolve(FileEventUtils.pathFromEventNumber(eventNumber));
         File eventFile = eventFilePath.toFile();
+        logger.info("Waiting for event " + eventNumber);
         while (! (eventFile.exists() && eventFile.length() > 0) ) {
             Thread.sleep( WATCH_WINDOW_MILLIS);
         }
+        logger.info("Got Event " + eventNumber);
         return FileEventUtils.fileToEvent( eventFilePath.toFile() );
     }
 

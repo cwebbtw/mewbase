@@ -2,8 +2,10 @@ package io.mewbase.router
 
 
 
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+
 import akka.stream._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.{entity, _}
@@ -17,11 +19,15 @@ import org.slf4j.LoggerFactory
 
 
 
+
+
 object HttpEventRouter extends App
 {
 
   implicit val system = ActorSystem("server")
   implicit val materializer = ActorMaterializer()
+  import system.dispatcher
+
 
   val PORT_CONFIG_PATH = "mewbase.http.router.port"
 
@@ -34,7 +40,7 @@ object HttpEventRouter extends App
   val pingRoute =
     get {
       path ( "ping" ) {
-          log.debug(s"get - ping")
+          log.info(s"get - ping")
           complete("pong")
         }
       }
@@ -43,13 +49,14 @@ object HttpEventRouter extends App
   val publishRoute =
     post {
       path(HttpEventSink.publishRoute ) {
-          entity(as[Array[Byte]]) { body =>
+          entity(as[Array[Byte]]) { body => {
             val bson = new BsonObject(body)
             val channelName = bson.getString(HttpEventSink.CHANNEL_TAG)
             val event = bson.getBsonObject(HttpEventSink.EVENT_TAG)
             val eventNumber = sink.publishSync(channelName, event)
-            log.debug(s"post - ${HttpEventSink.publishRoute} $channelName" )
+            log.info(s"post - ${HttpEventSink.publishRoute} $channelName")
             complete(HttpEntity(eventNumber.toString()))
+          }
         }
       }
     }
@@ -58,12 +65,15 @@ object HttpEventRouter extends App
   val subscribeRoute =
     post {
       path (HttpEventSource.subscribeRoute ) {
-        entity(as[Array[Byte]]) { body =>
+        entity(as[Array[Byte]]) { body => {
           val bson = new BsonObject(body)
           val subReq = new SubscriptionRequest(bson)
-          val chunkSource = SubscriptionChunkSource(source,subReq)
-          log.debug(s"post - ${HttpEventSource.subscribeRoute} $subReq" )
-        complete(HttpEntity.Chunked(ContentTypes.`application/octet-stream`, Source.fromGraph(chunkSource)))
+          val pushPull = SubscriptionPushPull(source,subReq)
+          val chunkGraph = SubscriptionChunkSource(pushPull)
+          val chunkSource = Source.fromGraph(chunkGraph)
+          log.info(s"post - ${HttpEventSource.subscribeRoute} $subReq" )
+          complete(HttpEntity.Chunked(ContentTypes.`application/octet-stream`, chunkSource ))
+          }
         }
       }
     }
