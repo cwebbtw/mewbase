@@ -37,7 +37,7 @@ public class FileEventSource implements EventSource
 
     public FileEventSource(Config cfg) {
         baseDir = Paths.get(cfg.getString("mewbase.event.source.file.basedir"));
-        logger.info("Created FileEventSource connection with base directory " + baseDir);
+        logger.info("Created File Event Source connection with base directory " + baseDir);
     }
 
 

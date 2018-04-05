@@ -33,17 +33,6 @@ public class EventSinkTest extends MewbaseTestBase {
     }
 
 
-    //@Test
-    public void testSupplyAsyncCapturesUncheckedException() {
-        CompletableFuture<Long> fut = CompletableFuture.supplyAsync( () -> {
-             //throw new IOException(new IOException("Boom!"));
-            return 1L;
-        });
-        fut.join();
-        assert(fut.isCompletedExceptionally());
-    }
-
-
     @Test
     public void testPublishSingleEvent() throws Exception {
 

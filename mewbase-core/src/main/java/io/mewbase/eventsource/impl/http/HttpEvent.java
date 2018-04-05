@@ -6,23 +6,40 @@ import io.mewbase.eventsource.Event;
 import java.time.Instant;
 
 
-class HttpEvent implements Event {
+public class HttpEvent implements Event {
+
+    final static String NUMBER_KEY = "EventNumber";
+    final static String START_TIME_KEY = "EpochMillis";
+    final static String CRC32_KEY = "Crc32";
+    final static String EVENT_KEY = "Event";
 
     final long eventNumber;
     final long epochMillis;
     final long crc32;
     final BsonObject event;
 
+
     public HttpEvent(byte[] httpEventArray) {
-       BsonObject boj = new BsonObject(httpEventArray);
-       this.eventNumber = boj.getLong("EventNumber");
-       this.epochMillis = boj.getLong("EpochMillis");
-       this.crc32 = boj.getLong("Crc32");
-       this.event = boj.getBsonObject( "Event" );
+        BsonObject boj = new BsonObject(httpEventArray);
+        this.eventNumber = boj.getLong(NUMBER_KEY);
+        this.epochMillis = boj.getLong(START_TIME_KEY);
+        this.crc32 = boj.getLong(CRC32_KEY);
+        this.event = boj.getBsonObject(EVENT_KEY);
     }
 
+
+    public HttpEvent(Event that) {
+        this.eventNumber = that.getEventNumber();
+        this.epochMillis = that.getInstant().toEpochMilli();
+        this.crc32 = that.getCrc32();
+        this.event = that.getBson();
+    }
+
+
     @Override
-    public BsonObject getBson() { return event; }
+    public BsonObject getBson() {
+        return event;
+    }
 
     @Override
     public Instant getInstant() {
@@ -47,6 +64,12 @@ class HttpEvent implements Event {
                 " PayLoad : " + this.getBson();
     }
 
-
+    public BsonObject toBson() {
+       return new BsonObject()
+                .put(NUMBER_KEY, getEventNumber())
+                .put(START_TIME_KEY, getInstant().toEpochMilli())
+                .put(CRC32_KEY, getCrc32())
+                .put(EVENT_KEY, getBson());
+    }
 
 }

@@ -32,14 +32,23 @@ public class HttpEventSubscription implements Subscription {
         this.dispatcher = new EventDispatcher<>(i -> i, eventHandler);
 
         // TODO Check how vert.x handles request chunks
-        client.post(HttpEventSource.subscribeRoute, response  ->
-                response.bodyHandler(totalBuffer -> {
-                    try {
-                        dispatcher.dispatch(new HttpEvent(totalBuffer.getBytes()));
-                    } catch (Exception exp) {
-                        logger.error("Event subscription failed", exp);
-                    }
-                } )
+        client.post("/"+HttpEventSource.subscribeRoute, response  -> {
+                    // got a chunk (Event) from the stream
+                    response.handler(buffer -> {
+                        try {
+                            dispatcher.dispatch(new HttpEvent(buffer.getBytes()));
+                        } catch (Exception exp) {
+                            logger.error("Event delivery failed", exp);
+                        }
+                    });
+
+                    // socket was closed
+                    response.endHandler( nothing -> {
+                            logger.info("Event stream ended");
+                            close();
+                        }
+                    );
+                }
         ).end(subsRequest.toBson().encode());
     }
 
@@ -49,6 +58,7 @@ public class HttpEventSubscription implements Subscription {
         client.close();
         // drain and stop the dispatcher.
         dispatcher.stop();
+        logger.info("Event subscription closed");
     }
 
 }

@@ -42,8 +42,8 @@ public class HttpEventSink implements EventSink {
 
 
     public HttpEventSink(Config cfg) {
-        String hostname = cfg.getString(HOSTNAME_CONFIG_PATH);
-        int port = cfg.getInt(PORT_CONFIG_PATH);
+        final String hostname = cfg.getString(HOSTNAME_CONFIG_PATH);
+        final int port = cfg.getInt(PORT_CONFIG_PATH);
 
         HttpClientOptions options = new HttpClientOptions()
                     .setDefaultHost(hostname)
@@ -76,10 +76,11 @@ public class HttpEventSink implements EventSink {
                 .put(EVENT_TAG, event);
 
         CompletableFuture<Long> fut = new CompletableFuture<>();
-        client.post(publishRoute, response ->
+        client.post("/"+publishRoute, response ->
                 response.bodyHandler(totalBuffer -> {
                     try {
-                        final Long eventNumber = Long.getLong(totalBuffer.toString());
+                        final String eventNumberAsString = totalBuffer.toString();
+                        final Long eventNumber = Long.valueOf(eventNumberAsString);
                         fut.complete(eventNumber);
                     } catch (Exception exp) {
                         fut.completeExceptionally(exp);

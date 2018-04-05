@@ -52,7 +52,11 @@ public class SubscriptionRequest {
         return bson;
     }
 
-
+    @Override
+    public String toString() {
+        return  " Channel :" + channel +
+                " Type :" + type.name();
+    }
 }
 
 
