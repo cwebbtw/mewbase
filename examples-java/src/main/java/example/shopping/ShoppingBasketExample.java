@@ -12,6 +12,10 @@ import io.mewbase.eventsource.impl.nats.NatsEventSink;
 import io.mewbase.eventsource.impl.nats.NatsEventSource;
 import io.mewbase.projection.ProjectionManager;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 /**
@@ -19,7 +23,8 @@ import java.util.function.Consumer;
  * order events
  *
  * Created by tim on 08/11/16.
- * Updated by Nige on 25/10/17
+ * Updated by Nige on 25/10/17, 16/4/18
+ *
  */
 
 public class ShoppingBasketExample {
@@ -28,7 +33,7 @@ public class ShoppingBasketExample {
     public static void main(String[] args) throws Exception {
 
         // In order to run a projection set up an EventSource and BinderStore.
-        EventSource src = new NatsEventSource();
+        EventSource src = EventSource.instance();;
         BinderStore store = BinderStore.instance();
         ProjectionManager mgr = ProjectionManager.instance(src,store);
 
@@ -74,19 +79,20 @@ public class ShoppingBasketExample {
         //************************** Client Side Setup ******************************
 
         // set up a sink to send events to the projection
-        EventSink sink = new NatsEventSink();
+        EventSink sink = EventSink.instance();
 
         // Create some add/remove events
         BsonObject event = new BsonObject().put(BASKET_ID_KEY, BASKET_ID);
         BsonObject addEvent = event.copy().put(EVENT_TYPE_KEY, ADD_EVENT);
         BsonObject remEvent = event.copy().put(EVENT_TYPE_KEY, REMOVE_EVENT);
 
-        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod1234").put("quantity", 2));
-        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod2341").put("quantity", 1));
-        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "prod5432").put("quantity", 3));
-        sink.publishAsync(ORDERS_EVENT_CHANNEL, remEvent.copy().put("productID", "prod5432").put("quantity", 1));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "Prod-Chicken").put("quantity", 2));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "Prod-Peas").put("quantity", 3));
+        sink.publishAsync(ORDERS_EVENT_CHANNEL, addEvent.copy().put("productID", "Prod-Carrots").put("quantity", 2));
+        // wait for last one to be written in the write queue
+        sink.publishSync(ORDERS_EVENT_CHANNEL, remEvent.copy().put("productID", "Prod-Peas").put("quantity", 1));
 
-        // Todo await the CompleteableFutures rather than
+        // Wait for the Source to pick up the events and for the projection to process thee events
         Thread.sleep(100);
 
         // Consumer of the Basket
@@ -97,6 +103,7 @@ public class ShoppingBasketExample {
         fridgeStatusBinder.get(BASKET_ID).thenAccept( basketConsumer );
 
         // close the resources
+        mgr.stopAll();
         sink.close();
         src.close();
     }

@@ -45,7 +45,7 @@ public class RestService {
 
     public static void main(String [] args) throws Exception {
 
-        // Plug wire together the top level  objects
+        // Wire together the top level objects
         final EventSink eventSink = EventSink.instance();
         final EventSource eventSource = EventSource.instance();
         final BinderStore store = BinderStore.instance();

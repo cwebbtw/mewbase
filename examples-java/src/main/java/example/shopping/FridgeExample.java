@@ -29,11 +29,11 @@ import java.util.function.Consumer;
  * 2) Introduce a new event that reflects the temperature of the fridge and integrate this into
  * the current projection, or make a new projection to handle the new status event.
  *
- * The example depends on a running instance of NatsStreaming service. See the instructions
- * here https://github.com/Tesco/mewbase
+ *
  *
  * Created by Nige on 17/05/17.
- * Updated by Nige on 25/10/17
+ * Updated by Nige on 25/10/17.
+ * Updated by Nige on 16/4/18
  */
 
 public class FridgeExample {
@@ -72,7 +72,7 @@ public class FridgeExample {
         //************************** Client Side Setup ******************************
 
         // set up a sink to send events to the projection
-        EventSink sink = new NatsEventSink();
+        EventSink sink = EventSink.instance();
 
         // Send some open close events for this fridge
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
@@ -95,6 +95,7 @@ public class FridgeExample {
         fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );
 
         // close the resources
+        mgr.stopAll();
         sink.close();
         src.close();
 
