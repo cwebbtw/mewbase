@@ -117,7 +117,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
     ),
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
     crossPaths := false,
-    autoScalaLibrary := false
+    autoScalaLibrary := true
   )
 
 lazy val mewbaseJava = Project("mewbase-java", file("mewbase-java"))

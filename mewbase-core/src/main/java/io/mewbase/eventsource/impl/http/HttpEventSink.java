@@ -26,6 +26,7 @@ public class HttpEventSink implements EventSink {
 
     // route uri for publishing events
     public final static String publishRoute = "publish";
+
     // Define the tags for the body payload
     public final static String EVENT_TAG = "event";
     public final static String CHANNEL_TAG = "channel";
