@@ -20,14 +20,17 @@ Here is how events flow through a typical system that uses mewbase:
 
 This is where raw event data comes from. It should be able to accept a large number of events, without slowing down the user or system that produces them.
 
-Mewbase does not manage or implement the Event Source.
+Mewbase does not manage or implement the Event Source itself.
 
-It is able to use any of the following as an Event Source:
+By default, mewbase is able to use any of the following as an Event Source:
 * A file which contains a sequence of events
 * A topic of [Apache Kafka](https://kafka.apache.org/) messages
 * A subject of [NATS streaming](https://nats.io/about/) messages
 
-In all these cases mewbase stipulates that incoming events are [BSON encoded](http://bsonspec.org/)
+In all these cases the mewbase implementation requires that incoming events are [BSON encoded](http://bsonspec.org/).
+
+The abstraction mewbase provides makes it possible to integrate with another type of Event Source, which may not use BSON encoding.
+
 ### Projection
 
 ### Binder
@@ -38,7 +41,9 @@ In all these cases mewbase stipulates that incoming events are [BSON encoded](ht
 
 ### Event Sink
 
+## Why mewbase is useful
 
+## Writing your first system using mewbase
 
 Glossary
 ---
