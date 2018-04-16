@@ -7,7 +7,6 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
 
 import io.mewbase.projection.ProjectionManager;
 
@@ -29,10 +28,8 @@ import java.util.function.Consumer;
  * 2) Introduce a new event that reflects the temperature of the fridge and integrate this into
  * the current projection, or make a new projection to handle the new status event.
  *
- *
- *
- * Created by Nige on 17/05/17.
- * Updated by Nige on 25/10/17.
+ * Created by Nige on 17/05/17
+ * Updated by Nige on 25/10/17
  * Updated by Nige on 16/4/18
  */
 
@@ -40,6 +37,7 @@ public class FridgeExample {
 
     public static void main(String[] args) throws Exception {
 
+        //************************** Server Side Setup ******************************
         // In order to run a projection set up an EventSource and BinderStore.
         EventSource src = EventSource.instance();
         BinderStore store = BinderStore.instance();
@@ -70,8 +68,7 @@ public class FridgeExample {
 
 
         //************************** Client Side Setup ******************************
-
-        // set up a sink to send events to the projection
+        // set up a sink to send events to the projection in the server
         EventSink sink = EventSink.instance();
 
         // Send some open close events for this fridge

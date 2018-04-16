@@ -4,18 +4,11 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.bson.BsonObject;
 
-
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
-import io.mewbase.eventsource.impl.nats.NatsEventSource;
-import io.mewbase.projection.ProjectionManager;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import io.mewbase.projection.ProjectionManager;
 import java.util.function.Consumer;
 
 /**
