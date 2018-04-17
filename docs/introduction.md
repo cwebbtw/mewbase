@@ -98,7 +98,7 @@ You must also provide functions that filter and classify events that arrive:
 ![Filter and Identifcation functions](images/ProjectionFilterIdentify.png)
 
 * The Filter Function describes which incoming raw events should be ignored by this projection
-* And the Identifcation Function assigns each incoming event to a document in the binder. It transforms an event into an index String, identifying document the event is related to.
+* And the Identifcation Function assigns each incoming event to a document in the binder. It transforms an event into an index String, identifying which document the event is related to.
 
 You must also provide a Projection Function. This is a [pure function](https://en.wikipedia.org/wiki/Pure_function) that determines the next value of a document in the binder.
 
