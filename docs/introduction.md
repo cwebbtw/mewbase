@@ -93,14 +93,14 @@ You tell mewbase:
 * The channel or topic within the Event Source that the projection should subscribe to (e.g. Kafka topic name, if your Event Source is [Apache Kafka](https://kafka.apache.org/))
 * The name of the binder the projection will maintain within the Binder Store
 
-You provide functions that filter and classify any events that arrive form the Event Source:
+You must also provide functions that filter and classify events that arrive:
 
 ![Filter and Identifcation functions](images/ProjectionFilterIdentify.png)
 
 * The Filter Function describes which incoming raw events should be ignored by this projection
 * And the Identifcation Function assigns each incoming event to a document in the binder. It transforms an event into an index String, identifying document the event is related to.
 
-You also provide a Projection Function. This is a [pure function](https://en.wikipedia.org/wiki/Pure_function) that determines the next value of a document in the binder.
+You must also provide a Projection Function. This is a [pure function](https://en.wikipedia.org/wiki/Pure_function) that determines the next value of a document in the binder.
 
 ![Projection Function](images/ProjectionFunction.png)
 
@@ -127,3 +127,12 @@ Applications in a Mewbase system will typically consume data from Binders: the i
 Data can be retrieved from a Binder using the Mewbase API, or or through a [RESTful API](https://en.wikipedia.org/wiki/Representational_state_transfer) that Mewbase is able to expose.
 
 Mewbase provides an Event Sink abstraction allowing applications to produce events.
+
+# Summary
+
+Accepting fine grain events as input to a system provides flexibility and business value. Mewbase provides a toolkit that allows you to accept this kind of input, but build applications from their aggregations. This makes the applications easier to reason about and maintain.
+
+Mewbase:
+* has abstractions for sending and receiving events
+* provides an engine for processing them into aggregations.
+* has abstractions for persistance and exposure of these aggregations
