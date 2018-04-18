@@ -10,7 +10,6 @@ import io.mewbase.eventsource.EventSource;
 
 import io.mewbase.projection.ProjectionManager;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 
@@ -71,11 +70,14 @@ public class FridgeExample {
         // set up a sink to send events to the projection in the server
         EventSink sink = EventSink.instance();
 
-        // Send some open close events for this fridge
+        // Send some open/close events for this fridge
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
-        CompletableFuture<Long> fut = sink.publishAsync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
+        sink.publishSync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
 
-        // Consumer of the Docuemnt
+        // wait for the projection to fire
+        Thread.sleep(200);
+
+        // Consumer of the Document
         Consumer<BsonObject> statusDocumentConsumer = fridgeStateDoc ->
                 System.out.println("Fridge State is :" + fridgeStateDoc);
 
@@ -85,8 +87,8 @@ public class FridgeExample {
         // Shut that door
         sink.publishSync(FRIDGE_EVENT_CHANNEL_NAME,event.copy().put("status", "shut"));
 
-        // wait for the projection to fire
-        Thread.sleep(100);
+        // wait for the projection again
+        Thread.sleep(200);
 
         // Now get the fridge state again
         fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );

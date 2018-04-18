@@ -23,9 +23,9 @@ public class Json2BsonExample {
     public static void main(String[] args) throws Exception {
 
         final String CHANNEL_NAME = "Json2BsonChannel";
-        final int NUMBER_OF_JSON_BLOCKS = 128;  // choose your size
+        final int NUMBER_OF_JSON_FIELDS = 128;  // choose your size
 
-        final String json = createJson(NUMBER_OF_JSON_BLOCKS);
+        final String json = createJson(NUMBER_OF_JSON_FIELDS);
 
         // make a JsonObject from the String could one line this
         JsonObject jobj = new JsonObject(json);
@@ -68,7 +68,7 @@ public class Json2BsonExample {
 
     private static String createJson( int n) {
         StringBuilder sb = new StringBuilder();
-        sb.append("{ \n");
+        sb.append("{\n");
         IntStream.range(1,n).forEach( i -> sb.append( " \"Field"+i+"\" : "+i+",\n"));
         sb.append(" \"Goodnight\" : \"Vienna\" \n" );
         sb.append("}");
