@@ -128,7 +128,6 @@ public static void main(String[] args) {
 }
 ```
 
-It's quite easy:
 * we load our sample config
 * get an instance of a `RestServiceAdaptor` from the factory we specified in the config (it'll be a [Eclipse Vert.x](https://vertx.io/) implementation)
 * then we start it
@@ -186,11 +185,11 @@ This has a few important parts:
 
 This will be the name of the endpoint exposed by the `RestAdapter`.
 
-In this case, it'll be `/buy`turning
+In this case, it'll be "buy"
 
 ## The command handler
 
-This is a function responsible for building an event that will be sent to the Event Sink.
+This is a function responsible for building the event to be sent to the Event Sink.
 
 The actual HTTP request made to the REST service will be a `POST` of `Content-Type` `application/json`.<br/>
 Mewbase's `RestServiceAdapter` will translate this into a [BSON object](http://bsonspec.org/).
@@ -213,7 +212,7 @@ and the corresponding event our command handler produces looks like so:
 {
     "product": "banana",
     "quantity": 1,
-    "action", "BUY"
+    "action": "BUY"
 }
 ```
 
