@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
  * Adapted by Nige on 19/12/17.
  * From Tim's original Impl 16/12/16.
  */
-public interface RestServiceAdaptor {
+public interface RestServiceAdaptor extends AutoCloseable {
 
 
     String factoryConfigPath = "mewbase.api.rest.factory";
@@ -126,5 +126,8 @@ public interface RestServiceAdaptor {
      * @return
      */
     CompletableFuture<Void> stop();
+
+    @Override
+    void close();
 
 }
