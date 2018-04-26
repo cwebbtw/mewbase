@@ -9,3 +9,10 @@ services:
         environment:
             - ADVERTISED_HOST=localhost
             - ADVERTISED_PORT=9092
+    postgres:
+        container_name: "mewbase-gs-postgres"
+        build:
+          context: ../../../../../../mewbase-core/src/main/resources
+          dockerfile: postgres.Dockerfile
+        ports:
+            - "5432:5432"

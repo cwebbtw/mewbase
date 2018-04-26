@@ -8,7 +8,7 @@ import io.mewbase.util.CanFactoryFrom;
 import java.time.Instant;
 
 
-public interface EventSource {
+public interface EventSource extends AutoCloseable {
 
     String factoryConfigPath = "mewbase.event.source.factory";
 
