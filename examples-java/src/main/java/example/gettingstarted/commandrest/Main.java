@@ -9,6 +9,7 @@ import io.mewbase.eventsource.EventSink;
 import io.mewbase.rest.RestServiceAdaptor;
 
 import java.io.IOException;
+import java.time.Instant;
 
 public class Main {
 
@@ -25,9 +26,9 @@ public class Main {
                         .named("buy")
                         .as(params -> {
                             final BsonObject event = new BsonObject();
-                            event.put("customer_id", params.getBsonObject("body").getInteger("customer_id"));
                             event.put("product", params.getBsonObject("body").getString("product"));
                             event.put("quantity", params.getBsonObject("body").getInteger("quantity"));
+                            event.put("action", "BUY");
                             return event;
                         })
                         .emittingTo("purchase_events")
@@ -39,9 +40,9 @@ public class Main {
                         .named("refund")
                         .as(params -> {
                             final BsonObject event = new BsonObject();
-                            event.put("customer_id", params.getBsonObject("body").getInteger("customer_id"));
                             event.put("product", params.getBsonObject("body").getString("product"));
                             event.put("quantity", params.getBsonObject("body").getInteger("quantity"));
+                            event.put("timestamp", Instant.now());
                             event.put("action", "REFUND");
                             return event;
                         })

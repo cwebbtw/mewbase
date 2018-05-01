@@ -12,7 +12,7 @@ services:
     postgres:
         container_name: "mewbase-gs-postgres"
         build:
-          context: ../../../../../../mewbase-core/src/main/resources
+          context: .
           dockerfile: postgres.Dockerfile
         ports:
             - "5432:5432"
