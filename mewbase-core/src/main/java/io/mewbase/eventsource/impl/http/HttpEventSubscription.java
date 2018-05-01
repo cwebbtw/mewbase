@@ -1,5 +1,6 @@
 package io.mewbase.eventsource.impl.http;
 
+import com.typesafe.config.ConfigFactory;
 import io.mewbase.eventsource.EventHandler;
 
 import io.mewbase.eventsource.Subscription;
@@ -23,6 +24,7 @@ public class HttpEventSubscription implements Subscription {
 
 
     public HttpEventSubscription(final HttpClient httpClient,
+                                 final String subscriptionURI,
                                  final SubscriptionRequest subsRequest,
                                  final EventHandler eventHandler) {
 
@@ -32,7 +34,7 @@ public class HttpEventSubscription implements Subscription {
         this.dispatcher = new EventDispatcher<>(i -> i, eventHandler);
 
         // TODO Check how vert.x handles request chunks
-        client.post("/"+HttpEventSource.subscribeRoute, response  -> {
+        client.post(subscriptionURI, response  -> {
                     // got a chunk (Event) from the stream
                     response.handler(buffer -> {
                         try {

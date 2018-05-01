@@ -46,13 +46,13 @@ object HttpEventRouter extends App
 
   val publishRoute =
     post {
-      path(HttpEventSink.publishRoute ) {
+      path(HttpEventSink.PUBLISH_ROUTE ) {
           entity(as[Array[Byte]]) { body => {
             val bson = new BsonObject(body)
             val channelName = bson.getString(HttpEventSink.CHANNEL_TAG)
             val event = bson.getBsonObject(HttpEventSink.EVENT_TAG)
             val eventNumber = sink.publishSync(channelName, event)
-            log.info(s"post - ${HttpEventSink.publishRoute} $channelName")
+            log.info(s"post - ${HttpEventSink.PUBLISH_ROUTE} $channelName")
             complete(HttpEntity(eventNumber.toString()))
           }
         }
@@ -62,14 +62,14 @@ object HttpEventRouter extends App
 
   val subscribeRoute =
     post {
-      path (HttpEventSource.subscribeRoute ) {
+      path (HttpEventSource.SUBSCRIBE_ROUTE ) {
         entity(as[Array[Byte]]) { body => {
           val bson = new BsonObject(body)
           val subReq = new SubscriptionRequest(bson)
           val pushPull = SubscriptionPushPull(source,subReq)
           val chunkGraph = SubscriptionChunkSource(pushPull)
           val chunkSource = Source.fromGraph(chunkGraph)
-          log.info(s"post - ${HttpEventSource.subscribeRoute} $subReq" )
+          log.info(s"post - ${HttpEventSource.SUBSCRIBE_ROUTE} $subReq" )
           complete(HttpEntity.Chunked(ContentTypes.`application/octet-stream`, chunkSource ))
           }
         }

@@ -7,7 +7,6 @@ import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +23,15 @@ public class HttpEventSource implements EventSource
 
     final static String HOSTNAME_CONFIG_PATH = "mewbase.event.source.http.hostname";
     final static String PORT_CONFIG_PATH = "mewbase.event.source.http.port";
+    final static String URL_PREFIX_PATH = "mewbase.event.source.http.url.prefix";
 
-    public final static String subscribeRoute = "subscribe";
+    final public static String SUBSCRIBE_ROUTE = "/subscribe";
 
     private final HttpClientOptions options;
     private final Vertx vertx = Vertx.vertx();
+    private final String subsURI;
 
+    
     public HttpEventSource() {
         this( ConfigFactory.load() );
     }
@@ -38,13 +40,14 @@ public class HttpEventSource implements EventSource
     public HttpEventSource(Config cfg) {
         String hostname = cfg.getString(HOSTNAME_CONFIG_PATH);
         int port = cfg.getInt(PORT_CONFIG_PATH);
+        subsURI = cfg.getString(URL_PREFIX_PATH) + SUBSCRIBE_ROUTE;
 
         options = new HttpClientOptions()
                 .setDefaultHost(hostname)
                 .setDefaultPort(port);
         // TODO lookup and set various security / protocol options here
         // TODO - replace with Java 10 SE Library for HttpClient when able
-        logger.info("Created HTTP Event Source for "+hostname+":"+port);
+        logger.info("Created HTTP Event Source for "+hostname+":"+port+" on "+ subsURI);
     }
 
 
@@ -53,7 +56,7 @@ public class HttpEventSource implements EventSource
             try {
                 final SubscriptionRequest.SubscriptionType subsType = SubscriptionRequest.SubscriptionType.FromNow;
                 final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,Instant.EPOCH);
-                return new HttpEventSubscription(vertx.createHttpClient(options),  subsRq, eventHandler );
+                return new HttpEventSubscription(vertx.createHttpClient(options), subsURI, subsRq, eventHandler );
             } catch (Exception exp) {
                 throw new CompletionException(exp);
             }
@@ -65,7 +68,7 @@ public class HttpEventSource implements EventSource
         try {
             final SubscriptionRequest.SubscriptionType subsType = SubscriptionRequest.SubscriptionType.FromMostRecent;
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,Instant.EPOCH);
-            return new HttpEventSubscription(vertx.createHttpClient(options),  subsRq, eventHandler );
+            return new HttpEventSubscription(vertx.createHttpClient(options), subsURI, subsRq, eventHandler );
         } catch (Exception exp) {
             throw new CompletionException(exp);
         }
@@ -76,7 +79,7 @@ public class HttpEventSource implements EventSource
         try {
             final SubscriptionRequest.SubscriptionType subsType = SubscriptionRequest.SubscriptionType.FromEventNumber;
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName,subsType,startInclusive,Instant.EPOCH);
-            return new HttpEventSubscription(vertx.createHttpClient(options),  subsRq, eventHandler );
+            return new HttpEventSubscription(vertx.createHttpClient(options), subsURI, subsRq, eventHandler );
         } catch (Exception exp) {
             throw new CompletionException(exp);
         }
@@ -87,7 +90,7 @@ public class HttpEventSource implements EventSource
         try {
             final SubscriptionRequest.SubscriptionType subsType = SubscriptionRequest.SubscriptionType.FromInstant;
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,startInstant);
-            return new HttpEventSubscription(vertx.createHttpClient(options),  subsRq, eventHandler );
+            return new HttpEventSubscription(vertx.createHttpClient(options), subsURI, subsRq, eventHandler );
         } catch (Exception exp) {
             throw new CompletionException(exp);
         }
@@ -98,7 +101,7 @@ public class HttpEventSource implements EventSource
         try {
             final SubscriptionRequest.SubscriptionType subsType = SubscriptionRequest.SubscriptionType.FromStart;
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,Instant.EPOCH);
-            return new HttpEventSubscription(vertx.createHttpClient(options),  subsRq, eventHandler );
+            return new HttpEventSubscription(vertx.createHttpClient(options), subsURI, subsRq, eventHandler );
         } catch (Exception exp) {
             throw new CompletionException(exp);
         }
