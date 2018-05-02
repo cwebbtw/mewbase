@@ -42,7 +42,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        source.subscribe(testChannelName,  event ->  {
+        final Subscription subs = source.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
                         long evtNum = event.getEventNumber();
@@ -52,11 +52,12 @@ public class EventSourceTest extends MewbaseTestBase {
                         }
                     );
 
-        TimeUnit.MILLISECONDS.sleep(10);
+        TimeUnit.MILLISECONDS.sleep(500);
 
         sink.publishSync(testChannelName, bsonEvent);
         latch.await();
 
+        subs.close();
         source.close();
         sink.close();
     }
@@ -78,18 +79,21 @@ public class EventSourceTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        source.subscribe(testChannelName, event -> {
+        final Subscription subs = source.subscribe(testChannelName, event -> {
                 BsonObject bson =  event.getBson();
                 long thisEventNum = END_EVENT_NUMBER - latch.getCount();
                 assert(bson.getLong("num") == thisEventNum);
                 latch.countDown();
         });
 
+        TimeUnit.MILLISECONDS.sleep(500);
+
         EventSinkUtils utils =  new EventSinkUtils(sink);
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
 
         latch.await();
 
+        subs.close();
         source.close();
         sink.close();
     }
@@ -115,17 +119,20 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSinkUtils utils =  new EventSinkUtils(sink);
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
 
-        source.subscribeFromMostRecent(testChannelName, event -> {
+        final Subscription subs = source.subscribeFromMostRecent(testChannelName, event -> {
             BsonObject bson = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
             assert(bson.getLong("num") == thisEventNum);
             latch.countDown();
         });
 
+        TimeUnit.MILLISECONDS.sleep(500);
+
         utils.sendNumberedEvents(testChannelName,(long)MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER);
 
         latch.await();
 
+        subs.close();
         source.close();
         sink.close();
     }
@@ -151,7 +158,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
 
-        source.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
+        final Subscription subs = source.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
             BsonObject bson = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
             assert(bson.getLong("num") == thisEventNum);
@@ -191,7 +198,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         utils.sendNumberedEvents(testChannelName,(long)MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER);
 
-        source.subscribeFromInstant(testChannelName, then, event -> {
+       final Subscription subs = source.subscribeFromInstant(testChannelName, then, event -> {
             BsonObject bson  = event.getBson();
             long thisEventNum = MID_EVENT_NUMBER + 1 + (eventsToTest - latch.getCount());
             assert(bson.getLong("num") == thisEventNum);

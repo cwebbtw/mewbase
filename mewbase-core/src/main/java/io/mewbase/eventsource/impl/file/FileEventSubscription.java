@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 
 public class FileEventSubscription implements Subscription {
 
-    private final static Logger logger = LoggerFactory.getLogger(FileEventSource.class);
+    private final static Logger logger = LoggerFactory.getLogger(FileEventSubscription.class);
 
     private final Future reader;
 
@@ -64,11 +64,11 @@ public class FileEventSubscription implements Subscription {
     private FileEvent waitForEvent(final long eventNumber) throws Exception {
         Path eventFilePath = channelPath.resolve(FileEventUtils.pathFromEventNumber(eventNumber));
         File eventFile = eventFilePath.toFile();
-        logger.info("Waiting for event " + eventNumber);
+        logger.debug("Waiting for event " + eventNumber);
         while (! (eventFile.exists() && eventFile.length() > 0) ) {
             Thread.sleep( WATCH_WINDOW_MILLIS);
         }
-        logger.info("Got Event " + eventNumber);
+        logger.debug("Got Event " + eventNumber);
         return FileEventUtils.fileToEvent( eventFilePath.toFile() );
     }
 

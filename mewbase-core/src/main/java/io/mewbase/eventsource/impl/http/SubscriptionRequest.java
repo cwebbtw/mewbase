@@ -1,10 +1,10 @@
 package io.mewbase.eventsource.impl.http;
 
 import io.mewbase.bson.BsonObject;
-import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.Subscription;
+
 
 import java.time.Instant;
+
 
 public class SubscriptionRequest {
 

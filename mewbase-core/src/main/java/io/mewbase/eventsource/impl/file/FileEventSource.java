@@ -30,7 +30,6 @@ public class FileEventSource implements EventSource
     private final Path baseDir;
 
 
-
     public FileEventSource() {
         this( ConfigFactory.load() );
     }
