@@ -1,13 +1,13 @@
 package io.mewbase.router
 
 
-
-
+import java.util.UUID
 
 import com.typesafe.config.ConfigFactory
-
+import io.mewbase.eventsource.impl.http.SubscriptionRequest
+import io.mewbase.eventsource.{EventSink, EventSource}
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.ChannelInitializer
+import io.netty.channel.{Channel, ChannelInitializer}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.{HttpObjectAggregator, HttpRequestDecoder, Ht
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
 
 
 object HttpEventRouter extends App {
@@ -28,15 +29,25 @@ object HttpEventRouter extends App {
   val maxHeaderSize = 4096
   val maxPayloadFrameSize = 1024 * 1024
 
+  // create an Event Source and Sink according to the local config
+  val eventSink = EventSink.instance
+  val eventSource = EventSource.instance
+
+  // Remember initial subscription requests and their subsequently associated handlers
+  val subscriptionRequests = mutable.Map[UUID, SubscriptionRequest]()
+  val subscriptionHandlers  = mutable.Map[Channel, HttpSubscriptionHandler]()
+
 
   class LocalChannelInitializer extends ChannelInitializer[SocketChannel] {
+
     override def initChannel(ch: SocketChannel): Unit = {
       val p = ch.pipeline()
       val decoder = new HttpRequestDecoder(initialLineLength, maxHeaderSize, maxPayloadFrameSize, false)
       p.addLast("decoder", decoder)
       p.addLast("aggregator", new HttpObjectAggregator(65536))
       p.addLast("encoder", new HttpResponseEncoder())
-      p.addLast("handler", new HttpEventRouterHandler())
+      val evtHandler = new HttpEventRouterHandler(eventSink, eventSource, subscriptionRequests, subscriptionHandlers)
+      p.addLast("handler", evtHandler)
     }
   }
 
