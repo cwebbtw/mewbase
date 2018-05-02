@@ -3,90 +3,76 @@ package io.mewbase.router
 
 
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 
-import akka.stream._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives.{entity, _}
-import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.ConfigFactory
-import io.mewbase.bson.BsonObject
-import io.mewbase.eventsource.{EventSink, EventSource}
-import io.mewbase.eventsource.impl.http.{HttpEventSink, HttpEventSource, SubscriptionRequest}
+
+import io.netty.bootstrap.ServerBootstrap
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.SocketChannel
+import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.handler.codec.http.{HttpObjectAggregator, HttpRequestDecoder, HttpResponseEncoder}
+import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import org.slf4j.LoggerFactory
 
 
 
+object HttpEventRouter extends App {
 
-object HttpEventRouter extends App
-{
-
-  implicit val system = ActorSystem("server")
-  implicit val materializer = ActorMaterializer()
-  import system.dispatcher
-
-
+  // key to find port number
   val PORT_CONFIG_PATH = "mewbase.http.router.port"
 
-  val log = LoggerFactory.getLogger(getClass.getName)
-
-  val sink = EventSink.instance()
-  val source = EventSource.instance()
-
-
-  val pingRoute =
-    get {
-      path ( "ping" ) {
-          log.info(s"get - ping")
-          complete("pong")
-        }
-      }
+  // Configure the HttpRequestDecoder to handle 'small' line lengths
+  // and headers and "large" payload chunks for large event encodings
+  val initialLineLength = 4096
+  val maxHeaderSize = 4096
+  val maxPayloadFrameSize = 1024 * 1024
 
 
-  val publishRoute =
-    post {
-      path(HttpEventSink.PUBLISH_ROUTE ) {
-          entity(as[Array[Byte]]) { body => {
-            val bson = new BsonObject(body)
-            val channelName = bson.getString(HttpEventSink.CHANNEL_TAG)
-            val event = bson.getBsonObject(HttpEventSink.EVENT_TAG)
-            val eventNumber = sink.publishSync(channelName, event)
-            log.info(s"post - ${HttpEventSink.PUBLISH_ROUTE} $channelName")
-            complete(HttpEntity(eventNumber.toString()))
-          }
-        }
-      }
+  class LocalChannelInitializer extends ChannelInitializer[SocketChannel] {
+    override def initChannel(ch: SocketChannel): Unit = {
+      val p = ch.pipeline()
+      val decoder = new HttpRequestDecoder(initialLineLength, maxHeaderSize, maxPayloadFrameSize, false)
+      p.addLast("decoder", decoder)
+      p.addLast("aggregator", new HttpObjectAggregator(65536))
+      p.addLast("encoder", new HttpResponseEncoder())
+      p.addLast("handler", new HttpEventRouterHandler())
     }
+  }
 
 
-  val subscribeRoute =
-    post {
-      path (HttpEventSource.SUBSCRIBE_ROUTE ) {
-        entity(as[Array[Byte]]) { body => {
-          val bson = new BsonObject(body)
-          val subReq = new SubscriptionRequest(bson)
-          val pushPull = SubscriptionPushPull(source,subReq)
-          val chunkGraph = SubscriptionChunkSource(pushPull)
-          val chunkSource = Source.fromGraph(chunkGraph)
-          log.info(s"post - ${HttpEventSource.SUBSCRIBE_ROUTE} $subReq" )
-          complete(HttpEntity.Chunked(ContentTypes.`application/octet-stream`, chunkSource ))
-          }
-        }
-      }
-    }
+  private val logger = LoggerFactory.getLogger(getClass().getName())
 
+  private val PORT = ConfigFactory.load.getInt(PORT_CONFIG_PATH)
 
+  val bossGroup : NioEventLoopGroup = new NioEventLoopGroup(1)
+  val workerGroup : NioEventLoopGroup = new NioEventLoopGroup()
 
-  val allRoutes =  { pingRoute ~ publishRoute ~ subscribeRoute }
+  try {
+    val b = new ServerBootstrap()
 
-  val config = ConfigFactory.load()
-  val port = config.getInt(PORT_CONFIG_PATH)
-  val interfaces = "0.0.0.0"
+    b.group(bossGroup, workerGroup)
+      .channel(classOf[NioServerSocketChannel])
+      .handler(new LoggingHandler(LogLevel.INFO))
+      .childHandler(new LocalChannelInitializer() )
 
-  val serverSource = Http().bindAndHandle(allRoutes, interfaces, port)
-
-  log.info(s"Server Started on Port :$port")
+    // Start the server.
+    val f = b.bind(PORT).sync
+    logger.info("Http Event Router started")
+    // Wait until the server socket is closed.
+    f.channel.closeFuture.sync
+    logger.info("Http Event Router closed")
+  } finally {
+    logger.info("Http Event Router shutdown started")
+    // Shut down all event loops to terminate all threads.
+    bossGroup.shutdownGracefully()
+    workerGroup.shutdownGracefully()
+    logger.info("Http Event Router shutdown completed")
+  }
 
 
 }
+
+
+
+

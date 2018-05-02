@@ -28,10 +28,7 @@ class RouterSpec extends AsyncFlatSpec with BeforeAndAfterAll {
   val EVENT_TAG = "event"
   val CHANNEL_TAG = "channel"
 
-//  override def beforeAll() {
-//    HttpEventRouter.main(Array(""))
-//    Thread.sleep(2000)
-//  }
+
 
 
   "The router" should "ping on configured host and port" in {
