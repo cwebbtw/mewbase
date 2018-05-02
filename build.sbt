@@ -135,10 +135,10 @@ lazy val mewbaseScala = Project("mewbase-scala", file("mewbase-scala"))
   .settings(basicSettings: _*)
   .settings(
     libraryDependencies ++= Dependencies.compile(
-      "com.typesafe.akka" %% "akka-http" % "10.0.11"
+      //"com.typesafe.akka" %% "akka-http" % "10.0.11"
     ),
     libraryDependencies ++= Dependencies.test(
-      "com.typesafe.akka" %% "akka-http-testkit" % "10.0.11"
+      //"com.typesafe.akka" %% "akka-http-testkit" % "10.0.11"
     ),
     libraryDependencies ++= Dependencies.test(scalatest(scalaVersion.value)),
 
