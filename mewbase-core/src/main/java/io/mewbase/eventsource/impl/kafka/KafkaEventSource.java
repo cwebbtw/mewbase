@@ -68,7 +68,7 @@ public class KafkaEventSource implements EventSource {
     public Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
-        java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap(1);
+        java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap<>(1);
         timeForPartition0.put(partition0,startInstant.toEpochMilli());
         OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
         kafkaConsumer.seek(partition0 , offsetAndTimestamp.offset());

@@ -31,6 +31,10 @@ public class PostgresBinderStore implements BinderStore {
         this(ConfigFactory.load(), DriverManager::getConnection);
     }
 
+    public PostgresBinderStore(Config cfg) throws Exception {
+        this(cfg, DriverManager::getConnection);
+    }
+
     public PostgresBinderStore(Config cfg, ConnectionBuilder connectionBuilder) throws Exception {
         Class.forName("org.postgresql.Driver");
         final String uri = cfg.getString("mewbase.binders.postgres.store.url");
