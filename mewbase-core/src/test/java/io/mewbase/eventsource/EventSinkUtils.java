@@ -20,7 +20,7 @@ public class EventSinkUtils {
         LongStream.rangeClosed(startInclusive,endInclusive).forEach( l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
             try {
-                sink.publishSync(channelName,bsonEvent);
+                sink.publishSync(channelName, bsonEvent);
             } catch(Exception exp) {
                 // wrap and rethrow
                 throw new RuntimeException(exp);

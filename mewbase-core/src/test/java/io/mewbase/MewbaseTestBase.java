@@ -18,6 +18,10 @@ import java.nio.file.Paths;
  */
 public class MewbaseTestBase {
 
+
+    public static final int PROJECTION_SETUP_MAX_TIMEOUT = 3;
+    public static final int SUBSCRIPTION_SETUP_MAX_TIMEOUT = 2;
+
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 

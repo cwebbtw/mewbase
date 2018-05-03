@@ -16,6 +16,7 @@ import io.restassured.response.ResponseBodyExtractionOptions;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
+import org.apache.commons.collections.keyvalue.TiedMapEntry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -25,7 +26,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
@@ -231,13 +234,15 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
         // listen for an event arriving on the channel
          final CountDownLatch latch = new CountDownLatch(1);
-         Subscription subs = TEST_EVENT_SOURCE.subscribe(CHANNEL_NAME, event ->  {
+         final CompletableFuture<Subscription> subFut = TEST_EVENT_SOURCE.subscribe(CHANNEL_NAME, event ->  {
                      BsonObject bson  = event.getBson();
                      assertNotNull(bson);
                      assertEquals(bson.getString(key),value);
                      latch.countDown();
                  }
          );
+        final Subscription sub = subFut.get(2,TimeUnit.SECONDS);
+
 
          // post to the command
          final String inputJson = "{ "+quotedKey+" : "+quotedValue+" }";
@@ -256,6 +261,7 @@ public class RESTAdaptorTest extends MewbaseTestBase {
 
          // latch clears when event received
          latch.await();
+         sub.close();
 
          tearDownServer(serv);
      }

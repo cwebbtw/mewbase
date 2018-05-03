@@ -10,7 +10,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.time.Instant;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(VertxUnitRunner.class)
 public class EventSourceTest extends MewbaseTestBase {
+
 
     @Test
     public void testConnectToEventSource() throws Exception {
@@ -42,7 +46,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final Subscription subs = source.subscribe(testChannelName,  event ->  {
+        final CompletableFuture<Subscription> subFut = source.subscribe(testChannelName, event -> {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
                         long evtNum = event.getEventNumber();
@@ -52,12 +56,14 @@ public class EventSourceTest extends MewbaseTestBase {
                         }
                     );
 
-        TimeUnit.MILLISECONDS.sleep(500);
+        // will throw if the subscription doesnt set uop in the given time
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         sink.publishSync(testChannelName, bsonEvent);
+
         latch.await();
 
-        subs.close();
+        sub.close();
         source.close();
         sink.close();
     }
@@ -72,28 +78,29 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestMultiEventChannel";
-        final int START_EVENT_NUMBER = 0;
-        final int END_EVENT_NUMBER = 127;
+        final long START_EVENT_NUMBER = 0;
+        final long END_EVENT_NUMBER = 128;
 
-        final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER;
+        final int expectedEvents = (int) (END_EVENT_NUMBER + 1);
 
-        final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
+        final CountDownLatch latch = new CountDownLatch(expectedEvents);
+        final List<Long> nums = new LinkedList<>();
 
-        final Subscription subs = source.subscribe(testChannelName, event -> {
-                BsonObject bson =  event.getBson();
-                long thisEventNum = END_EVENT_NUMBER - latch.getCount();
-                assert(bson.getLong("num") == thisEventNum);
-                latch.countDown();
+        final CompletableFuture<Subscription> subFut =  source.subscribe(testChannelName, event -> {
+            nums.add(event.getBson().getLong("num"));
+            latch.countDown();
         });
 
-        TimeUnit.MILLISECONDS.sleep(500);
+        // will throw if the subscription doesnt set uop in the given time
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         EventSinkUtils utils =  new EventSinkUtils(sink);
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
 
         latch.await();
+        // TODO test numbers in order.
 
-        subs.close();
+        sub.close();
         source.close();
         sink.close();
     }
@@ -109,30 +116,34 @@ public class EventSourceTest extends MewbaseTestBase {
 
         final String testChannelName = "TestMostRecentChannel";
 
-        final int START_EVENT_NUMBER = 0;
-        final long MID_EVENT_NUMBER = 64;
-        final int END_EVENT_NUMBER = 127;
+        final long START_EVENT_NUMBER = 0;
+        final long END_EVENT_NUMBER = 64;
+        final long RESTART_EVENT_NUMBER = 65;
+        final long REEND_EVENT_NUMBER = 128;
 
-        final int eventsToTest = 63;
-        final CountDownLatch latch = new CountDownLatch(eventsToTest);
+        final int expectedEvents = 65;
+
+        final CountDownLatch latch = new CountDownLatch(expectedEvents);
+        final List<Long> nums = new LinkedList<>();
 
         final EventSinkUtils utils =  new EventSinkUtils(sink);
-        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
+        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, END_EVENT_NUMBER);
 
-        final Subscription subs = source.subscribeFromMostRecent(testChannelName, event -> {
-            BsonObject bson = event.getBson();
-            long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
-            assert(bson.getLong("num") == thisEventNum);
+        final CompletableFuture<Subscription> subFut =  source.subscribeFromMostRecent(testChannelName, event -> {
+            nums.add(event.getBson().getLong("num"));
             latch.countDown();
         });
 
-        TimeUnit.MILLISECONDS.sleep(500);
+        // will throw if the subscription doesnt set up in the given time
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+        Thread.sleep(1000);
+        utils.sendNumberedEvents(testChannelName, RESTART_EVENT_NUMBER, REEND_EVENT_NUMBER);
 
-        utils.sendNumberedEvents(testChannelName,(long)MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER);
-
+        // count the number of events
         latch.await();
-
-        subs.close();
+        // Todo - Check the array
+        System.out.println(nums);
+        sub.close();
         source.close();
         sink.close();
     }
@@ -155,21 +166,25 @@ public class EventSourceTest extends MewbaseTestBase {
         final CountDownLatch latch = new CountDownLatch(eventsToTest);
 
         final EventSinkUtils utils =  new EventSinkUtils(sink);
+        final List<Long> nums = new LinkedList<>();
 
         utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
 
-        final Subscription subs = source.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
-            BsonObject bson = event.getBson();
-            long thisEventNum = MID_EVENT_NUMBER + (eventsToTest - latch.getCount());
-            assert(bson.getLong("num") == thisEventNum);
+        final CompletableFuture<Subscription> subFut = source.subscribeFromEventNumber(testChannelName, MID_EVENT_NUMBER, event -> {
+            nums.add(event.getBson().getLong("num"));
             latch.countDown();
         });
 
+        // will throw if the subscription doesnt set up in the given time
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+
         latch.await();
+        // Todo check that the nums contains expected.
 
         source.close();
         sink.close();
     }
+
 
    @Test
     public void testSubscribeFromInstant() throws Exception {
@@ -180,32 +195,38 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSource source = EventSource.instance(testConfig);
 
         final String testChannelName = "TestFromInstantChannel";
-        final int START_EVENT_NUMBER = 0;
-        final long MID_EVENT_NUMBER = 64;
-        final int END_EVENT_NUMBER = 128;
+        final long START_EVENT_NUMBER = 0;
+        final long END_EVENT_NUMBER = 64;
+        final long RESTART_EVENT_NUMBER = 65;
+        final long REEND_EVENT_NUMBER = 128;
 
-        final int eventsToTest = 63;
-        final CountDownLatch latch = new CountDownLatch(eventsToTest);
+        final int expectedEvents = (int) (REEND_EVENT_NUMBER - RESTART_EVENT_NUMBER + 1);
+
+        final CountDownLatch latch = new CountDownLatch(expectedEvents);
+        final List<Long> nums = new LinkedList<>();
+
         final EventSinkUtils utils =  new EventSinkUtils(sink);
 
-        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)MID_EVENT_NUMBER);
+        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, END_EVENT_NUMBER);
 
-        Thread.sleep(10); // give the events time to rest in the event source
+        Thread.sleep(100); // give the events time to rest in the event source
 
         Instant then = Instant.now();
 
         Thread.sleep(10); // some room the other side of the time window
 
-        utils.sendNumberedEvents(testChannelName,(long)MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER);
+        utils.sendNumberedEvents(testChannelName,RESTART_EVENT_NUMBER,REEND_EVENT_NUMBER);
 
-       final Subscription subs = source.subscribeFromInstant(testChannelName, then, event -> {
-            BsonObject bson  = event.getBson();
-            long thisEventNum = MID_EVENT_NUMBER + 1 + (eventsToTest - latch.getCount());
-            assert(bson.getLong("num") == thisEventNum);
-            latch.countDown();
+       final CompletableFuture<Subscription> subFut = source.subscribeFromInstant(testChannelName, then, event -> {
+           nums.add(event.getBson().getLong("num"));
+           latch.countDown();
         });
 
+       // will throw if the subscription doesnt set uop in the given time
+       final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+
         latch.await();
+        // Todo - Check the numbers in order
 
         source.close();
         sink.close();
@@ -220,28 +241,33 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestAllChannel";
-        final int START_EVENT_NUMBER = 0;
-        final long MID_EVENT_NUMBER = 64;
-        final int END_EVENT_NUMBER = 128;
+        final String testChannelName = "TestAllChannel"+UUID.randomUUID();
+        final long START_EVENT_NUMBER = 0;
+        final long END_EVENT_NUMBER = 64;
+        final long RESTART_EVENT_NUMBER = 65;
+        final long REEND_EVENT_NUMBER = 128;
 
-        final int eventsToTest = END_EVENT_NUMBER - START_EVENT_NUMBER;
-        final CountDownLatch latch = new CountDownLatch(eventsToTest);
+        final int expectedEvents = (int) (REEND_EVENT_NUMBER  + 1);
+        final CountDownLatch latch = new CountDownLatch(expectedEvents);
+        final List<Long> nums = new LinkedList<>();
 
-        final EventSinkUtils utils =  new EventSinkUtils(sink);
-        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, MID_EVENT_NUMBER);
+        final EventSinkUtils utils = new EventSinkUtils(sink);
+        utils.sendNumberedEvents(testChannelName,START_EVENT_NUMBER, END_EVENT_NUMBER);
 
-        source.subscribeAll(testChannelName,  event -> {
-            BsonObject bson = event.getBson();
-            long thisEventNum = START_EVENT_NUMBER + eventsToTest - latch.getCount();
-            assert(bson.getLong("num") == thisEventNum);
+        final CompletableFuture<Subscription> subFut = source.subscribeAll(testChannelName,  event -> {
+            nums.add(event.getBson().getLong("num"));
             latch.countDown();
         });
 
-        utils.sendNumberedEvents(testChannelName, MID_EVENT_NUMBER+1, (long)END_EVENT_NUMBER );
+        // will throw if the subscription doesnt set uop in the given time
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        utils.sendNumberedEvents(testChannelName, RESTART_EVENT_NUMBER, REEND_EVENT_NUMBER );
 
         latch.await();
+        // Todo
 
+        sub.close();
         source.close();
         sink.close();
     }

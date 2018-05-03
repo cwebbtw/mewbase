@@ -13,6 +13,7 @@ import java.nio.file.*;
 import java.util.concurrent.*;
 
 
+
 public class FileEventSubscription implements Subscription {
 
     private final static Logger logger = LoggerFactory.getLogger(FileEventSubscription.class);
@@ -22,6 +23,8 @@ public class FileEventSubscription implements Subscription {
     private final EventDispatcher<FileEvent> dispatcher;
 
     private final Path channelPath;
+
+    public final CompletableFuture<Subscription>initialisingFuture = new CompletableFuture<>();
 
     private Boolean closing = false;
 
@@ -34,6 +37,7 @@ public class FileEventSubscription implements Subscription {
 
         reader = Executors.newSingleThreadExecutor().submit( () -> {
             long targetEvent = firstEventNumber;
+            initialisingFuture.complete(FileEventSubscription.this);
             while (!closing) {
                 try {
                     FileEvent evt = waitForEvent(targetEvent);
@@ -56,6 +60,7 @@ public class FileEventSubscription implements Subscription {
         // drain and stop the dispatcher.
         dispatcher.stop();
     }
+
 
     // This will sleep only the reading thread
     // originally did this with a java.nio.WatchService but it was more complex and

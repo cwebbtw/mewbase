@@ -7,6 +7,7 @@ import io.mewbase.bson.BsonObject;
 
 import org.junit.Test;
 
+
 import java.util.List;
 
 import java.util.UUID;
@@ -14,7 +15,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -49,19 +52,20 @@ public class EventSinkTest extends MewbaseTestBase {
         // check the event arrived
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Subscription subs = source.subscribe(testChannelName,  event ->  {
+        final CompletableFuture<Subscription> subFut = source.subscribe(testChannelName,  event ->  {
                         BsonObject bson  = event.getBson();
                         assert(inputUUID.equals(bson.getString("data")));
                         latch.countDown();
                         }
                     );
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
-        TimeUnit.MILLISECONDS.sleep(10);
 
         long eventNumber = sink.publishSync(testChannelName,bsonEvent);
         assertEquals(0, eventNumber);
         latch.await();
 
+        sub.close();
         source.close();
         sink.close();
     }
@@ -77,7 +81,7 @@ public class EventSinkTest extends MewbaseTestBase {
 
 
         // Test local event producer to inject events in the event source.
-        final String testChannelName = "TestMultiEventChannel";
+        final String testChannelName = "TestManyOrderedEventsChannel";
         final int START_EVENT_NUMBER = 1;
         final int END_EVENT_NUMBER = 128;
 
@@ -85,20 +89,23 @@ public class EventSinkTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        source.subscribe(testChannelName, event -> {
-                BsonObject bson  = event.getBson();
-                long thisEventNum = END_EVENT_NUMBER - latch.getCount();
-                assert(bson.getLong("num") == thisEventNum);
-                latch.countDown();
+        final CompletableFuture<Subscription> subFut = source.subscribe(testChannelName, event -> {
+            BsonObject bson = event.getBson();
+            long thisEventNum = END_EVENT_NUMBER - latch.getCount();
+            assert (bson.getLong("num") == thisEventNum);
+            latch.countDown();
         });
 
-        LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).forEach(l -> {
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        LongStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).sequential().forEach(l -> {
             final BsonObject bsonEvent = new BsonObject().put("num", l);
             sink.publishSync(testChannelName,bsonEvent);
         } );
 
         latch.await();
 
+        sub.close();
         source.close();
         sink.close();
     }
@@ -116,20 +123,23 @@ public class EventSinkTest extends MewbaseTestBase {
         final int START_EVENT_NUMBER = 0;
         final int END_EVENT_NUMBER = 127;
 
-        final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER;
+        final int TOTAL_EVENTS = END_EVENT_NUMBER - START_EVENT_NUMBER + 1;
+
+        final List<Integer> eventNums = IntStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).boxed().collect(Collectors.toList());
 
         final CountDownLatch latch = new CountDownLatch(TOTAL_EVENTS);
 
-        source.subscribe(testChannelName, event -> {
+        final CompletableFuture<Subscription> subFut = source.subscribe(testChannelName, event -> {
             BsonObject bson  = event.getBson();
-            long thisEventNum = END_EVENT_NUMBER - latch.getCount();
-            assert(bson.getLong("num") == thisEventNum);
+            eventNums.remove( bson.getInteger("num") );
             latch.countDown();
         });
 
+        // make sure the subscription is set up.
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
-        List<CompletableFuture<Long>> futs = LongStream.range(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(l -> {
-            final BsonObject bsonEvent = new BsonObject().put("num", l);
+        List<CompletableFuture<Long>> futs = IntStream.rangeClosed(START_EVENT_NUMBER,END_EVENT_NUMBER).mapToObj(i -> {
+            final BsonObject bsonEvent = new BsonObject().put("num", i);
             return sink.publishAsync(testChannelName,bsonEvent);
         } ).collect(Collectors.toList());
 
@@ -142,6 +152,7 @@ public class EventSinkTest extends MewbaseTestBase {
                 }).join();
 
         latch.await();
+        assert(eventNums.isEmpty() );
 
         source.close();
         sink.close();

@@ -11,18 +11,19 @@ import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
 import io.mewbase.projection.ProjectionManager;
+import io.mewbase.util.CanFailFutures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 
-public class ProjectionManagerImpl implements ProjectionManager {
+public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures {
 
     private final static Logger log = LoggerFactory.getLogger(ProjectionManager.class);
 
@@ -31,6 +32,8 @@ public class ProjectionManagerImpl implements ProjectionManager {
 
     public static final String PROJ_STATE_BINDER_NAME = "mewbase_proj_state";
     public static final String EVENT_NUM_FIELD = "eventNum";
+
+    private static final int MAX_SUBSCRIPTION_WAIT_TIME_MS= 5000;
 
     private final Binder stateBinder;
 
@@ -59,7 +62,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
      * @param projectionFunction
      * @return
      */
-    Projection createProjection(final String projectionName,
+    CompletableFuture<Projection> createProjection(final String projectionName,
                                 final String channelName,
                                 final String binderName,
                                 final Function<Event, Boolean> eventFilter,
@@ -89,16 +92,17 @@ public class ProjectionManagerImpl implements ProjectionManager {
             }
         };
 
-        Subscription subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
 
-        // register it with the manager
-        ProjectionImpl proj = new ProjectionImpl(projectionName,subs);
-        projections.put(projectionName,proj);
-        return proj;
+        final CompletableFuture<Subscription> subs = subscribeFromLastKnownEvent(projectionName,channelName,eventHandler);
+        return subs.thenApply( subscription -> {
+            final ProjectionImpl proj = new ProjectionImpl(projectionName,subscription);
+            projections.put(projectionName,proj);
+            return proj;
+        });
     }
 
 
-    private BsonObject  executeProjection(String projectionName,
+    private BsonObject executeProjection(String projectionName,
                                      String binderName,
                                      String docID,
                                      BiFunction<BsonObject, Event, BsonObject> projectionFunction,
@@ -138,7 +142,7 @@ public class ProjectionManagerImpl implements ProjectionManager {
     public void stopAll() { projections.forEach( (name, proj) -> proj.stop() ); }
 
 
-    private Subscription subscribeFromLastKnownEvent(String projectionName, String channelName, EventHandler eventHandler) {
+    private CompletableFuture<Subscription> subscribeFromLastKnownEvent(String projectionName, String channelName, EventHandler eventHandler) {
         try {
             final BsonObject stateDoc = stateBinder.get(projectionName).get();
             if (stateDoc == null) {
@@ -151,8 +155,9 @@ public class ProjectionManagerImpl implements ProjectionManager {
             }
         } catch (Exception exp) {
             log.error("Failed to recover last known state of the projection " + projectionName, exp);
+            return CanFailFutures.failedFuture(exp);
         }
-        return null;
+
     }
 
 }

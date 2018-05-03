@@ -13,6 +13,7 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
+import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
 
@@ -24,8 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -48,6 +48,8 @@ public class ProjectionTest extends MewbaseTestBase {
     private static final String TEST_PROJECTION_NAME = "TestProjection";
 
     private static final String BASKET_ID_FIELD = "BasketID";
+
+
 
     private BinderStore store = null;
     private EventSource source = null;
@@ -110,7 +112,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Projection projection = builder
+        CompletableFuture<Projection> projectionFut = builder
                 .named(TEST_PROJECTION_NAME)
                 .projecting(TEST_CHANNEL)
                 .onto(TEST_BINDER)
@@ -124,6 +126,9 @@ public class ProjectionTest extends MewbaseTestBase {
                     return out;
                 })
                 .create();
+
+        // ensure the projection is set up or times out
+        final Projection projection = projectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
@@ -152,9 +157,10 @@ public class ProjectionTest extends MewbaseTestBase {
 
         Stream<String> names = IntStream.range(1,10).mapToObj( i -> {
             final String projName = "Proj" + i;
-            createProjection(builder,TEST_BINDER, BASKET_ID_FIELD,projName);
+            final Projection projection = createProjection(builder, TEST_BINDER, BASKET_ID_FIELD, projName);
             return projName;
         });
+
 
         assertTrue( names.allMatch( name -> mgr.isProjection(name) ) );
     }
@@ -174,7 +180,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         final String MULTI_EVENT_CHANNEL = "MultiEventChannel";
 
-        Projection projection = builder
+        CompletableFuture<Projection> projectionFut =  builder
                 .named(TEST_PROJECTION_NAME)
                 .projecting(MULTI_EVENT_CHANNEL)
                 .onto(TEST_BINDER)
@@ -187,6 +193,9 @@ public class ProjectionTest extends MewbaseTestBase {
                     return out;
                 })
                 .create();
+
+        // ensure the projection is set up or times out
+        final Projection projection = projectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
@@ -229,7 +238,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         final String MULTI_EVENT_CHANNEL = "MultiEventChannel";
 
-        Projection projection = builder
+        CompletableFuture<Projection> firstProjectionFut = builder
                 .named(TEST_PROJECTION_NAME)
                 .projecting(MULTI_EVENT_CHANNEL)
                 .onto(TEST_BINDER)
@@ -241,6 +250,9 @@ public class ProjectionTest extends MewbaseTestBase {
                     return out;
                 })
                 .create();
+
+        // ensure the projection is set up or times out
+        final Projection firstProjection = firstProjectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
@@ -256,7 +268,7 @@ public class ProjectionTest extends MewbaseTestBase {
         assertNotNull(basketDoc);
         assertEquals(RESULT,basketDoc.getInteger("output"));
 
-        projection.stop();
+        firstProjection.stop();
         Thread.sleep(100);
 
         // binder now has offset event and valid current document
@@ -267,7 +279,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         final CountDownLatch newLatch = new CountDownLatch(1);
 
-        Projection newProjection = newFactory.builder()
+        CompletableFuture<Projection> secondProjectionFut = newFactory.builder()
                 .named(TEST_PROJECTION_NAME)
                 .projecting(MULTI_EVENT_CHANNEL)
                 .onto(TEST_BINDER)
@@ -280,6 +292,9 @@ public class ProjectionTest extends MewbaseTestBase {
                     return basket;
                 })
                 .create();
+
+        // ensure the projection is set up or times out
+        final Projection secondProjection = firstProjectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         // send another event on the same channel
         sink.publishSync(MULTI_EVENT_CHANNEL, evt);
@@ -294,8 +309,7 @@ public class ProjectionTest extends MewbaseTestBase {
         assertNotNull(newBasketDoc);
         assertEquals(RESULT+RESULT,(long)newBasketDoc.getInteger("output"));
 
-        newProjection.stop();
-
+        secondProjection.stop();
     }
 
 
@@ -344,7 +358,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Projection projection = manager.builder()
+        CompletableFuture<Projection> projectionFut  = manager.builder()
                 .named(UNIQUE_PROJECTION_NAME)
                 .projecting(UNIQUE_CHANNEL_NAME)
                 .onto(TEST_BINDER)
@@ -380,7 +394,7 @@ public class ProjectionTest extends MewbaseTestBase {
 
     private Projection createProjection(ProjectionBuilder builder, String testBinder, String binderIdKey, String projName) {
 
-        return builder
+        CompletableFuture<Projection> projectionFut = builder
                 .named(projName)
                 .projecting(TEST_CHANNEL)
                 .onto(testBinder)
@@ -388,6 +402,12 @@ public class ProjectionTest extends MewbaseTestBase {
                 .identifiedBy(event -> event.getBson().getString(binderIdKey))
                 .as( (basket, event) -> event.getBson().put("output",projName) )
                 .create();
+        try {
+            return projectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+        } catch(Exception exp) {
+            throw new IllegalStateException(exp);
+        }
+
     }
 
 }
