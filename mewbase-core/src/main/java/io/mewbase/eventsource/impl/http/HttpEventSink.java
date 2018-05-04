@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class HttpEventSink implements EventSink {
@@ -35,6 +35,8 @@ public class HttpEventSink implements EventSink {
     private final long syncWriteTimeOut = 10;
 
     private final HttpClient client;
+    private final AtomicBoolean clientIsClosed = new AtomicBoolean(false);
+
     public final String publishURI;
 
 
@@ -98,7 +100,11 @@ public class HttpEventSink implements EventSink {
 
     @Override
     public void close() {
-       client.close();
+        if (!clientIsClosed.get()) {
+            client.close();
+            clientIsClosed.set(true);
+        }
+        logger.info("HttpEventSink closed");
     }
 
 

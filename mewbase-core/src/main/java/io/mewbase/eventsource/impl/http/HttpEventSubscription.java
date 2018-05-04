@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class HttpEventSubscription implements Subscription {
@@ -22,6 +23,7 @@ public class HttpEventSubscription implements Subscription {
     // and the server can then use the disconnect shutdown logic
     private final HttpClient client;
 
+    private final AtomicBoolean clientIsClosed = new AtomicBoolean(false);
 
     public final CompletableFuture<Subscription> future = new CompletableFuture<>();
 
@@ -30,7 +32,7 @@ public class HttpEventSubscription implements Subscription {
                                  final SubscriptionRequest subsRequest,
                                  final EventHandler eventHandler)  {
 
-        this.client = httpClient;
+        client = httpClient;
 
 
         client.post(HttpEventSource.SUBSCRIBE_ROUTE, response  -> {
@@ -60,8 +62,11 @@ public class HttpEventSubscription implements Subscription {
 
     @Override
     public void close()  {
-        client.close();
-        logger.info("Event subscription closed");
+        if (!clientIsClosed.get()) {
+            client.close();
+            clientIsClosed.set(true);
+        }
+        logger.info("HttpEventSubscription closed");
     }
 
 }

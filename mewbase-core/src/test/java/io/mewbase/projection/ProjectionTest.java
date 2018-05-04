@@ -294,7 +294,7 @@ public class ProjectionTest extends MewbaseTestBase {
                 .create();
 
         // ensure the projection is set up or times out
-        final Projection secondProjection = firstProjectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+        final Projection secondProjection = secondProjectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         // send another event on the same channel
         sink.publishSync(MULTI_EVENT_CHANNEL, evt);
@@ -373,6 +373,7 @@ public class ProjectionTest extends MewbaseTestBase {
                 })
                 .create();
 
+        Projection proj = projectionFut.get(PROJECTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
         // Send an event to the channel which the projection is subscribed to.
         BsonObject evt = new BsonObject().put(BASKET_ID_FIELD, TEST_BASKET_ID);
         sink.publishSync(UNIQUE_CHANNEL_NAME, evt);
@@ -389,6 +390,7 @@ public class ProjectionTest extends MewbaseTestBase {
         Binder stateBinder = store.open(ProjectionManagerImpl.PROJ_STATE_BINDER_NAME);
         BsonObject state = stateBinder.get(UNIQUE_PROJECTION_NAME).get();
         assertNull(state);
+        proj.stop();
     }
 
 

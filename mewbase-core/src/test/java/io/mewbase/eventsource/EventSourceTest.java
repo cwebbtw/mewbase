@@ -142,7 +142,7 @@ public class EventSourceTest extends MewbaseTestBase {
         // count the number of events
         latch.await();
         // Todo - Check the array
-        System.out.println(nums);
+
         sub.close();
         source.close();
         sink.close();
