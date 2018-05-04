@@ -7,7 +7,7 @@ Such examples of patterns used when moving to an event based architecture includ
 
 * Event emitting of changes in a system (typically backed by underlying messaging infrastructure - though mewbase tries to standardise access APIs across providers).
 * Subscribing and responding events.
-* Separating commands and queries (i.e. CQRS).
+* Separating commands and queries (i.e. [CQRS](https://en.wikipedia.org/wiki/Command%E2%80%93query_separation)).
 
 Examples of streams of events might be:
 
