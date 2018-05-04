@@ -1,20 +1,4 @@
 
-
-
-# Introduction
-
-Organisations produce a lot of events, e.g. customer actions on a UI or stock movement in a supply chain.<br/>
-Many realise it's great to store *all* the events they produce, as it gives them more data to make better decisions in the future.
-
-But:
-
-* They don't want event capture to impact the performance of applications, so need a fast, high volume architecture that can store raw events for a long time.
-
-* Individual applications the organisation implement rarely wish to process raw event data: it's too noisy. They want to work with aggregates at a higher level of abstraction.
-
-Mewbase is a framework that helps you turn raw event data into aggregates.<br/>
-It helps you build systems that accept fine grain event data and process it at a higher level of abstraction.
-
 # Components of a Mewbase system
 
 Here is how events flow through a typical system that uses Mewbase:
