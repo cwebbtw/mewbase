@@ -9,6 +9,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,7 +42,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestSingleEventChannel";
+        final String testChannelName = "TestSingleEventChannel"+UUID.randomUUID();
         final String inputUUID = UUID.randomUUID().toString();
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
@@ -56,7 +57,7 @@ public class EventSourceTest extends MewbaseTestBase {
                         }
                     );
 
-        // will throw if the subscription doesnt set uop in the given time
+        // will throw if the subscription doesnt set up in the given time
         final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         sink.publishSync(testChannelName, bsonEvent);
@@ -77,11 +78,11 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestMultiEventChannel";
-        final long START_EVENT_NUMBER = 0;
+        final String testChannelName = "TestMultiEventChannel"+UUID.randomUUID();
+        final long START_EVENT_NUMBER = 1;
         final long END_EVENT_NUMBER = 128;
 
-        final int expectedEvents = (int) (END_EVENT_NUMBER + 1);
+        final int expectedEvents = (int) END_EVENT_NUMBER;
 
         final CountDownLatch latch = new CountDownLatch(expectedEvents);
         final List<Long> nums = new LinkedList<>();
@@ -95,7 +96,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         EventSinkUtils utils =  new EventSinkUtils(sink);
-        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, (long)END_EVENT_NUMBER);
+        utils.sendNumberedEvents(testChannelName, START_EVENT_NUMBER, END_EVENT_NUMBER);
 
         latch.await();
         // TODO test numbers in order.
@@ -114,7 +115,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestMostRecentChannel";
+        final String testChannelName = "TestMostRecentChannel"+UUID.randomUUID();
 
         final long START_EVENT_NUMBER = 0;
         final long END_EVENT_NUMBER = 64;
@@ -157,7 +158,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestFromNumberChannel";
+        final String testChannelName = "TestFromNumberChannel"+UUID.randomUUID();
         final int START_EVENT_NUMBER = 0;
         final long MID_EVENT_NUMBER = 64;
         final int END_EVENT_NUMBER = 127;
@@ -194,7 +195,7 @@ public class EventSourceTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestFromInstantChannel";
+        final String testChannelName = "TestFromInstantChannel"+UUID.randomUUID();;
         final long START_EVENT_NUMBER = 0;
         final long END_EVENT_NUMBER = 64;
         final long RESTART_EVENT_NUMBER = 65;
@@ -284,7 +285,7 @@ public class EventSourceTest extends MewbaseTestBase {
 
         events += increment;
 
-        final String testChannelName = "TestManyEvents";
+        final String testChannelName = "TestManyEvents"+UUID.randomUUID();
         final EventSinkUtils utils =  new EventSinkUtils(sink);
         utils.sendNumberedEvents(testChannelName,(long)0, events);
 
