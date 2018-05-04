@@ -1,11 +1,12 @@
 package io.mewbase.router
 
 
-import io.mewbase.eventsource.{Event, EventHandler, EventSource}
+
+import io.mewbase.eventsource.{Event, EventHandler, EventSource, Subscription}
 import io.mewbase.eventsource.impl.http.{HttpEvent, SubscriptionRequest}
 import io.mewbase.eventsource.impl.http.SubscriptionRequest.SubscriptionType
 import io.netty.channel.Channel
-import io.netty.handler.codec.http.websocketx.{BinaryWebSocketFrame, CloseWebSocketFrame,  WebSocketServerHandshaker}
+import io.netty.handler.codec.http.websocketx.{BinaryWebSocketFrame, CloseWebSocketFrame, WebSocketServerHandshaker}
 import org.slf4j.LoggerFactory
 
 
@@ -17,6 +18,8 @@ case class HttpSubscriptionHandler (val nettyChannel : Channel,
 
   private val logger = LoggerFactory.getLogger(classOf[HttpSubscriptionHandler])
 
+  private val subscriptionTimeOut = 3;
+
   val handler : EventHandler = (evt: Event) => {
     val bsonEvent = new HttpEvent(evt).toBson()
     if (nettyChannel.isActive) {
@@ -27,10 +30,9 @@ case class HttpSubscriptionHandler (val nettyChannel : Channel,
     }
   }
 
-
   import SubscriptionType._
   val evtChannel = subscriptionRequest.channel
-  val subscription =  subscriptionRequest.`type` match {
+  val subscriptionFut =  subscriptionRequest.`type` match {
     case  FromNow => eventSource.subscribe(evtChannel, handler)
     case  FromMostRecent => eventSource.subscribeFromMostRecent(evtChannel, handler)
     case  FromEventNumber => eventSource.subscribeFromEventNumber(evtChannel, subscriptionRequest.startInclusive, handler)
@@ -40,7 +42,7 @@ case class HttpSubscriptionHandler (val nettyChannel : Channel,
 
 
   def stop : Unit = {
-    subscription.close()
+    subscriptionFut.thenAccept{ (subs ) => subs.close() }
     handshaker.close(nettyChannel, new CloseWebSocketFrame())
   }
 
