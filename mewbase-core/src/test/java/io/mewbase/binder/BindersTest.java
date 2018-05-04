@@ -12,12 +12,15 @@ import io.mewbase.binders.Binder;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
+import io.mewbase.eventsource.Subscription;
 import io.vertx.ext.unit.junit.Repeat;
 import org.junit.Test;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -348,7 +351,7 @@ public class BindersTest extends MewbaseTestBase {
 
         CountDownLatch latch = new CountDownLatch(1);
         // listen to the stream channel
-        source.subscribe(eventOutputChannel, event -> {
+        Future<Subscription> subsFut = source.subscribe(eventOutputChannel, event -> {
             BsonObject bson = event.getBson();
             assertNotNull(bson);
             assertEquals(testBinderName, bson.getString(StreamableBinder.BINDER_NAME_KEY));
@@ -360,9 +363,12 @@ public class BindersTest extends MewbaseTestBase {
             latch.countDown();
         });
 
+        Subscription subs = subsFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+
         BsonObject docPut = createObject();
         binder.put(documentID, docPut).join();
         latch.await();
+        subs.close();
     }
 
 

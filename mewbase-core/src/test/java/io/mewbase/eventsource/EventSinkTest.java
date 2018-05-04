@@ -79,9 +79,8 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-
         // Test local event producer to inject events in the event source.
-        final String testChannelName = "TestManyOrderedEventsChannel";
+        final String testChannelName = "TestManyOrderedEventsChannel" + UUID.randomUUID();
         final int START_EVENT_NUMBER = 1;
         final int END_EVENT_NUMBER = 128;
 
@@ -119,7 +118,7 @@ public class EventSinkTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        final String testChannelName = "TestManyAsyncEventChannel";
+        final String testChannelName = "TestManyAsyncEventChannel" + UUID.randomUUID();
         final int START_EVENT_NUMBER = 0;
         final int END_EVENT_NUMBER = 127;
 

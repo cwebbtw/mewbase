@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.file.*;
 import java.util.concurrent.*;
 
@@ -45,8 +46,11 @@ public class FileEventSubscription implements Subscription {
                     targetEvent++;
                 } catch (InterruptedException exp ) {
                     closing = true;
+                } catch (ClosedByInterruptException exp ) {
+                    closing = true;
                 } catch (Exception exp ) {
-                    logger.error("Error in event reader",exp);
+                    logger.error("Error in event reader - closing subscription",exp);
+                    closing = true;
                 }
             }
             logger.info("Subscription closed for channel "+ channelPath.getFileName());

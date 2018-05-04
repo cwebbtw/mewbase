@@ -10,14 +10,18 @@ import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
+import io.mewbase.eventsource.Subscription;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -37,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 public class CommandTest extends MewbaseTestBase {
 
     final String COMMAND_NAME = "TestCommand";
-    final String CHANNEL_NAME = "CommandTestChannel";
+
 
     final String COMMAND_INPUT_KEY = "InputKey";
     final String EVENT_OUTPUT_KEY = "OutputKey";
@@ -77,6 +81,8 @@ public class CommandTest extends MewbaseTestBase {
         final EventSource source  = EventSource.instance(cfg);
         final CommandManager mgr = CommandManager.instance(sink);
 
+        final String TEST_CHANNEL_NAME =  "CommandTestChannel"+ UUID.randomUUID();
+
         Function<BsonObject, BsonObject> handler = (params) -> {
             assertNotNull( "Params should be non null", params);
             final String cmdInput = params.getString(COMMAND_INPUT_KEY);
@@ -87,14 +93,14 @@ public class CommandTest extends MewbaseTestBase {
 
         CommandBuilder cBuilder = mgr.commandBuilder();
         Command cmd = cBuilder.named(COMMAND_NAME)
-                        .emittingTo(CHANNEL_NAME)
+                        .emittingTo(TEST_CHANNEL_NAME)
                         .as(handler)
                         .create();
 
         // Command construction and getters.
         assertNotNull(cmd);
         assertEquals(COMMAND_NAME, cmd.getName());
-        assertEquals(CHANNEL_NAME, cmd.getOutputChannel());
+        assertEquals(TEST_CHANNEL_NAME, cmd.getOutputChannel());
         assertEquals(handler, cmd.getFunction());
 
         //Subscribe to the EventSource
@@ -105,7 +111,8 @@ public class CommandTest extends MewbaseTestBase {
             assertEquals(OUTPUT_VALUE, event.getString(EVENT_OUTPUT_KEY));
             cdl.countDown();
         };
-        source.subscribe(CHANNEL_NAME,evtHandler);
+        Future<Subscription> subsFut = source.subscribe(TEST_CHANNEL_NAME,evtHandler);
+        subsFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         // Execute the command
         BsonObject params = new BsonObject().put(COMMAND_INPUT_KEY, INPUT_VALUE);
@@ -113,7 +120,7 @@ public class CommandTest extends MewbaseTestBase {
 
 
         // wait for the evtHandler to receive the event and check that the event was placed on
-        // the correct channel and was in hte correct transformed state.
+        // the correct channel and was in the correct transformed state.
         cdl.await();
     }
 
@@ -125,6 +132,8 @@ public class CommandTest extends MewbaseTestBase {
         final EventSink sink = EventSink.instance(cfg);
         final CommandManager mgr = CommandManager.instance(sink);
 
+        final String TEST_CHANNEL_NAME =  "CommandTestChannel"+ UUID.randomUUID();
+
         Function<BsonObject, BsonObject> handler = (params) -> {
             String empty = params.getString("NoExistentKey");
             empty.length();     // **** provokes an NPE ****
@@ -133,7 +142,7 @@ public class CommandTest extends MewbaseTestBase {
 
         CommandBuilder cBuilder = mgr.commandBuilder();
         Command cmd = cBuilder.named(COMMAND_NAME)
-                .emittingTo(CHANNEL_NAME)
+                .emittingTo(TEST_CHANNEL_NAME)
                 .as(handler)
                 .create();
 
@@ -160,9 +169,11 @@ public class CommandTest extends MewbaseTestBase {
         final CommandManager mgr = CommandManager.instance(sink);
         final CommandBuilder builder = mgr.commandBuilder();
 
+        final String TEST_CHANNEL_NAME =  "CommandTestChannel"+ UUID.randomUUID();
+
         final Stream<String> names = IntStream.rangeClosed(1,16).mapToObj( (index) -> {
             final String commandName = COMMAND_NAME + index;
-            Command cmd = builder.emittingTo(CHANNEL_NAME)
+            Command cmd = builder.emittingTo(TEST_CHANNEL_NAME)
                 .named(commandName)
                 .as((params) -> {
                     assertNotNull("Params should be non null", params);
