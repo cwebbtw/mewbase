@@ -38,7 +38,7 @@ include:
 
 [This introduction](https://github.com/Tesco/mewbase/blob/master/docs/introduction.md) provides a solid foundation of main components of a Mewbase system.
 
-To get straight into the code examples, check out: https://github.com/Tesco/mewbase/tree/master/examples-java/src/main/java/example
+To get straight into the code examples, there are a number of [Java code examples here](https://github.com/Tesco/mewbase/tree/master/examples-java/src/main/java/example). 
 
 ### Features
 
