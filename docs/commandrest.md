@@ -1,4 +1,4 @@
-Note: This article assumes knowledge of the concepts discussed in the introduction article
+Note: This article assumes knowledge of the concepts discussed in the [introduction article](https://github.com/Tesco/mewbase/blob/master/docs/introduction.md)
 
 # Introduction
 
