@@ -4,7 +4,7 @@ import Dependencies._
 
 val basicSettings = Seq(
   shellPrompt           := { s => Project.extract(s).currentProject.id + " > " },
-  version               := "0.5.0",
+  version               := "0.6.0",
   scalaVersion          := "2.12.4",
   homepage              := Some(new URL("https://github.com/Tesco/mewbase")),
   organization          := "com.tesco",
