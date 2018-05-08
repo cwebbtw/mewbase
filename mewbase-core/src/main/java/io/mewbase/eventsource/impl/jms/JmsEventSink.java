@@ -23,9 +23,6 @@ public class JmsEventSink implements EventSink {
     final static String USERNAME_CONFIG_PATH = "mewbase.event.sink.jms.username";
     final static String PASSWORD_CONFIG_PATH = "mewbase.event.sink.jms.password";
 
-    final static Long SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER = -1L;
-
-
     private final static Logger logger = LoggerFactory.getLogger(JmsEventSink.class);
 
     private final Executor exec = Executors.newSingleThreadExecutor();

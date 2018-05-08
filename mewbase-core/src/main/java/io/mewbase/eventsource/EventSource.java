@@ -6,6 +6,7 @@ import io.mewbase.eventsource.impl.file.FileEventSource;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 
 public interface EventSource {
@@ -25,9 +26,9 @@ public interface EventSource {
      * Any new Events that arrive at the source will be sent to the event handler.
      * @param channelName
      * @param eventHandler
-     * @return
+     * @return CompletableFuture<Subscription>
      */
-    Subscription subscribe(String channelName, EventHandler eventHandler);
+    CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler);
 
     /**
      * Subscribe to a named channel with the given event handler resulting the most recent event ( == highest event
@@ -35,18 +36,18 @@ public interface EventSource {
      *
      * @param channelName
      * @param eventHandler
-     * @return
+     * @return CompletableFuture<Subscription>
      */
-    Subscription subscribeFromMostRecent(String channelName, EventHandler eventHandler);
+    CompletableFuture<Subscription> subscribeFromMostRecent(String channelName, EventHandler eventHandler);
 
     /**
      * Subscribe to a named channel with the given event handler.
      * Replay the events from the given number and then any new events that may arrive.
      * @param channelName
      * @param eventHandler
-     * @return
+     * @return CompletableFuture<Subscription>
      */
-    Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler);
+    CompletableFuture<Subscription> subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler);
 
     /**
      * Subscribe to a named channel with the given event handler
@@ -54,9 +55,9 @@ public interface EventSource {
      * @param channelName
      * @param startInstant
      * @param eventHandler
-     * @return
+     * @return CompletableFuture<Subscription>
      */
-    Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler);
+    CompletableFuture<Subscription> subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler);
 
     /**
      * Subscribe to a named channel with the given event handler resulting in all the events
@@ -67,9 +68,9 @@ public interface EventSource {
      *
      * @param channelName
      * @param eventHandler
-     * @return
+     * @return CompletableFuture<Subscription>
      */
-    Subscription subscribeAll(String channelName, EventHandler eventHandler);
+    CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler);
 
 
     void close();

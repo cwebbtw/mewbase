@@ -4,15 +4,17 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
+import io.mewbase.util.CanFailFutures;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
  * Created by tim on 28/11/16.
  */
-public class ProjectionBuilderImpl implements ProjectionBuilder {
+public class ProjectionBuilderImpl implements ProjectionBuilder, CanFailFutures {
 
     private final ProjectionManagerImpl factory;
 
@@ -66,31 +68,34 @@ public class ProjectionBuilderImpl implements ProjectionBuilder {
         return this;
     }
 
+
     @Override
-    public Projection create() {
+    public CompletableFuture<Projection> create()  {
+
         if (projectionName == null) {
-            throw new IllegalStateException("Please specify a projection name");
+            return CanFailFutures.failedFuture(new IllegalStateException("Please specify a projection name"));
         }
         if (channelName == null) {
-            throw new IllegalStateException("Please specify a channel name");
+            return CanFailFutures.failedFuture(new IllegalStateException("Please specify a channel name"));
         }
         if (binderName == null) {
-            throw new IllegalStateException("Please specify a binder name");
+            return CanFailFutures.failedFuture(new IllegalStateException("Please specify a binder name"));
         }
         if (eventFilter == null) {
-            throw new IllegalStateException("Please specify an event filter");
+            return CanFailFutures.failedFuture(new IllegalStateException("Please specify an event filter"));
         }
         if (docIDSelector == null) {
-            throw new IllegalStateException("Please specify a document ID filter");
+            return CanFailFutures.failedFuture(new IllegalStateException("Please specify a document ID filter"));
         }
         if (projectionFunction == null) {
-            throw new IllegalStateException("Please specify a projection function");
+            return CanFailFutures.failedFuture(new IllegalStateException("Please specify a projection function"));
         }
 
         // Check for name collisions
         if ( factory.isProjection(projectionName) ) {
-            throw new IllegalStateException("Projection name is already being used " + projectionName);
+            return CanFailFutures.failedFuture(new IllegalStateException("Projection name is already being used " + projectionName));
         }
+
         // TODO if the BinderStore is streaming ensure the input channel is not the output channel
 
         // Use the factory to internal create the Projection.

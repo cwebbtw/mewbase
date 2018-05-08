@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 
 /**
@@ -50,50 +51,54 @@ public class NatsEventSource implements EventSource {
     }
 
 
-    private Subscription subscribeWithOptions(String channelName, EventHandler eventHandler, SubscriptionOptions opts) {
-        MessageHandler handler = message -> {
-            eventHandler.onEvent(new NatsEvent(message));
-        };
-        Subscription subs = null;
-        try {
-            subs = new NatsSubscription( nats.subscribe(channelName, handler, opts) );
-        } catch (Exception exp) {
-            logger.error("Error attempting to subscribe to Nats Streaming Server", exp);
-        }
-        return subs;
-    }
-
-
     @Override
-    public Subscription subscribe(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler) {
         SubscriptionOptions opts = new SubscriptionOptions.Builder().build();
         return subscribeWithOptions( channelName, eventHandler, opts);
     }
 
     @Override
-    public Subscription subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
         SubscriptionOptions opts = new SubscriptionOptions.Builder().startWithLastReceived().build();
         return subscribeWithOptions( channelName, eventHandler, opts );
     }
 
     @Override
-    public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
         // Nats events start at 1 and we are 0 based.
         SubscriptionOptions opts = new SubscriptionOptions.Builder().startAtSequence(startInclusive+1L).build();
         return subscribeWithOptions( channelName, eventHandler, opts );
     }
 
     @Override
-    public Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
         SubscriptionOptions opts = new SubscriptionOptions.Builder().startAtTime(startInstant).build();
         return subscribeWithOptions( channelName, eventHandler, opts );
     }
 
     @Override
-    public Subscription subscribeAll(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler) {
         SubscriptionOptions opts = new SubscriptionOptions.Builder().deliverAllAvailable().build();
         return subscribeWithOptions( channelName, eventHandler, opts );
     }
+
+
+
+    private CompletableFuture<Subscription> subscribeWithOptions(String channelName, EventHandler eventHandler, SubscriptionOptions opts) {
+
+        MessageHandler handler = message -> eventHandler.onEvent(new NatsEvent(message));
+
+        CompletableFuture<Subscription> fut = new CompletableFuture<>();
+        try {
+            fut.complete( new NatsSubscription( nats.subscribe(channelName, handler, opts) ) );
+        } catch (Exception exp) {
+            logger.error("Error attempting to subscribe to Nats Streaming Server", exp);
+            fut.completeExceptionally(exp);
+        }
+        return fut;
+    }
+
+
 
 
     @Override

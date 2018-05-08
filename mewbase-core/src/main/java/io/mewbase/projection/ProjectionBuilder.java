@@ -3,6 +3,7 @@ package io.mewbase.projection;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -23,5 +24,5 @@ public interface ProjectionBuilder {
 
     ProjectionBuilder as(BiFunction<BsonObject, Event, BsonObject> projectionFunction);
 
-    Projection create();
+    CompletableFuture<Projection> create();
 }

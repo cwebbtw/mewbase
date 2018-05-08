@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory;
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
+import io.mewbase.util.CanFailFutures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static io.mewbase.eventsource.impl.file.FileEventUtils.ensureChannelExists;
@@ -22,12 +24,10 @@ import static io.mewbase.eventsource.impl.file.FileEventUtils.nextEventNumberFro
 import static java.lang.Long.max;
 
 
-public class FileEventSource implements EventSource
+public class FileEventSource implements EventSource, CanFailFutures
 {
 
     private final static Logger logger = LoggerFactory.getLogger(FileEventSource.class);
-
-    private final TreeMap<String,FileEventChannel> channels = new TreeMap<>();
 
     private final Path baseDir;
 
@@ -38,56 +38,64 @@ public class FileEventSource implements EventSource
 
     public FileEventSource(Config cfg) {
         baseDir = Paths.get(cfg.getString("mewbase.event.source.file.basedir"));
-        logger.info("Created FileEventSource connection with base directory " + baseDir);
+        logger.info("Created File Event Source connection with base directory " + baseDir);
     }
 
 
     @Override
-    public Subscription subscribe(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler) {
         Path channelPath = ensureChannelExists(baseDir,channelName);
             try {
                 long next = nextEventNumberFromPath(channelPath);
-                return new FileEventSubscription(channelPath, next, eventHandler);
+                return new FileEventSubscription(channelPath, next, eventHandler).initialisingFuture;
             } catch (Exception exp) {
-                throw new CompletionException(exp);
+                return CanFailFutures.failedFuture(exp);
             }
         }
 
 
     @Override
-    public Subscription subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription>  subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
         Path channelPath = ensureChannelExists(baseDir,channelName);
         try {
             long next = nextEventNumberFromPath(channelPath);
             long currentEventNumber = max(0L, next - 1);
-            return new FileEventSubscription(channelPath, currentEventNumber, eventHandler);
+            return new FileEventSubscription(channelPath, currentEventNumber, eventHandler).initialisingFuture;
         } catch (Exception exp) {
-            throw new CompletionException(exp);
+            return CanFailFutures.failedFuture(exp);
         }
     }
 
     @Override
-    public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
-        final long startEvent = max(startInclusive,0L);
-        Path channelPath = ensureChannelExists(baseDir,channelName);
-        return new FileEventSubscription(channelPath, startEvent, eventHandler);
-    }
-
-    @Override
-    public Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
-        Path channelPath = ensureChannelExists(baseDir,channelName);
+    public CompletableFuture<Subscription>  subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
         try {
-            long eventNumber = eventNumberAfterInstant(channelPath, startInstant);
-            return new FileEventSubscription(channelPath,eventNumber, eventHandler);
+            final long startEvent = max(startInclusive,0L);
+            Path channelPath = ensureChannelExists(baseDir,channelName);
+            return new FileEventSubscription(channelPath, startEvent, eventHandler).initialisingFuture;
         } catch (Exception exp) {
-            throw new CompletionException(exp);
+            return CanFailFutures.failedFuture(exp);
         }
     }
 
     @Override
-    public Subscription subscribeAll(String channelName, EventHandler eventHandler) {
-        Path channelPath = ensureChannelExists(baseDir,channelName);
-        return new FileEventSubscription(channelPath,0L, eventHandler);
+    public CompletableFuture<Subscription>  subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
+        try {
+            Path channelPath = ensureChannelExists(baseDir,channelName);
+            long eventNumber = eventNumberAfterInstant(channelPath, startInstant);
+            return new FileEventSubscription(channelPath,eventNumber, eventHandler).initialisingFuture;
+        } catch (Exception exp) {
+            return CanFailFutures.failedFuture(exp);
+        }
+    }
+
+    @Override
+    public CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler) {
+        try {
+            Path channelPath = ensureChannelExists(baseDir,channelName);
+            return new FileEventSubscription(channelPath,0L, eventHandler).initialisingFuture;
+        } catch (Exception exp) {
+            return CanFailFutures.failedFuture(exp);
+        }
     }
 
     @Override

@@ -42,7 +42,7 @@ object Dependencies {
   val restAssured = "io.rest-assured" % "rest-assured" % "3.0.6"
 
   // Scala Test
-  def scalatest(scalaVersion: String) = "org.scalatest" %% "scalatest" % "3.0.4"
+  def scalatest(scalaVersion: String) = "org.scalatest" %% "scalatest" % "3.0.5"
 
 
 }

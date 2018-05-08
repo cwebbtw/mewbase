@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 
 public class KafkaEventSource implements EventSource {
@@ -37,50 +38,49 @@ public class KafkaEventSource implements EventSource {
         logger.info("Set up KafkaEventSource");
     }
 
-
     @Override
-    public Subscription subscribe(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription>  subscribe(String channelName, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToEnd(Arrays.asList(partition0));
-        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
+        return CompletableFuture.completedFuture(createAndRegisterSubscription(kafkaConsumer,eventHandler));
     }
 
     @Override
-    public Subscription subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToEnd(Arrays.asList(partition0));
         final long offset = kafkaConsumer.position(partition0);
         kafkaConsumer.seek(partition0 , offset-1);
-        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
+        return CompletableFuture.completedFuture(createAndRegisterSubscription(kafkaConsumer,eventHandler));
     }
 
     @Override
-    public Subscription subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seek(partition0 , startInclusive);      // to include this jump back one
-        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
+        return CompletableFuture.completedFuture(createAndRegisterSubscription(kafkaConsumer,eventHandler));
     }
 
     @Override
-    public Subscription subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         java.util.Map<TopicPartition,java.lang.Long> timeForPartition0 = new HashMap(1);
         timeForPartition0.put(partition0,startInstant.toEpochMilli());
         OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(timeForPartition0).get(partition0);
         kafkaConsumer.seek(partition0 , offsetAndTimestamp.offset());
-        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
+        return CompletableFuture.completedFuture(createAndRegisterSubscription(kafkaConsumer,eventHandler));
     }
 
     @Override
-    public Subscription subscribeAll(String channelName, EventHandler eventHandler) {
+    public CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler) {
         TopicPartition partition0 = new TopicPartition(channelName, partitionZeroOnly);
         KafkaConsumer<String, byte[]> kafkaConsumer = createAndAssignConsumer(partition0);
         kafkaConsumer.seekToBeginning(Arrays.asList(partition0));
-        return createAndRegisterSubscription(kafkaConsumer,eventHandler);
+        return CompletableFuture.completedFuture(createAndRegisterSubscription(kafkaConsumer,eventHandler));
     }
 
 

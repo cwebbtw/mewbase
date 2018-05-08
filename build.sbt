@@ -93,7 +93,8 @@ def javaDoc = Seq(
   }
 )
 
-lazy val root = Project("root", file("."))
+
+lazy val root = Project("mewbase", file("."))
   .aggregate(mewbaseCore, mewbaseJava, mewbaseScala, examplesJava, examplesScala)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
@@ -109,13 +110,14 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
       vertx, vertxAuth, vertxWeb // REST frameworks
+
     ),
     libraryDependencies ++= Dependencies.test(
       junit, junitIntf, vertxUnit, restAssured
     ),
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
     crossPaths := false,
-    autoScalaLibrary := false
+    autoScalaLibrary := true
   )
 
 lazy val mewbaseJava = Project("mewbase-java", file("mewbase-java"))
@@ -127,9 +129,23 @@ lazy val mewbaseJava = Project("mewbase-java", file("mewbase-java"))
     autoScalaLibrary := false
   )
 
+
 lazy val mewbaseScala = Project("mewbase-scala", file("mewbase-scala"))
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
+  .settings(
+    libraryDependencies ++= Dependencies.compile(
+      //"com.typesafe.akka" %% "akka-http" % "10.0.11"
+    ),
+    libraryDependencies ++= Dependencies.test(
+      //"com.typesafe.akka" %% "akka-http-testkit" % "10.0.11"
+    ),
+    libraryDependencies ++= Dependencies.test(scalatest(scalaVersion.value)),
+
+    testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
+    crossPaths := true,
+    autoScalaLibrary := true
+  )
 
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))
