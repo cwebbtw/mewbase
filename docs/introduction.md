@@ -120,3 +120,5 @@ Mewbase:
 * has abstractions for sending and receiving events
 * provides an engine for processing them into aggregations.
 * has abstractions for persistance and exposure of these aggregations
+
+Next, let's look at a simple [Event Sourcing example](https://github.com/Tesco/mewbase/blob/master/docs/commandrest.md) which is exposed over a RESTful interface.
