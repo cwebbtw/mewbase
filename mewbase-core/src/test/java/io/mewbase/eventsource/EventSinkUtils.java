@@ -3,8 +3,6 @@ package io.mewbase.eventsource;
 
 import io.mewbase.bson.BsonObject;
 
-import io.mewbase.eventsource.EventSink;
-
 import java.util.stream.LongStream;
 
 
@@ -27,7 +25,6 @@ public class EventSinkUtils {
             }
         } );
     }
-
 
 
 }

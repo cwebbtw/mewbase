@@ -34,7 +34,6 @@ public class HttpEventSubscription implements Subscription {
 
         client = httpClient;
 
-
         client.post(HttpEventSource.SUBSCRIBE_ROUTE, response  -> {
             response.bodyHandler(totalBuffer -> {
                 try {
@@ -52,7 +51,7 @@ public class HttpEventSubscription implements Subscription {
                         }
                     });
                  } catch (Exception exp) {
-                    logger.error("Websocket subsacription failed", exp);
+                    logger.error("Websocket subscription failed", exp);
                     future.completeExceptionally(exp);
                     }
                 });

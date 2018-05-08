@@ -364,7 +364,7 @@ public class BindersTest extends MewbaseTestBase {
         });
 
         Subscription subs = subsFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
-
+        Thread.sleep(1000);
         BsonObject docPut = createObject();
         binder.put(documentID, docPut).join();
         latch.await();

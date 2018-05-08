@@ -274,26 +274,37 @@ public class EventSourceTest extends MewbaseTestBase {
     }
 
 
-    long events = 0;
-    final long increment = 1000;
-   // @Test
-   // @Repeat(10)
+
+    // @Test
+    // @Repeat(10)
     public void testManyEvents() throws Exception {
+
         final Config testConfig = createConfig();
         final EventSink sink = EventSink.instance(testConfig);
         final EventSource source = EventSource.instance(testConfig);
 
-        events += increment;
+        final long events = 1000;
 
         final String testChannelName = "TestManyEvents"+UUID.randomUUID();
         final EventSinkUtils utils =  new EventSinkUtils(sink);
-        utils.sendNumberedEvents(testChannelName,(long)0, events);
 
-        long start = Instant.now().toEpochMilli();
-        source.subscribe(testChannelName,  event -> {
+        long publishStart = Instant.now().toEpochMilli();
+        utils.sendNumberedEvents(testChannelName,1l, events);
+        long publishEnd = Instant.now().toEpochMilli();
+
+        System.out.println("Events:" + events + " Time " + (publishEnd-publishStart) );
+
+        final CountDownLatch latch = new CountDownLatch( (int)events );
+        long consumeStart = Instant.now().toEpochMilli();
+        source.subscribeAll(testChannelName,  event -> {
             BsonObject bson = event.getBson();
+            latch.countDown();
         });
-        long end = Instant.now().toEpochMilli();
-        System.out.println("Events:" + events + " Time " + (end-start) );
+        latch.await();
+        long consumeEnd = Instant.now().toEpochMilli();
+
+        System.out.println("Events:" + events + " Time " + (consumeEnd-consumeStart) );
+
     }
+
 }
