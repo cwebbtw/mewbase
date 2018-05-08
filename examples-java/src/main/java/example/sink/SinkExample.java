@@ -5,6 +5,7 @@ import io.mewbase.eventsource.EventSink;
 
 import java.time.Instant;
 
+
 /**
  *
  * Run this example to generate timestamped events until it is cancelled by an OS signal
@@ -29,7 +30,7 @@ public class SinkExample {
 
         while (!Thread.interrupted() ) {
             final String timeStamp = "Time :" + Instant.now();
-            event.put("timestamp", timeStamp);      // overwrite previous value
+            event.put("timestamp", timeStamp);          // overwrite previous value
             eventSink.publishSync(CHANNEL_NAME,event);  // publish the event to the sink on the given channel
             Thread.sleep( milliSecondWait );
         }

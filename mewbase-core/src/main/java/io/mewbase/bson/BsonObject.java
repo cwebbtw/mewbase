@@ -750,6 +750,13 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
     }
 
     /**
+     * Get a stream of the keys in the JSON object
+     *
+     * @return a stream of the keys
+     */
+    public Stream<String> keyStream() { return stream().map(Map.Entry::getKey); }
+
+    /**
      * Get an Iterator of the entries in the JSON object.
      *
      * @return an Iterator of the entries

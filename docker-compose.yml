@@ -1,0 +1,18 @@
+version: "3"
+services:
+    kafka:
+        container_name: "mewbase-gs-kafka"
+        image: "spotify/kafka"
+        ports:
+            - "2181:2181"
+            - "9092:9092"
+        environment:
+            - ADVERTISED_HOST=localhost
+            - ADVERTISED_PORT=9092
+    postgres:
+        container_name: "mewbase-gs-postgres"
+        build:
+          context: .
+          dockerfile: postgres.Dockerfile
+        ports:
+            - "5432:5432"

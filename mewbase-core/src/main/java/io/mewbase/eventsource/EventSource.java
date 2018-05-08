@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 
-public interface EventSource {
+public interface EventSource extends AutoCloseable {
 
     String factoryConfigPath = "mewbase.event.source.factory";
 

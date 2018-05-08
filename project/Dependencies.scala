@@ -41,6 +41,8 @@ object Dependencies {
   val vertxUnit   = "io.vertx" % "vertx-unit" % "3.4.2"
   val restAssured = "io.rest-assured" % "rest-assured" % "3.0.6"
 
+  val commonsIo = "commons-io" % "commons-io" % "2.6"
+
   // Scala Test
   def scalatest(scalaVersion: String) = "org.scalatest" %% "scalatest" % "3.0.5"
 

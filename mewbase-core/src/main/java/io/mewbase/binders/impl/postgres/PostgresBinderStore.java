@@ -8,10 +8,7 @@ import io.mewbase.binders.BinderStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -19,31 +16,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-
 public class PostgresBinderStore implements BinderStore {
+
+    public static final String MEWBASE_BINDER_DATA_TABLE_NAME = "mewbase_binder_data";
+    public static final String MEWBASE_BINDER_TABLE_NAME = "mewbase_binder";
 
     private final static Logger logger = LoggerFactory.getLogger(PostgresBinderStore.class);
 
     protected final ConcurrentMap<String, Binder> binders = new ConcurrentHashMap<>();
 
-    Connection connection;
+    private Connection connection;
 
-    public PostgresBinderStore() { this(ConfigFactory.load()); }
+    public PostgresBinderStore() throws Exception {
+        this(ConfigFactory.load(), DriverManager::getConnection);
+    }
 
+    public PostgresBinderStore(Config cfg) throws Exception {
+        this(cfg, DriverManager::getConnection);
+    }
 
-    public PostgresBinderStore(Config cfg) {
-        try {
-            Class.forName("org.postgresql.Driver");
-            final String uri = cfg.getString("mewbase.binders.postgres.store.url");
-            final String username = cfg.getString("mewbase.binders.postgres.store.username");
-            final String password = cfg.getString("mewbase.binders.postgres.store.password");
-            connection = DriverManager.getConnection(uri, username, password);
-            logger.info("Started postgress binder store with  " + uri);
-        } catch (Exception exp) {
-            logger.error("Postgres binder failed to start", exp);
-        }
+    public PostgresBinderStore(Config cfg, ConnectionBuilder connectionBuilder) throws Exception {
+        Class.forName("org.postgresql.Driver");
+        final String uri = cfg.getString("mewbase.binders.postgres.store.url");
+        final String username = cfg.getString("mewbase.binders.postgres.store.username");
+        final String password = cfg.getString("mewbase.binders.postgres.store.password");
 
-        listAllTables().forEach( name -> open(name) );
+        connection = connectionBuilder.build(uri, username, password);
+        logger.info("Started postgress binder store with  " + uri);
+
+        listAllTables().forEach(this::open);
     }
 
 
@@ -75,23 +76,24 @@ public class PostgresBinderStore implements BinderStore {
 
 
     private Stream<String> listAllTables() {
-        Set<String> names = new HashSet();
+        Set<String> names = new HashSet<>();
         try {
-            final String sql = "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'mewbase';";
-            final Statement stmt = connection.createStatement();
-            final ResultSet dbrs = stmt.executeQuery(sql);
-
-            while (dbrs.next()) {
-                names.add(dbrs.getString(2));
+            final String sql = "SELECT name FROM " + MEWBASE_BINDER_TABLE_NAME;
+            try (final Statement stmt = connection.createStatement()) {
+                try (ResultSet dbrs = stmt.executeQuery(sql)) {
+                    while (dbrs.next()) {
+                        names.add(dbrs.getString(1));
+                    }
+                }
             }
-            dbrs.close();
-            stmt.close();
         } catch (Exception exp) {
             logger.error("Failed to find current binders list in postgres",exp);
         }
         return names.stream();
     }
 
-
-
+    @Override
+    public void close() throws Exception {
+        connection.close();
+    }
 }

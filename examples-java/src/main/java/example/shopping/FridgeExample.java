@@ -7,11 +7,9 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.impl.nats.NatsEventSink;
 
 import io.mewbase.projection.ProjectionManager;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 
@@ -29,17 +27,16 @@ import java.util.function.Consumer;
  * 2) Introduce a new event that reflects the temperature of the fridge and integrate this into
  * the current projection, or make a new projection to handle the new status event.
  *
- * The example depends on a running instance of NatsStreaming service. See the instructions
- * here https://github.com/Tesco/mewbase
- *
- * Created by Nige on 17/05/17.
+ * Created by Nige on 17/05/17
  * Updated by Nige on 25/10/17
+ * Updated by Nige on 16/4/18
  */
 
 public class FridgeExample {
 
     public static void main(String[] args) throws Exception {
 
+        //************************** Server Side Setup ******************************
         // In order to run a projection set up an EventSource and BinderStore.
         EventSource src = EventSource.instance();
         BinderStore store = BinderStore.instance();
@@ -70,15 +67,17 @@ public class FridgeExample {
 
 
         //************************** Client Side Setup ******************************
+        // set up a sink to send events to the projection in the server
+        EventSink sink = EventSink.instance();
 
-        // set up a sink to send events to the projection
-        EventSink sink = new NatsEventSink();
-
-        // Send some open close events for this fridge
+        // Send some open/close events for this fridge
         BsonObject event = new BsonObject().put("fridgeID", "f1").put("eventType", "doorStatus");
-        CompletableFuture<Long> fut = sink.publishAsync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
+        sink.publishSync(FRIDGE_EVENT_CHANNEL_NAME, event.copy().put("status", "open"));
 
-        // Consumer of the Docuemnt
+        // wait for the projection to fire
+        Thread.sleep(200);
+
+        // Consumer of the Document
         Consumer<BsonObject> statusDocumentConsumer = fridgeStateDoc ->
                 System.out.println("Fridge State is :" + fridgeStateDoc);
 
@@ -88,13 +87,14 @@ public class FridgeExample {
         // Shut that door
         sink.publishSync(FRIDGE_EVENT_CHANNEL_NAME,event.copy().put("status", "shut"));
 
-        // wait for the projection to fire
-        Thread.sleep(100);
+        // wait for the projection again
+        Thread.sleep(200);
 
         // Now get the fridge state again
         fridgeStatusBinder.get("f1").thenAccept( statusDocumentConsumer );
 
         // close the resources
+        mgr.stopAll();
         sink.close();
         src.close();
 

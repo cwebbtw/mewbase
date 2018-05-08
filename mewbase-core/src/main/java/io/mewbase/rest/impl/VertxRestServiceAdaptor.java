@@ -30,6 +30,9 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 /**
@@ -263,6 +266,15 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
         logger.info("Stopping Rest Adapter");
         httpServer.close(ar);
         return ar;
+    }
+
+    @Override
+    public void close() {
+        try {
+            stop().get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

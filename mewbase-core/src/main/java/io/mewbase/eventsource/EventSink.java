@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 
 
-public interface EventSink {
+public interface EventSink extends AutoCloseable {
 
     String factoryConfigPath = "mewbase.event.sink.factory";
     Long SYNC_WRITE_FAILED = -1l;

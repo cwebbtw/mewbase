@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 /**
  * Created by Nige on 14/09/17.
  */
-public interface BinderStore {
+public interface BinderStore extends AutoCloseable {
 
     String factoryConfigPath = "mewbase.binders.factory";
 
@@ -76,7 +76,5 @@ public interface BinderStore {
      */
     @Deprecated
     Boolean delete(String name);
-
-
 
 }
