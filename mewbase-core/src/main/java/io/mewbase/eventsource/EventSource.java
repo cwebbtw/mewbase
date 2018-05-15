@@ -13,12 +13,23 @@ public interface EventSource extends AutoCloseable {
 
     String factoryConfigPath = "mewbase.event.source.factory";
 
+    /**
+     * Create an instance of an EventSource given the current configuration in the environment.
+     *
+     * @return Instance of an EventSource, implemented as configured in the configuration.
+     */
     static EventSource instance() {
         return EventSource.instance(ConfigFactory.load());
     }
 
-    static EventSource instance(Config cfg) {
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSource(cfg) );
+    /**
+     * Create an instance of an EventSource given the configuration sul;lplied as a parameter.
+     * Default is to use the FileEventSource if nothing is supplied in the config.
+     * @param config
+     * @return Instance of an EventSource, implemented as configured in the configuration.
+     */
+    static EventSource instance(Config config) {
+        return CanFactoryFrom.instance(config.getString(factoryConfigPath), config, () -> new FileEventSource(config) );
     }
 
     /**
@@ -72,6 +83,8 @@ public interface EventSource extends AutoCloseable {
      */
     CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler);
 
+
+    private Stream<ChannelDescriptor> describeChannels()
 
     void close();
 
