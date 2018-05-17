@@ -19,6 +19,7 @@
 
 package io.mewbase;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 
 
@@ -74,5 +75,21 @@ public class TestUtils {
      */
     public static boolean byteArraysEqual(byte[] b1, byte[] b2) {
         return Arrays.equals(b1, b2);
+    }
+
+
+    static final String VALID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.$";
+    static SecureRandom rnd = new SecureRandom();
+
+    /**
+     * Generate a valid random String of any given length
+     * @param len
+     * @return
+     */
+    public static String randomString( int len ){
+        StringBuilder sb = new StringBuilder( len );
+        for( int i = 0; i < len; i++ )
+            sb.append( VALID_CHARS.charAt( rnd.nextInt(VALID_CHARS.length()) ) );
+        return sb.toString();
     }
 }

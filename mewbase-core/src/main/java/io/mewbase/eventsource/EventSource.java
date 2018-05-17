@@ -2,11 +2,13 @@ package io.mewbase.eventsource;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+
 import io.mewbase.eventsource.impl.file.FileEventSource;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+
 
 
 public interface EventSource extends AutoCloseable {
@@ -83,9 +85,11 @@ public interface EventSource extends AutoCloseable {
      */
     CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler);
 
-
-    private Stream<ChannelDescriptor> describeChannels()
-
+    /**
+     * Close the connection to this EventSource forcing closer of any currently running subscriptions
+     *
+     * Generally intended to be used at program termination for example in shutdown hooks.
+     */
     void close();
 
 }
