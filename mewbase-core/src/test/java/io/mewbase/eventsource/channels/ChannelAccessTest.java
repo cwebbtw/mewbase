@@ -33,7 +33,7 @@ public class ChannelAccessTest extends MewbaseTestBase {
     public void testNoOrPoorConfigGivesNoAccess() throws Exception {
         setUpBadConfig();
         ChannelAccessRegistry reg = ChannelAccessRegistry.instance();
-        // cast will hurl if it is not an all access registry
+        // cast will hurl if it is not a NoAccess registry
         NoAccessRegistry allReg = (NoAccessRegistry)reg;
         String randomChannel = TestUtils.randomString(16);
         assertFalse( allReg.canPublishTo(randomChannel) );
