@@ -4,6 +4,8 @@ package io.mewbase.eventsource.channels;
 import com.typesafe.config.ConfigFactory;
 import io.mewbase.MewbaseTestBase;
 import io.mewbase.TestUtils;
+import io.mewbase.bson.BsonObject;
+import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.channels.impl.AllAccessRegistry;
 import io.mewbase.eventsource.channels.impl.NoAccessRegistry;
 import org.junit.Test;
@@ -38,6 +40,16 @@ public class ChannelAccessTest extends MewbaseTestBase {
         String randomChannel = TestUtils.randomString(16);
         assertFalse( allReg.canPublishTo(randomChannel) );
         assertFalse( allReg.canSubscribeTo(randomChannel) );
+    }
+
+    @Test
+    public void testFileEventSinkDefaultAccess() throws Exception {
+        EventSink sink = EventSink.instance();
+        BsonObject event = new BsonObject().put("age", 27);
+        // if this doesnt work it will throw a channel access exception
+        Long eventNumber = sink.publishSync("OpenChannel", event );
+        assertNotNull(eventNumber);
+
     }
 
 

@@ -7,6 +7,7 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
 
+import io.mewbase.eventsource.impl.SecureEventSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 
 
-public class FileEventSink implements EventSink {
+public class FileEventSink extends SecureEventSink {
 
     private final static Logger logger = LoggerFactory.getLogger(FileEventSink.class);
 
