@@ -12,13 +12,16 @@ object Dependencies {
 
   // include for core
 
+  // JSON and BSON encodings
   val jackson     = "com.fasterxml.jackson.core" % "jackson-core" % "2.7.4"
   val jacksonData = "com.fasterxml.jackson.core" % "jackson-databind" % "2.7.4"
   val jacksonBson = "de.undercouch" % "bson4jackson" % "2.7.0"
 
+  // Logging  Config and Metrics
   val slf4j       = "org.slf4j" % "slf4j-log4j12" % "1.7.21"
   val slf4jAPI    = "org.slf4j" % "slf4j-api" % "1.7.21"
   val lbConfig    = "com.typesafe" % "config" % "1.3.1"
+  val micrometer  =  "io.micrometer" % "micrometer-core" % "1.0.4"
 
   // Various dependencies for implementations of Event and Binder servers
   // EventSource and/or Sink implementations
