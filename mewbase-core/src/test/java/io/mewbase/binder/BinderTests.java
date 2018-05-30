@@ -3,7 +3,7 @@ package io.mewbase.binder;
 import com.google.common.base.Throwables;
 import com.typesafe.config.Config;
 import io.mewbase.MewbaseTestBase;
-import io.mewbase.binder.session.PostgresTestBinderStoreSessionSupplier;
+
 import io.mewbase.binder.session.TestBinderStoreSession;
 import io.mewbase.binder.session.TempDirectoryTestBinderStoreSessionSupplier;
 import io.mewbase.binders.BinderStore;
@@ -15,6 +15,9 @@ import io.mewbase.binders.Binder;
 
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +25,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
@@ -268,6 +272,8 @@ public class BinderTests extends MewbaseTestBase {
     public void testDelete() throws Exception {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
+        Metrics.addRegistry(new SimpleMeterRegistry());
+
         singleStoreTest(store -> {
             Binder binder = store.open(testBinderName);
 
@@ -278,6 +284,11 @@ public class BinderTests extends MewbaseTestBase {
             assertTrue(binder.delete("id1234").get());
             docGet = binder.get("id1234").get();
             assertNull(docGet);
+
+            
+            Counter counter = Metrics.globalRegistry
+                    .find("mewbase.binder.file.put").counter();
+            assertTrue(counter.count() == 1.0);
         });
     }
 
