@@ -25,7 +25,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
@@ -137,6 +136,8 @@ public class BinderTests extends MewbaseTestBase {
 
         // set up the store and add some binders
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+        Metrics.addRegistry(new SimpleMeterRegistry());
+
         singleStoreTest(store -> {
             final int numBinders = 10;
 
@@ -156,7 +157,13 @@ public class BinderTests extends MewbaseTestBase {
             System.out.println(bindersSet2.size());
 
             assertEquals(bindersSet1.size() + 1, bindersSet2.size());
+
+            // check instrumentation here.
+            Counter counter = Metrics.globalRegistry
+                    .find("mewbase.binderstore.open").counter();
+            assertTrue(counter.count() == 11.0);
         });
+
     }
 
 
@@ -272,8 +279,6 @@ public class BinderTests extends MewbaseTestBase {
     public void testDelete() throws Exception {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        Metrics.addRegistry(new SimpleMeterRegistry());
-
         singleStoreTest(store -> {
             Binder binder = store.open(testBinderName);
 
@@ -286,9 +291,7 @@ public class BinderTests extends MewbaseTestBase {
             assertNull(docGet);
 
             
-            Counter counter = Metrics.globalRegistry
-                    .find("mewbase.binder.file.put").counter();
-            assertTrue(counter.count() == 1.0);
+
         });
     }
 

@@ -36,7 +36,7 @@ public class TempDirectoryTestBinderStoreSessionSupplier implements Supplier<Tes
 
             @Override
             public BinderStore get() {
-                return new FileBinderStore(config);
+                return BinderStore.instance(config);
             }
         };
     }

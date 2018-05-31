@@ -5,10 +5,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
-import io.micrometer.core.instrument.Counter;
 
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,14 +13,13 @@ import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+
 import java.util.HashSet;
-import java.util.List;
+
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -39,11 +35,6 @@ public class FileBinder extends StreamableBinder implements Binder {
 
     private final File binderDir;
 
-    private final Counter putCounter;
-    private final Counter getCounter;
-    private final Counter delCounter;
-    private final AtomicLong docsGuage =  new AtomicLong(0);
-
     private final ExecutorService stexec = Executors.newSingleThreadExecutor();
 
 
@@ -51,15 +42,6 @@ public class FileBinder extends StreamableBinder implements Binder {
         this.name = name;
         this.binderDir = binderDir;
         createIfDoesntExists(this.binderDir);
-
-        // counters and logging
-        // List<Tag> nameAsIterable = Arrays.asList(new );
-        List<Tag> tag = Arrays.asList(Tag.of("name", name));
-        putCounter = Metrics.counter("mewbase.binder.file.put", tag);
-        getCounter = Metrics.counter( "mewbase.binder.file.get", tag);
-        delCounter = Metrics.counter( "mewbase.binder.file.delete", tag);
-        // gauges need to wrapped and registered
-        Metrics.gauge("mewbase.binder.file.docs", tag, docsGuage);
         log.info("Opened Binder named " + name);
     }
 
@@ -82,7 +64,6 @@ public class FileBinder extends StreamableBinder implements Binder {
                     byte[] buffer = Files.readAllBytes(file.toPath());
                     doc = new BsonObject(buffer);
                     log.debug("Read Document " + id + " : " + doc);
-                    getCounter.increment();
                 } catch (Exception exp) {
                     log.error("Error getting document with key : " + id);
                     fut.completeExceptionally(exp);
@@ -105,7 +86,6 @@ public class FileBinder extends StreamableBinder implements Binder {
             try {
                 Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE;
                 log.debug("Written Document " + id + " : " + doc);
-                putCounter.increment();
             } catch (Exception exp) {
                 log.error("Error writing document key : " + id + " value : " + doc);
                 fut.completeExceptionally(exp);
@@ -126,7 +106,6 @@ public class FileBinder extends StreamableBinder implements Binder {
             try {
                 fut.complete( Files.deleteIfExists(file.toPath()) );
                 log.debug("Deleted " + file.toPath());
-                delCounter.increment();
                 fut.complete(true);
             } catch (Exception exp) {
                 log.error("Error deleting document " + id );
@@ -146,10 +125,8 @@ public class FileBinder extends StreamableBinder implements Binder {
         CompletableFuture<Set<KeyVal<String, BsonObject>>> fut = CompletableFuture.supplyAsync( () -> {
 
             Set<KeyVal<String, BsonObject>> resultSet = new HashSet<>();
-            long documentCounter = 0;
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(binderDir.toPath())) {
                 for (Path entry: stream) {
-                    documentCounter += 1;
                     String key = entry.getFileName().toString();
                     byte[] buffer = Files.readAllBytes(entry);
                     final BsonObject doc = new BsonObject(buffer);
@@ -159,7 +136,6 @@ public class FileBinder extends StreamableBinder implements Binder {
             } catch (Exception ex) {
                 log.error("File based Binder failed to start", ex);
             }
-            docsGuage.set(documentCounter);
             return resultSet;
         }, stexec);
 
