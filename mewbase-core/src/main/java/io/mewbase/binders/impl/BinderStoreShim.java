@@ -41,7 +41,7 @@ public class BinderStoreShim implements BinderStore {
     public Binder open(String name) {
         Binder b = impl.open(name);
         openCounter.increment();
-        impl.binders(); // force a count on the current binders
+        this.binders(); // force a count on the current binders
         return b;
     }
 
@@ -54,12 +54,8 @@ public class BinderStoreShim implements BinderStore {
 
     @Override
     public Stream<Binder> binders() {
-        binderCount.set(0L);
-        Stream<Binder> sb = impl.binders().map( b -> {
-            binderCount.getAndIncrement();
-            return b;
-        });
-        return sb;
+        binderCount.set(impl.binders().count());
+        return impl.binders();
     }
 
     @Override

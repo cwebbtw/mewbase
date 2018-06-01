@@ -16,6 +16,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Assert;
@@ -139,32 +140,36 @@ public class BinderTests extends MewbaseTestBase {
         Metrics.addRegistry(new SimpleMeterRegistry());
 
         singleStoreTest(store -> {
-            final int numBinders = 10;
+            try {
+                final int numBinders = 10;
 
-            IntStream.range(0, numBinders).forEach(i -> store.open(testBinderName + i));
+                IntStream.range(0, numBinders).forEach(i -> store.open(testBinderName + i));
 
-            Set<String> bindersSet1 = store.binderNames().collect(toSet());
+                Set<String> bindersSet1 = store.binderNames().collect(toSet());
 
-            IntStream.range(0, numBinders).forEach(i -> assertTrue(bindersSet1.contains(testBinderName + i)));
+                IntStream.range(0, numBinders).forEach(i -> assertTrue(bindersSet1.contains(testBinderName + i)));
 
-            final String name = "YetAnother" + testBinderName;
-            assertEquals(store.open(name).getName(), name);
+                final String name = "YetAnother" + testBinderName;
+                assertEquals(store.open(name).getName(), name);
 
-            Set<String> bindersSet2 = store.binderNames().collect(toSet());
-            assertTrue(bindersSet2.contains(name));
+                Set<String> bindersSet2 = store.binderNames().collect(toSet());
+                assertTrue(bindersSet2.contains(name));
+                assertEquals(bindersSet1.size() + 1, bindersSet2.size());
 
-            System.out.println(bindersSet1.size());
-            System.out.println(bindersSet2.size());
+                // check instrumentation here.
 
-            assertEquals(bindersSet1.size() + 1, bindersSet2.size());
+                Counter opens = Metrics.globalRegistry.find("mewbase.binderstore.open").counter();
+                assertTrue(opens.count() == bindersSet2.size());
 
-            // check instrumentation here.
-            Counter counter = Metrics.globalRegistry
-                    .find("mewbase.binderstore.open").counter();
-            assertTrue(counter.count() == 11.0);
+                Gauge binders = Metrics.globalRegistry.find("mewbase.binderstore.binders").gauge();
+                assertTrue(binders.value() == bindersSet2.size());
+            } catch (Exception exp) {
+                exp.printStackTrace();
+            }
+
         });
-
     }
+
 
 
    @Test
