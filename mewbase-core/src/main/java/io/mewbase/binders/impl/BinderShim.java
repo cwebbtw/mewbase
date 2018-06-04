@@ -20,7 +20,7 @@ import java.util.stream.Stream;
  * Shims are used for two main purposes ...
  *
  * 1) Instrument the Calls to teh underlying class
- * 2) Implement security on a call by call bassis possibly wrt Counters and other instrumentation
+ * 2) Implement security on a call by call basis possibly wrt Counters and other instrumentation
  */
 
 public class BinderShim implements Binder {
@@ -49,7 +49,6 @@ public class BinderShim implements Binder {
         Metrics.gauge(METRICS_NAME + ".documents", tag, docsCount);
     }
 
-
     @Override
     public String getName() {
         return impl.getName();
@@ -59,6 +58,7 @@ public class BinderShim implements Binder {
     public CompletableFuture<BsonObject> get(String name) {
         CompletableFuture<BsonObject> ob = impl.get(name);
         getCounter.increment();
+    System.out.println("Gets " + getCounter.count());
         return ob;
     }
 
@@ -66,6 +66,7 @@ public class BinderShim implements Binder {
     public CompletableFuture<Void> put(String id, BsonObject doc) {
         CompletableFuture<Void> op = impl.put(id, doc);
         putCounter.increment();
+    System.out.println("Puts " + putCounter.count());
         return op;
     }
 
@@ -73,6 +74,7 @@ public class BinderShim implements Binder {
     public CompletableFuture<Boolean> delete(String name) {
         CompletableFuture<Boolean> cb = impl.delete(name);
         delCounter.increment();
+    System.out.println("Dels " + delCounter.count());
         return cb;
     }
 

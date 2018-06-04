@@ -18,6 +18,7 @@ import io.mewbase.eventsource.EventSource;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.search.Search;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import org.junit.runners.Parameterized;
 
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -140,6 +142,8 @@ public class BinderTests extends MewbaseTestBase {
 
         // set up the store and add some binders
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
+        // Register the counters locally
         Metrics.addRegistry(new SimpleMeterRegistry());
 
         singleStoreTest(store -> {
@@ -281,6 +285,9 @@ public class BinderTests extends MewbaseTestBase {
     public void testDelete() throws Exception {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
+        // Register the counters locally
+        Metrics.addRegistry(new SimpleMeterRegistry());
+
         singleStoreTest(store -> {
             Binder binder = store.open(testBinderName);
 
@@ -291,6 +298,13 @@ public class BinderTests extends MewbaseTestBase {
             assertTrue(binder.delete("id1234").get());
             docGet = binder.get("id1234").get();
             assertNull(docGet);
+
+            // test instrumentation
+            final Counter gets = Metrics.globalRegistry.find("mewbase.binder.get")
+                    .tag("name", testBinderName).counter();
+            // final Collection<Counter> counters = search.counters();
+            // final Counter counter = search.tag("name", testBinderName).counter();
+            assertTrue(gets.count() == 2.0);
 
         });
     }
