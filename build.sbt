@@ -116,6 +116,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       junit, junitIntf, vertxUnit, restAssured
     ),
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
+    parallelExecution in Test := false,
     crossPaths := false,
     autoScalaLibrary := true
   )
