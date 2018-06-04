@@ -10,6 +10,8 @@ import io.mewbase.bson.BsonObject;
 
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.QueryManager;
+import io.mewbase.rest.DocumentLookup;
+import io.mewbase.rest.IncomingRequest;
 import io.mewbase.rest.RestServiceAdaptor;
 
 import io.vertx.core.MultiMap;
@@ -33,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -136,6 +139,36 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
         return this;
     }
 
+    @Override
+    public RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String uri, Function<IncomingRequest, DocumentLookup> requestToDocumentLookup) {
+        router.route(HttpMethod.GET, uri).handler(rc -> {
+           final IncomingRequest incomingRequest = new IncomingRequest(rc.pathParams());
+           final DocumentLookup documentLookup = requestToDocumentLookup.apply(incomingRequest);
+
+           final HttpServerResponse response = rc.response();
+           binderStore.open(documentLookup.getBinderName()).get(documentLookup.getDocumentId()).whenComplete((doc, t) -> {
+               if (t != null) {
+                   String errMsg = "Failed to find "+ documentLookup.getDocumentId() +" in binder "+ documentLookup.getBinderName();
+                   logger.error(errMsg, t);
+                   response.
+                           setStatusCode(500).
+                           setStatusMessage(errMsg).
+                           end();
+               } else if (doc == null) {
+                   response
+                           .setStatusCode(404)
+                           .setStatusMessage("Not Found")
+                           .end();
+               } else {
+                   response.
+                           putHeader("content-type","application/json").
+                           end(doc.encodeToString());
+               }
+           });
+        });
+
+        return this;
+    }
 
     @Override
     public RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String binderName, String uriPathPrefix) {

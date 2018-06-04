@@ -10,7 +10,9 @@ import io.mewbase.cqrs.QueryManager;
 import io.mewbase.rest.impl.VertxRestServiceAdaptor;
 import io.mewbase.util.CanFactoryFrom;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * Adapted by Nige on 19/12/17.
@@ -80,6 +82,7 @@ public interface RestServiceAdaptor extends AutoCloseable {
      */
     RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String uriPathPrefix);
 
+    RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String uri, Function<IncomingRequest, DocumentLookup> requestToDocumentLookup);
 
     /**
      * This method is exposes only the named Binder in the binder store and all of its contained

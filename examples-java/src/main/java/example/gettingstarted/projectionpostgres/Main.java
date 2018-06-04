@@ -7,16 +7,18 @@ import io.mewbase.eventsource.EventSource;
 import io.mewbase.projection.ProjectionManager;
 
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Main {
 
-    private final static DateTimeFormatter dateFormatter =
-            DateTimeFormatter.BASIC_ISO_DATE.withZone(ZoneId.systemDefault());
+    private final static DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
 
     public static void main(String[] args) throws Exception {
-        final Config config = ConfigFactory.load("example/gettingstarted/projectionpostgres/configuration.conf");
+        String resourceBasename = "example/gettingstarted/projectionpostgres/configuration.conf";
+        final Config config = ConfigFactory.load(resourceBasename);
 
         final EventSource eventSource = EventSource.instance(config);
         final BinderStore binderStore = BinderStore.instance(config);
@@ -26,18 +28,19 @@ public class Main {
                 .projecting("purchase_events") // which kafka topic to stream events from
                 .identifiedBy(event -> {
                     /*
-                    An event to buy a banana on 2018-01-01 15:00:00
-                    will affect the
-                    banana_20180101 document
+                    An event to buy a banana on 2018-01-01 15:00:00 affects the
+                    banana_2018-01-01 document
                      */
                     final String product = event.getBson().getString("product");
                     final Instant timestamp = event.getInstant();
+                    final ZonedDateTime zonedDateTime =
+                            ZonedDateTime.ofInstant(timestamp, ZoneOffset.UTC);
 
-                    return product + "_" + dateFormatter.format(timestamp);
+                    return product + "_" + dateFormatter.format(zonedDateTime);
                 })
                 .filteredBy(event -> {
                     /*
-                    Only consider incoming events with an action of BUY or refund
+                    Only consider incoming events with an action of BUY or REFUND
                      */
                     final String action = event.getBson().getString("action", "");
                     return action.equalsIgnoreCase("BUY") ||
@@ -57,9 +60,11 @@ public class Main {
                     // adjust buys/refunds for document based on this event
                     switch (action) {
                         case "BUY":
-                            buys -= quantity;
+                            buys += quantity;
+                            break;
                         case "REFUND":
-                            refunds -= quantity;
+                            refunds += quantity;
+                            break;
                     }
 
                     // update the document based on the adjustment
