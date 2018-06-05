@@ -5,6 +5,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import io.mewbase.bson.BsonObject;
+import io.mewbase.eventsource.impl.SinkShim;
 import io.mewbase.eventsource.impl.file.FileEventSink;
 import io.mewbase.util.CanFactoryFrom;
 
@@ -32,7 +33,8 @@ public interface EventSink extends AutoCloseable {
      * @return an Instance of an EventSink
      */
     static EventSink instance(Config cfg) {
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSink(cfg) );
+        EventSink impl = CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSink(cfg) );
+        return new SinkShim(impl);
     }
 
 

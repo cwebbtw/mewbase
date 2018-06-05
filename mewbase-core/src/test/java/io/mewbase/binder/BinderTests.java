@@ -17,9 +17,12 @@ import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.search.Search;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,10 +30,10 @@ import org.junit.runners.Parameterized;
 
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,6 +60,7 @@ interface ThrowingConsumer<T> extends Consumer<T> {
 
     void throwAccept(T t) throws Exception;
 }
+
 
 /**
  * <p>
@@ -85,6 +89,7 @@ public class BinderTests extends MewbaseTestBase {
     public BinderTests(Supplier<TestBinderStoreSession> testBinderStoreSessionSupplier) {
         this.testBinderStoreSessionSupplier = testBinderStoreSessionSupplier;
     }
+
 
     private void singleStoreTest(ThrowingConsumer<BinderStore> test) throws Exception {
         try (final TestBinderStoreSession session = testBinderStoreSessionSupplier.get()) {
@@ -143,9 +148,6 @@ public class BinderTests extends MewbaseTestBase {
         // set up the store and add some binders
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        // Register the counters locally
-        Metrics.addRegistry(new SimpleMeterRegistry());
-
         singleStoreTest(store -> {
 
             final int numBinders = 10;
@@ -163,10 +165,6 @@ public class BinderTests extends MewbaseTestBase {
             assertTrue(bindersSet2.contains(name));
             assertEquals(bindersSet1.size() + 1, bindersSet2.size());
 
-            // check instrumentation.
-            Counter opens = Metrics.globalRegistry.find("mewbase.binderstore.open").counter();
-            assertTrue(opens.count() == bindersSet2.size());
-
         });
 
     }
@@ -182,7 +180,7 @@ public class BinderTests extends MewbaseTestBase {
                assertFalse(binder.isStreaming());
 
                BsonObject docPut = createObject();
-               assertNull(binder.put("id1234", docPut).get());
+               assertTrue(binder.put("id1234", docPut).get());
 
                BsonObject docGet = binder.get("id1234").get();
                assertEquals(docPut, docGet);
@@ -239,11 +237,11 @@ public class BinderTests extends MewbaseTestBase {
 
             BsonObject docPut1 = createObject();
             docPut1.put("binder", "binder1");
-            assertNull(binder1.put("id0", docPut1).get());
+            assertTrue(binder1.put("id0", docPut1).get());
 
             BsonObject docPut2 = createObject();
             docPut2.put("binder", "binder2");
-            assertNull(binder2.put("id0", docPut2).get());
+            assertTrue(binder2.put("id0", docPut2).get());
 
             BsonObject docGet1 = binder1.get("id0").get();
             assertEquals("binder1", docGet1.remove("binder"));
@@ -285,14 +283,17 @@ public class BinderTests extends MewbaseTestBase {
     public void testDelete() throws Exception {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
-        // Register the counters locally
-        Metrics.addRegistry(new SimpleMeterRegistry());
-
         singleStoreTest(store -> {
+
+            // Set up instrumentation
+            Metrics.addRegistry(new SimpleMeterRegistry());
+
             Binder binder = store.open(testBinderName);
 
             BsonObject docPut = createObject();
-            assertNull(binder.put("id1234", docPut).get());
+            assertTrue(binder.put("id1234", docPut).get());
+            metricsExpectations(1L,0L,0L,1L,testBinderName);
+
             BsonObject docGet = binder.get("id1234").get();
             assertEquals(docPut, docGet);
             assertTrue(binder.delete("id1234").get());
@@ -300,13 +301,51 @@ public class BinderTests extends MewbaseTestBase {
             assertNull(docGet);
 
             // test instrumentation
-            final Counter gets = Metrics.globalRegistry.find("mewbase.binder.get")
-                    .tag("name", testBinderName).counter();
-            // final Collection<Counter> counters = search.counters();
-            // final Counter counter = search.tag("name", testBinderName).counter();
-            assertTrue(gets.count() == 2.0);
+//            final Counter gets = Metrics.globalRegistry.find("mewbase.binder.get")
+//                                                        .tag("name", testBinderName)
+//                                                        .counter();
+//            assertEquals(gets.count(), 2.0, 0.000001);
+//
+//            final Counter puts = Metrics.globalRegistry.find("mewbase.binder.put")
+//                    .tag("name", testBinderName)
+//                    .counter();
+//            assertEquals(puts.count(), 1.0, 0.000001);
+//
+//            final Counter dels = Metrics.globalRegistry.find("mewbase.binder.delete")
+//                    .tag("name", testBinderName)
+//                    .counter();
+//            assertEquals(dels.count(), 1.0, 0.000001);
+//
+//            final Gauge docs = Metrics.globalRegistry.find("mewbase.binder.documents")
+//                    .tag("name", testBinderName)
+//                    .gauge();
+//            assertEquals(docs.value() , 0.0, 0.000001);
 
         });
+    }
+
+
+    private void metricsExpectations(Long expPuts, Long expGets, Long expDels, Long expDocs, String binderName) {
+
+        final Counter puts = Metrics.globalRegistry.find("mewbase.binder.put")
+                .tag("name", binderName)
+                .counter();
+        assertEquals(expPuts, puts.count(), 0.000001);
+
+        final Counter gets = Metrics.globalRegistry.find("mewbase.binder.get")
+                .tag("name", binderName)
+                .counter();
+        assertEquals(expGets, gets.count(), 0.000001);
+
+        final Counter dels = Metrics.globalRegistry.find("mewbase.binder.delete")
+                .tag("name", binderName)
+                .counter();
+        assertEquals(expDels, dels.count(),0.000001);
+
+        final Gauge docs = Metrics.globalRegistry.find("mewbase.binder.documents")
+                .tag("name", binderName)
+                .gauge();
+        assertEquals(expDocs, docs.value(), 0.000001);
     }
 
 
@@ -389,8 +428,8 @@ public class BinderTests extends MewbaseTestBase {
     @Test
     public void testGetWithIdSet() throws Exception {
         singleStoreTest(store -> {
-            final String testBinderName = new Object() {
-            }.getClass().getEnclosingMethod().getName();
+            final String testBinderName = new Object() {}.getClass().getEnclosingMethod().getName();
+
             Binder binder = store.open(testBinderName);
 
             final int ALL_DOCS = 64;

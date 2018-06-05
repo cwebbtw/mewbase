@@ -108,10 +108,10 @@ public class PostgresBinder extends StreamableBinder implements Binder {
     }
 
     @Override
-    public CompletableFuture<Void> put(final String key, final BsonObject doc) {
+    public CompletableFuture<Boolean> put(final String key, final BsonObject doc) {
         final byte[] valBytes = doc.encode().getBytes();
 
-        CompletableFuture fut = CompletableFuture.runAsync( () -> {
+        CompletableFuture<Boolean> fut = CompletableFuture.supplyAsync( () -> {
             try {
                 final String sql = "INSERT INTO "+ PostgresBinderStore.MEWBASE_BINDER_DATA_TABLE_NAME +"(binder_id, key, data)  VALUES( ?, ?, ? )" +
                         " ON CONFLICT (binder_id, key) DO UPDATE SET data = ? ;";
@@ -126,6 +126,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
                 log.error("Error writing document key : " + key + " value : " + doc);
                 throw new CompletionException(exp);
             }
+            return true;
         }, stexec);
         streamFunc.ifPresent( func -> func.accept(key,doc));
         return fut;
@@ -151,6 +152,11 @@ public class PostgresBinder extends StreamableBinder implements Binder {
             }
         }, stexec);
         return fut;
+    }
+
+    @Override
+    public Long countDocuments() {
+        return null;
     }
 
 

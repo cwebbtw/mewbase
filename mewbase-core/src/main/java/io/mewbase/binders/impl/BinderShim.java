@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -47,6 +48,7 @@ public class BinderShim implements Binder {
         delCounter = Metrics.counter( METRICS_NAME + ".delete", tag);
         // gauges need to wrapped and registered
         Metrics.gauge(METRICS_NAME + ".documents", tag, docsCount);
+        docsCount.set(countDocuments());
     }
 
     @Override
@@ -58,34 +60,37 @@ public class BinderShim implements Binder {
     public CompletableFuture<BsonObject> get(String name) {
         CompletableFuture<BsonObject> ob = impl.get(name);
         getCounter.increment();
-    System.out.println("Gets " + getCounter.count());
         return ob;
     }
 
     @Override
-    public CompletableFuture<Void> put(String id, BsonObject doc) {
-        CompletableFuture<Void> op = impl.put(id, doc);
+    public CompletableFuture<Boolean> put(String id, BsonObject doc) {
+        CompletableFuture<Boolean> op = impl.put(id, doc);
         putCounter.increment();
-    System.out.println("Puts " + putCounter.count());
-        return op;
+        // put may change the total number of docs
+        return op.thenApplyAsync( b -> {
+            docsCount.set(countDocuments());
+            return b; } );
     }
 
     @Override
     public CompletableFuture<Boolean> delete(String name) {
         CompletableFuture<Boolean> cb = impl.delete(name);
         delCounter.increment();
-    System.out.println("Dels " + delCounter.count());
-        return cb;
+        // delete may change the total number of docs
+        return cb.thenApplyAsync( b -> {
+            docsCount.set(countDocuments());
+            return b; } );
+    }
+
+    @Override
+    public Long countDocuments() {
+        return impl.countDocuments();
     }
 
     @Override
     public Stream<KeyVal<String, BsonObject>> getDocuments() {
-        docsCount.set(0L);
-        Stream<KeyVal<String, BsonObject>> sb = impl.getDocuments().map( b -> {
-            docsCount.getAndIncrement();
-            return b;
-        });
-        return sb;
+        return impl.getDocuments();
     }
 
     @Override

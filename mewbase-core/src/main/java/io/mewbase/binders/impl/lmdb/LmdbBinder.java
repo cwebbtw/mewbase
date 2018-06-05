@@ -82,8 +82,8 @@ public class LmdbBinder extends StreamableBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<Void> put(final String id, final BsonObject doc) {
-        CompletableFuture fut = CompletableFuture.runAsync( () -> {
+    public CompletableFuture<Boolean> put(final String id, final BsonObject doc) {
+        CompletableFuture fut = CompletableFuture.supplyAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
             byte[] valBytes = doc.encode().getBytes();
             final ByteBuffer val = allocateDirect(valBytes.length);
@@ -91,6 +91,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
             synchronized (this) {
                 dbi.put(key, val);
             }
+            return true;
         }, stexec);
         streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
@@ -105,6 +106,11 @@ public class LmdbBinder extends StreamableBinder implements Binder {
             return deleted;
         }, stexec);
         return fut;
+    }
+
+    @Override
+    public Long countDocuments() {
+        return getDocuments().count();
     }
 
     @Override
