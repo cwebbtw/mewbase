@@ -18,7 +18,6 @@ import io.mewbase.eventsource.EventSource;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
@@ -296,32 +295,16 @@ public class BinderTests extends MewbaseTestBase {
 
             BsonObject docGet = binder.get("id1234").get();
             assertEquals(docPut, docGet);
+            metricsExpectations(1L,1L,0L,1L,testBinderName);
+
             assertTrue(binder.delete("id1234").get());
+            metricsExpectations(1L,1L,1L,0L,testBinderName);
+
             docGet = binder.get("id1234").get();
             assertNull(docGet);
-
-            // test instrumentation
-//            final Counter gets = Metrics.globalRegistry.find("mewbase.binder.get")
-//                                                        .tag("name", testBinderName)
-//                                                        .counter();
-//            assertEquals(gets.count(), 2.0, 0.000001);
-//
-//            final Counter puts = Metrics.globalRegistry.find("mewbase.binder.put")
-//                    .tag("name", testBinderName)
-//                    .counter();
-//            assertEquals(puts.count(), 1.0, 0.000001);
-//
-//            final Counter dels = Metrics.globalRegistry.find("mewbase.binder.delete")
-//                    .tag("name", testBinderName)
-//                    .counter();
-//            assertEquals(dels.count(), 1.0, 0.000001);
-//
-//            final Gauge docs = Metrics.globalRegistry.find("mewbase.binder.documents")
-//                    .tag("name", testBinderName)
-//                    .gauge();
-//            assertEquals(docs.value() , 0.0, 0.000001);
-
+            metricsExpectations(1L,2L,1L,0L,testBinderName);
         });
+
     }
 
 
