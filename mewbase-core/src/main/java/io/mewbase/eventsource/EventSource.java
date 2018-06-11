@@ -3,6 +3,7 @@ package io.mewbase.eventsource;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import io.mewbase.eventsource.impl.SourceShim;
 import io.mewbase.eventsource.impl.file.FileEventSource;
 import io.mewbase.util.CanFactoryFrom;
 
@@ -27,11 +28,12 @@ public interface EventSource extends AutoCloseable {
     /**
      * Create an instance of an EventSource given the configuration supplied as a parameter.
      * Default is to use the FileEventSource if nothing is supplied in the config.
-     * @param config
+     *
      * @return Instance of an EventSource, implemented as configured in the configuration.
      */
     static EventSource instance(Config cfg) {
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSource(cfg) );
+        EventSource impl = CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileEventSource(cfg) );
+        return new SourceShim(impl);
     }
 
     /**
