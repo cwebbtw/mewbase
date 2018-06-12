@@ -18,6 +18,7 @@ import io.mewbase.projection.impl.ProjectionManagerImpl;
 
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -97,6 +98,35 @@ public class ProjectionTest extends MewbaseTestBase {
         projection.stop();
     }
 
+
+
+
+    @Test
+    public void testProjectionBuilderFailsMeaningfully() throws Exception {
+
+        final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
+
+        ProjectionManager factory = ProjectionManager.instance(source,store);
+        ProjectionBuilder builder = factory.builder();
+
+        CompletableFuture<Projection> projectionFut = builder
+                .named("Projection  with missing function")
+                .projecting(TEST_CHANNEL)
+                .onto(TEST_BINDER)
+                .filteredBy(event -> true)
+                .identifiedBy(event -> event.getBson().getString("AnyKey"))
+                .create();
+
+        assertTrue(projectionFut.isCompletedExceptionally());
+        try{
+            projectionFut.get();
+        } catch(ExecutionException ex) {
+            final String message = ex.getCause().getMessage();
+           assertTrue ( message.contains("projection function") );
+        } catch (Exception e) {
+            Assert.fail("Projection Builder failed with the wrong exception.");
+        }
+    }
 
     @Test
     // @Repeat(50)

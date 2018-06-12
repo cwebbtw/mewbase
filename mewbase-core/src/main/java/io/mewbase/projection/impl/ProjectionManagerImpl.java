@@ -11,7 +11,7 @@ import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
 import io.mewbase.projection.ProjectionManager;
-import io.mewbase.util.CanFailFutures;
+import io.mewbase.util.FallibleFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 
-public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures {
+public class ProjectionManagerImpl implements ProjectionManager, FallibleFuture {
 
     private final static Logger log = LoggerFactory.getLogger(ProjectionManager.class);
 
@@ -155,7 +155,7 @@ public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures 
             }
         } catch (Exception exp) {
             log.error("Failed to recover last known state of the projection " + projectionName, exp);
-            return CanFailFutures.failedFuture(exp);
+            return FallibleFuture.failedFuture(exp);
         }
 
     }

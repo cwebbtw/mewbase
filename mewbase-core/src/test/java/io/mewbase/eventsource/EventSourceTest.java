@@ -5,6 +5,9 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,6 +20,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -223,7 +228,7 @@ public class EventSourceTest extends MewbaseTestBase {
            latch.countDown();
         });
 
-       // will throw if the subscription doesnt set uop in the given time
+       // will throw if the subscription doesnt set up in the given time
        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         latch.await();
@@ -236,6 +241,9 @@ public class EventSourceTest extends MewbaseTestBase {
 
     @Test
     public void testSubscribeAll() throws Exception {
+
+        // Register the counters locally
+        Metrics.addRegistry(new SimpleMeterRegistry());
 
         // use test local config
         final Config testConfig = createConfig();
@@ -266,7 +274,16 @@ public class EventSourceTest extends MewbaseTestBase {
         utils.sendNumberedEvents(testChannelName, RESTART_EVENT_NUMBER, REEND_EVENT_NUMBER );
 
         latch.await();
-        // Todo
+
+
+        // test instrumentation
+        final Counter subs = Metrics.globalRegistry.find("mewbase.event.source.subscribe")
+                .counter();
+        assertEquals(subs.count() , 1, 0.000001);
+        final Counter events = Metrics.globalRegistry.find("mewbase.event.source.event")
+                .tag("channel", testChannelName)
+                .counter();
+        assertEquals(events.count() , expectedEvents, 0.000001);
 
         sub.close();
         source.close();

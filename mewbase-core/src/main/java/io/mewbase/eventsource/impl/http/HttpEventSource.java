@@ -6,7 +6,7 @@ import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 
-import io.mewbase.util.CanFailFutures;
+import io.mewbase.util.FallibleFuture;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientOptions;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 
 
 
-public class HttpEventSource implements EventSource, CanFailFutures
+public class HttpEventSource implements EventSource, FallibleFuture
 {
     private final static Logger logger = LoggerFactory.getLogger(HttpEventSource.class);
 
@@ -60,7 +60,7 @@ public class HttpEventSource implements EventSource, CanFailFutures
                 final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,Instant.EPOCH);
                 return new HttpEventSubscription(vertx.createHttpClient(options), subsRq, eventHandler ).future;
             } catch (Exception exp) {   // Java 8 doesnt have CompletableFuture.failedFuture​(Throwable ex)
-                return CanFailFutures.failedFuture(exp);
+                return FallibleFuture.failedFuture(exp);
             }
         }
 
@@ -73,7 +73,7 @@ public class HttpEventSource implements EventSource, CanFailFutures
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,Instant.EPOCH);
             return new HttpEventSubscription(vertx.createHttpClient(options), subsRq, eventHandler).future;
         } catch (Exception exp) {
-            return CanFailFutures.failedFuture(exp);
+            return FallibleFuture.failedFuture(exp);
         }
     }
 
@@ -84,7 +84,7 @@ public class HttpEventSource implements EventSource, CanFailFutures
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName,subsType,startInclusive,Instant.EPOCH);
             return new HttpEventSubscription(vertx.createHttpClient(options), subsRq, eventHandler ).future;
         } catch (Exception exp) {
-            return CanFailFutures.failedFuture(exp);
+            return FallibleFuture.failedFuture(exp);
         }
     }
 
@@ -95,7 +95,7 @@ public class HttpEventSource implements EventSource, CanFailFutures
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,startInstant);
             return new HttpEventSubscription(vertx.createHttpClient(options), subsRq, eventHandler ).future;
         } catch (Exception exp) {
-            return CanFailFutures.failedFuture(exp);
+            return FallibleFuture.failedFuture(exp);
         }
     }
 
@@ -106,7 +106,7 @@ public class HttpEventSource implements EventSource, CanFailFutures
             final SubscriptionRequest subsRq = new SubscriptionRequest(channelName, subsType,0L,Instant.EPOCH);
             return new HttpEventSubscription(vertx.createHttpClient(options), subsRq, eventHandler ).future;
         } catch (Exception exp) {
-            return CanFailFutures.failedFuture(exp);
+            return FallibleFuture.failedFuture(exp);
         }
     }
 
