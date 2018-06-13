@@ -34,7 +34,7 @@ public class CommandManagerImpl implements CommandManager {
         if (commands.containsKey(command.getName())) {
             throw new IllegalArgumentException("Command " + command.getName() + " already registered");
         }
-        commands.put(command.getName(),command);
+        commands.put(command.getName(), command);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class CommandManagerImpl implements CommandManager {
 
     @Override
     public CompletableFuture<Command> getCommand(String commandName) {
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<Command> fut = new CompletableFuture<>();
         if (commands.containsKey(commandName)) {
             fut.complete(commands.get(commandName));
         } else {
@@ -63,7 +63,7 @@ public class CommandManagerImpl implements CommandManager {
     public CompletableFuture<Long> execute(final String commandName, final BsonObject context) {
 
         return  getCommand(commandName).thenCompose( cmd ->
-                    cmd.execute(context).thenCompose( outputEvt ->
+                cmd.execute(context).thenCompose( outputEvt ->
                         eventSink.publishAsync(cmd.getOutputChannel(), outputEvt)));
     }
 

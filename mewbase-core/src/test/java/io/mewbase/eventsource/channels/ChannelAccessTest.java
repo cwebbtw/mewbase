@@ -17,7 +17,6 @@ import static org.junit.Assert.*;
 /**
  * Created by Nige on 17/5/2018.
  */
-
 public class ChannelAccessTest extends MewbaseTestBase {
 
     @Test

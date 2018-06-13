@@ -57,7 +57,7 @@ public class KafkaEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
-        final CompletableFuture<Long> fut = new CompletableFuture();
+        final CompletableFuture<Long> fut = new CompletableFuture<>();
         kafkaProducer.send(producerRecord(channelName, event),
                 (RecordMetadata recordMetadata, Exception exp) -> {
                     if (recordMetadata != null) fut.complete(recordMetadata.offset());
