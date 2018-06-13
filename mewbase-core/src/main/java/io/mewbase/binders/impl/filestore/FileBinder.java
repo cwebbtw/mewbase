@@ -57,7 +57,7 @@ public class FileBinder extends StreamableBinder implements Binder {
     public CompletableFuture<BsonObject> get(final String id) {
         final File file = new File(binderDir,id);
 
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<BsonObject> fut = new CompletableFuture<>();
         stexec.submit( () -> {
             BsonObject doc = null;
             if (file.exists()) {
@@ -82,7 +82,7 @@ public class FileBinder extends StreamableBinder implements Binder {
         final File file = new File(binderDir, id);
         final byte[] valBytes = doc.encode().getBytes();
 
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<Boolean> fut = new CompletableFuture<>();
         stexec.submit( () -> {
             try {
                 Boolean newWrite = Files.notExists(file.toPath());
@@ -103,7 +103,7 @@ public class FileBinder extends StreamableBinder implements Binder {
     public CompletableFuture<Boolean> delete(final String id) {
         final File file = new File(binderDir, id);
 
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<Boolean> fut = new CompletableFuture<>();
         stexec.submit(  () -> {
             try {
                 fut.complete( Files.deleteIfExists(file.toPath()) );
