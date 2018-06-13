@@ -21,7 +21,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 
 /**
@@ -51,23 +53,35 @@ public class EventSourceTest extends MewbaseTestBase {
         final String inputUUID = UUID.randomUUID().toString();
         final BsonObject bsonEvent = new BsonObject().put("data", inputUUID);
 
+        final int START_EVT_NUMBER = 0;
+
         final CountDownLatch latch = new CountDownLatch(1);
+
+        final CompletableFuture<Event> evtRes = new CompletableFuture<>();
+
         final CompletableFuture<Subscription> subFut = source.subscribe(testChannelName, event -> {
-                        BsonObject bson  = event.getBson();
-                        assert(inputUUID.equals(bson.getString("data")));
-                        long evtNum = event.getEventNumber();
-                        Instant evtTime = event.getInstant();
-                        Long evtHash = event.getCrc32();
+                        evtRes.complete(event);
                         latch.countDown();
                         }
                     );
 
-        // will throw if the subscription doesnt set up in the given time
+        // will throw if the subscription doesn't set up in the given time
         final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
-
         sink.publishSync(testChannelName, bsonEvent);
-
         latch.await();
+
+        // check that the event is well formed as returned from the function.
+        final Event event = evtRes.get();
+        final BsonObject bson  = event.getBson();
+        assert( inputUUID.equals( bson.getString("data")) );
+        final long evtNum = event.getEventNumber();
+        assertEquals( START_EVT_NUMBER, evtNum );
+        final Instant evtTime = event.getInstant();
+        assertNotNull(evtTime);
+        final Long evtHash = event.getCrc32();
+        assertNotNull(evtHash);
+        final String evtStr = event.asString();
+        assertTrue(evtStr.contains("EventNumber : "+START_EVT_NUMBER));
 
         sub.close();
         source.close();
@@ -275,15 +289,18 @@ public class EventSourceTest extends MewbaseTestBase {
 
         latch.await();
 
-
         // test instrumentation
         final Counter subs = Metrics.globalRegistry.find("mewbase.event.source.subscribe")
                 .counter();
-        assertEquals(subs.count() , 1, 0.000001);
+        final Double minSubs = 1.0;
+        // At least this subscription must have been recorded
+        assertTrue("No subscriptions recorded", subs.count() >= minSubs );
+
         final Counter events = Metrics.globalRegistry.find("mewbase.event.source.event")
                 .tag("channel", testChannelName)
                 .counter();
-        assertEquals(events.count() , expectedEvents, 0.000001);
+
+        assertEquals(expectedEvents, events.count(), 0.000001);
 
         sub.close();
         source.close();
