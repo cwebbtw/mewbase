@@ -17,6 +17,9 @@ import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -122,15 +125,19 @@ public class ProjectionTest extends MewbaseTestBase {
             projectionFut.get();
         } catch(ExecutionException ex) {
             final String message = ex.getCause().getMessage();
-           assertTrue ( message.contains("projection function") );
+            assertTrue ( message.contains("projection function") );
         } catch (Exception e) {
             Assert.fail("Projection Builder failed with the wrong exception.");
         }
     }
 
+
     @Test
     // @Repeat(50)
     public void testSimpleProjectionRuns() throws Exception {
+
+        // Register the metrics counter(s) locally
+        Metrics.addRegistry(new SimpleMeterRegistry());
 
         final String TEST_BINDER = new Object(){}.getClass().getEnclosingMethod().getName();
 
@@ -174,6 +181,17 @@ public class ProjectionTest extends MewbaseTestBase {
         assertEquals(RESULT,basketDoc.getInteger("output"));
 
         projection.stop();
+
+        // test instrumentation
+        final Counter processedEvents = Metrics.globalRegistry.find("mewbase.projection")
+                .tag("name", TEST_PROJECTION_NAME)
+                .counter();
+        assertTrue(processedEvents.count() >  0.000001);
+        //wrong tag
+        final Counter none = Metrics.globalRegistry.find("mewbase.projection")
+                .tag("name", "Not a valid projection name")
+                .counter();
+        assertNull("Non existent counter exists!", none);
     }
 
 
