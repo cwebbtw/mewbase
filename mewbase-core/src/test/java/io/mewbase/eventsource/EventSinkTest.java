@@ -5,6 +5,10 @@ import io.mewbase.MewbaseTestBase;
 
 import io.mewbase.bson.BsonObject;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Test;
 
 
@@ -20,6 +24,7 @@ import java.util.stream.LongStream;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -74,6 +79,9 @@ public class EventSinkTest extends MewbaseTestBase {
     @Test
     public void testManyEventsInOrder() throws Exception {
 
+        // Register the counters locally
+        Metrics.addRegistry(new SimpleMeterRegistry());
+
         // use test local config
         final Config testConfig = createConfig();
         final EventSink sink = EventSink.instance(testConfig);
@@ -104,6 +112,13 @@ public class EventSinkTest extends MewbaseTestBase {
 
         latch.await();
 
+        // test instrumentation
+        final Counter gets = Metrics.globalRegistry.find("mewbase.event.sink.publish.sync")
+                .tag("channel", testChannelName)
+                .counter();
+        assertEquals(gets.count() , END_EVENT_NUMBER, 0.000001);
+
+
         sub.close();
         source.close();
         sink.close();
@@ -112,6 +127,9 @@ public class EventSinkTest extends MewbaseTestBase {
 
     @Test
     public void testManyAsyncEvents() throws Exception {
+
+        // Register the counters locally
+        Metrics.addRegistry(new SimpleMeterRegistry());
 
         // use test local config
         final Config testConfig = createConfig();
@@ -152,6 +170,13 @@ public class EventSinkTest extends MewbaseTestBase {
 
         latch.await();
         assert(eventNums.isEmpty() );
+
+        // test instrumentation
+        final Counter gets = Metrics.globalRegistry.find("mewbase.event.sink.publish.async")
+                .tag("channel", testChannelName)
+                .counter();
+        assertEquals(gets.count() , TOTAL_EVENTS, 0.000001);
+
 
         source.close();
         sink.close();

@@ -11,10 +11,15 @@ import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.Projection;
 import io.mewbase.projection.ProjectionBuilder;
 import io.mewbase.projection.ProjectionManager;
-import io.mewbase.util.CanFailFutures;
+import io.mewbase.util.FallibleFuture;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import java.util.concurrent.*;
@@ -23,17 +28,17 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 
-public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures {
+public class ProjectionManagerImpl implements ProjectionManager, FallibleFuture {
 
     private final static Logger log = LoggerFactory.getLogger(ProjectionManager.class);
+
+    public static final String METRICS_NAME = "mewbase.projection";
 
     private final EventSource source;
     private final BinderStore store;
 
     public static final String PROJ_STATE_BINDER_NAME = "mewbase_proj_state";
     public static final String EVENT_NUM_FIELD = "eventNum";
-
-    private static final int MAX_SUBSCRIPTION_WAIT_TIME_MS= 5000;
 
     private final Binder stateBinder;
 
@@ -69,6 +74,10 @@ public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures 
                                 final Function<Event, String> docIDSelector,
                                 final BiFunction<BsonObject, Event, BsonObject> projectionFunction) {
 
+        // instrument this projection
+        List<Tag> tag = Arrays.asList(Tag.of("name", projectionName));
+        Counter projectionCounter = Metrics.counter( METRICS_NAME, tag );
+
         EventHandler eventHandler =  (Event event) -> {
             try {
                 if (eventFilter.apply(event)) {
@@ -77,6 +86,7 @@ public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures 
                         log.error("In projection " + projectionName + " document id selector returned null");
                     } else {
                         try {
+                            projectionCounter.increment();
                             executeProjection(projectionName, binderName, docID, projectionFunction, event);
                         } catch (Exception exp) {
                             log.error("Projection failed to execute - Stopping" +
@@ -155,7 +165,7 @@ public class ProjectionManagerImpl implements ProjectionManager, CanFailFutures 
             }
         } catch (Exception exp) {
             log.error("Failed to recover last known state of the projection " + projectionName, exp);
-            return CanFailFutures.failedFuture(exp);
+            return FallibleFuture.failedFuture(exp);
         }
 
     }

@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 // Java 8 doesnt have CompletableFuture.failedFuture​(Throwable ex) so this gives something like
 // via interface inheritance and type inference.
-public interface CanFailFutures {
+public interface FallibleFuture {
 
     static  <T> CompletableFuture<T> failedFuture(Exception exp) {
         final CompletableFuture<T> fut = new CompletableFuture<>();

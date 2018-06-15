@@ -5,6 +5,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,10 @@ import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import java.nio.file.Paths;
 import java.util.HashSet;
+
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -53,7 +57,7 @@ public class FileBinder extends StreamableBinder implements Binder {
     public CompletableFuture<BsonObject> get(final String id) {
         final File file = new File(binderDir,id);
 
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<BsonObject> fut = new CompletableFuture<>();
         stexec.submit( () -> {
             BsonObject doc = null;
             if (file.exists()) {
@@ -74,20 +78,21 @@ public class FileBinder extends StreamableBinder implements Binder {
 
 
     @Override
-    public CompletableFuture<Void> put(final String id, final BsonObject doc) {
+    public CompletableFuture<Boolean> put(final String id, final BsonObject doc) {
         final File file = new File(binderDir, id);
         final byte[] valBytes = doc.encode().getBytes();
 
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<Boolean> fut = new CompletableFuture<>();
         stexec.submit( () -> {
             try {
+                Boolean newWrite = Files.notExists(file.toPath());
                 Files.write(file.toPath(), valBytes); // implies CREATE, TRUNCATE_EXISTING, WRITE;
                 log.debug("Written Document " + id + " : " + doc);
+                fut.complete(newWrite);
             } catch (Exception exp) {
                 log.error("Error writing document key : " + id + " value : " + doc);
                 fut.completeExceptionally(exp);
             }
-            fut.complete(null);
         });
         streamFunc.ifPresent( func -> func.accept(id,doc));
         return fut;
@@ -98,16 +103,28 @@ public class FileBinder extends StreamableBinder implements Binder {
     public CompletableFuture<Boolean> delete(final String id) {
         final File file = new File(binderDir, id);
 
-        CompletableFuture fut = new CompletableFuture();
+        CompletableFuture<Boolean> fut = new CompletableFuture<>();
         stexec.submit(  () -> {
             try {
                 fut.complete( Files.deleteIfExists(file.toPath()) );
+                log.debug("Deleted " + file.toPath());
+                fut.complete(true);
             } catch (Exception exp) {
                 log.error("Error deleting document " + id );
                 fut.completeExceptionally(exp);
             }
         });
         return fut;
+    }
+
+    @Override
+    public Long countDocuments() {
+        try (Stream<Path> files = Files.list(binderDir.toPath())) {
+            return files.count();
+        } catch (Exception exp) {
+            log.error("File based Binder failed to count documents", exp);
+        }
+        return 0L; // only on fail
     }
 
 
@@ -129,10 +146,11 @@ public class FileBinder extends StreamableBinder implements Binder {
                     if (filter.test(kv)) resultSet.add(kv);
                 }
             } catch (Exception ex) {
-                log.error("File based Binder failed to start", ex);
+                log.error("File based Binder failed to get documents", ex);
             }
             return resultSet;
         }, stexec);
+
         return fut.join().stream();
     }
 

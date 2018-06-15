@@ -3,7 +3,7 @@ package io.mewbase.binder;
 import com.google.common.base.Throwables;
 import com.typesafe.config.Config;
 import io.mewbase.MewbaseTestBase;
-import io.mewbase.binder.session.PostgresTestBinderStoreSessionSupplier;
+
 import io.mewbase.binder.session.TestBinderStoreSession;
 import io.mewbase.binder.session.TempDirectoryTestBinderStoreSessionSupplier;
 import io.mewbase.binders.BinderStore;
@@ -15,15 +15,24 @@ import io.mewbase.binders.Binder;
 
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -35,6 +44,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
+
 
 @FunctionalInterface
 interface ThrowingConsumer<T> extends Consumer<T> {
@@ -49,6 +59,7 @@ interface ThrowingConsumer<T> extends Consumer<T> {
 
     void throwAccept(T t) throws Exception;
 }
+
 
 /**
  * <p>
@@ -77,6 +88,7 @@ public class BinderTests extends MewbaseTestBase {
     public BinderTests(Supplier<TestBinderStoreSession> testBinderStoreSessionSupplier) {
         this.testBinderStoreSessionSupplier = testBinderStoreSessionSupplier;
     }
+
 
     private void singleStoreTest(ThrowingConsumer<BinderStore> test) throws Exception {
         try (final TestBinderStoreSession session = testBinderStoreSessionSupplier.get()) {
@@ -128,12 +140,15 @@ public class BinderTests extends MewbaseTestBase {
         }
     }
 
+
     @Test
     public void testOpenBinders() throws Exception {
 
         // set up the store and add some binders
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
+
         singleStoreTest(store -> {
+
             final int numBinders = 10;
 
             IntStream.range(0, numBinders).forEach(i -> store.open(testBinderName + i));
@@ -147,13 +162,12 @@ public class BinderTests extends MewbaseTestBase {
 
             Set<String> bindersSet2 = store.binderNames().collect(toSet());
             assertTrue(bindersSet2.contains(name));
-
-            System.out.println(bindersSet1.size());
-            System.out.println(bindersSet2.size());
-
             assertEquals(bindersSet1.size() + 1, bindersSet2.size());
+
         });
+
     }
+
 
 
    @Test
@@ -165,7 +179,7 @@ public class BinderTests extends MewbaseTestBase {
                assertFalse(binder.isStreaming());
 
                BsonObject docPut = createObject();
-               assertNull(binder.put("id1234", docPut).get());
+               assertTrue(binder.put("id1234", docPut).get());
 
                BsonObject docGet = binder.get("id1234").get();
                assertEquals(docPut, docGet);
@@ -222,11 +236,11 @@ public class BinderTests extends MewbaseTestBase {
 
             BsonObject docPut1 = createObject();
             docPut1.put("binder", "binder1");
-            assertNull(binder1.put("id0", docPut1).get());
+            assertTrue(binder1.put("id0", docPut1).get());
 
             BsonObject docPut2 = createObject();
             docPut2.put("binder", "binder2");
-            assertNull(binder2.put("id0", docPut2).get());
+            assertTrue(binder2.put("id0", docPut2).get());
 
             BsonObject docGet1 = binder1.get("id0").get();
             assertEquals("binder1", docGet1.remove("binder"));
@@ -269,16 +283,52 @@ public class BinderTests extends MewbaseTestBase {
         final String testBinderName = new Object(){}.getClass().getEnclosingMethod().getName();
 
         singleStoreTest(store -> {
+
+            // Set up instrumentation
+            Metrics.addRegistry(new SimpleMeterRegistry());
+
             Binder binder = store.open(testBinderName);
 
             BsonObject docPut = createObject();
-            assertNull(binder.put("id1234", docPut).get());
+            assertTrue(binder.put("id1234", docPut).get());
+            metricsExpectations(1L,0L,0L,1L,testBinderName);
+
             BsonObject docGet = binder.get("id1234").get();
             assertEquals(docPut, docGet);
+            metricsExpectations(1L,1L,0L,1L,testBinderName);
+
             assertTrue(binder.delete("id1234").get());
+            metricsExpectations(1L,1L,1L,0L,testBinderName);
+
             docGet = binder.get("id1234").get();
             assertNull(docGet);
+            metricsExpectations(1L,2L,1L,0L,testBinderName);
         });
+
+    }
+
+
+    private void metricsExpectations(Long expPuts, Long expGets, Long expDels, Long expDocs, String binderName) {
+
+        final Counter puts = Metrics.globalRegistry.find("mewbase.binder.put")
+                .tag("name", binderName)
+                .counter();
+        assertEquals(expPuts, puts.count(), 0.000001);
+
+        final Counter gets = Metrics.globalRegistry.find("mewbase.binder.get")
+                .tag("name", binderName)
+                .counter();
+        assertEquals(expGets, gets.count(), 0.000001);
+
+        final Counter dels = Metrics.globalRegistry.find("mewbase.binder.delete")
+                .tag("name", binderName)
+                .counter();
+        assertEquals(expDels, dels.count(),0.000001);
+
+        final Gauge docs = Metrics.globalRegistry.find("mewbase.binder.documents")
+                .tag("name", binderName)
+                .gauge();
+        assertEquals(expDocs, docs.value(), 0.000001);
     }
 
 
@@ -361,8 +411,8 @@ public class BinderTests extends MewbaseTestBase {
     @Test
     public void testGetWithIdSet() throws Exception {
         singleStoreTest(store -> {
-            final String testBinderName = new Object() {
-            }.getClass().getEnclosingMethod().getName();
+            final String testBinderName = new Object() {}.getClass().getEnclosingMethod().getName();
+
             Binder binder = store.open(testBinderName);
 
             final int ALL_DOCS = 64;

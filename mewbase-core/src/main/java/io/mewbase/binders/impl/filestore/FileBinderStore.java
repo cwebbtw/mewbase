@@ -8,6 +8,7 @@ import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 
 
+import io.mewbase.binders.impl.BinderShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +30,8 @@ public class FileBinderStore implements BinderStore {
 
     protected final File bindersDir;
 
-
     public FileBinderStore() { this(ConfigFactory.load() ); }
+
 
     public FileBinderStore(Config cfg) {
 
@@ -49,9 +50,10 @@ public class FileBinderStore implements BinderStore {
         }
     }
 
+
     @Override
     public Binder open(String name) {
-        return binders.computeIfAbsent(name, k -> new FileBinder(k, new File(bindersDir,name)));
+        return binders.computeIfAbsent(name, k -> new BinderShim(new FileBinder(k, new File(bindersDir,name))));
     }
 
     @Override
@@ -74,8 +76,8 @@ public class FileBinderStore implements BinderStore {
         return null;
     }
 
-
     @Override
     public void close() throws Exception {
     }
+
 }

@@ -38,17 +38,23 @@ public interface Binder {
      *
      * @param id  the name of the document within the binder
      * @param doc the document to save
-     * @return
+     * @return a CompleteableFuture with a Boolean set to true
      */
-    CompletableFuture<Void> put(String id, BsonObject doc);
+    CompletableFuture<Boolean> put(String id, BsonObject doc);
 
     /**
      * Delete a document from a binder
      *
      * @param id the name of the document within the binder
-     * @return a CompleteableFuture with a Boolean set to true if successful
+     * @return a CompleteableFuture with a Boolean set to true
      */
     CompletableFuture<Boolean> delete(String id);
+
+    /**
+     * Count up all the documents in this Binder as fast as you like.
+     * @return the total number of documents in this binder.
+     */
+    Long countDocuments();
 
     /**
      * Get all of the Documents and their ID's contained in this binder.

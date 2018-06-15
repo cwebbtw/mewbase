@@ -105,8 +105,8 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
   .settings(javaDoc: _*)
   .settings(
     libraryDependencies ++= Dependencies.compile(
-      jackson, jacksonData , jacksonBson,
-      slf4j, slf4jAPI, lbConfig,  // logging and config
+      jackson, jacksonData , jacksonBson,  // wire-encodings BSON and JSON
+      slf4j, slf4jAPI, lbConfig, micrometer, // logging, config, metrics
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
       vertx, vertxAuth, vertxWeb // REST frameworks
@@ -116,6 +116,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       junit, junitIntf, vertxUnit, restAssured
     ),
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
+    parallelExecution in Test := false,
     crossPaths := false,
     autoScalaLibrary := true
   )

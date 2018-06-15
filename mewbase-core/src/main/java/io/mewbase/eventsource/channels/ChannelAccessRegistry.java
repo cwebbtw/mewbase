@@ -6,12 +6,15 @@ import io.mewbase.eventsource.channels.impl.NoAccessRegistry;
 import io.mewbase.util.CanFactoryFrom;
 
 
-
-
+/**
+ * Channel Access Registry can be patched into any identity system that knows about
+ * channel ownership.
+ */
 public interface ChannelAccessRegistry {
 
 
     String factoryConfigPath = "mewbase.event.channels.access.factory";
+
     /**
      * Create an instance using the current config.
      * @return an Instance of a ChannelAccessRegistery

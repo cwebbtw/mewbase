@@ -4,6 +4,7 @@ package io.mewbase.binders;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import io.mewbase.binders.impl.BinderStoreShim;
 import io.mewbase.binders.impl.filestore.FileBinderStore;
 import io.mewbase.util.CanFactoryFrom;
 
@@ -32,8 +33,9 @@ public interface BinderStore extends AutoCloseable {
      * @return an Instance of a BinderStore
      */
      static BinderStore instance(Config cfg) {
-         return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileBinderStore(cfg));
-    }
+         BinderStore impl = CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new FileBinderStore(cfg));
+         return new BinderStoreShim(impl);
+     }
 
 
     /**

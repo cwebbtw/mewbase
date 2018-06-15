@@ -17,7 +17,6 @@ import javax.jms.*;
 
 public class JmsEventSink implements EventSink {
 
-
     final static String FACTORY_CONFIG_PATH = "mewbase.event.sink.jms.connectionFactoryFQCN";
     final static String SERVER_CONFIG_PATH = "mewbase.event.sink.jms.serverUrl";
     final static String USERNAME_CONFIG_PATH = "mewbase.event.sink.jms.username";
@@ -32,7 +31,6 @@ public class JmsEventSink implements EventSink {
     public JmsEventSink() {
         this( ConfigFactory.load() );
     }
-
 
     public JmsEventSink(Config cfg) {
 
@@ -49,15 +47,14 @@ public class JmsEventSink implements EventSink {
     }
 
 
-
     private final ConnectionFactory factoryConnection(Config cfg) throws Exception {
         try {
             final String factoryFQCN = cfg.getString(FACTORY_CONFIG_PATH);
-            final Class factoryClass = Class.forName(factoryFQCN);
-            final Constructor<ConnectionFactory> ctor = factoryClass.getDeclaredConstructor(String.class);
+            final Class<?> factoryClass = Class.forName(factoryFQCN);
+            final Constructor<?> ctor = factoryClass.getDeclaredConstructor(String.class);
 
             final String serverUrl = cfg.getString(SERVER_CONFIG_PATH);
-            final ConnectionFactory jmsFactory =  ctor.newInstance(serverUrl);
+            final ConnectionFactory jmsFactory =  (ConnectionFactory)ctor.newInstance(serverUrl);
 
             if (jmsFactory == null) throw new Exception("Attempt to construct "+factoryFQCN+" resulted in null");
             return jmsFactory;
