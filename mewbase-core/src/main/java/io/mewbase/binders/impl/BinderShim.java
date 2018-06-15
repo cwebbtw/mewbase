@@ -51,10 +51,12 @@ public class BinderShim implements Binder {
         docsCount.set(countDocuments());
     }
 
+
     @Override
     public String getName() {
         return impl.getName();
     }
+
 
     @Override
     public CompletableFuture<BsonObject> get(String name) {
