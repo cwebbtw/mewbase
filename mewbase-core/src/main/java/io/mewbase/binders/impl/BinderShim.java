@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 /**
  * Shims are used for two main purposes ...
  *
- * 1) Instrument the Calls to teh underlying class
+ * 1) Instrument the Calls to the underlying class
  * 2) Implement security on a call by call basis possibly wrt Counters and other instrumentation
  */
 
