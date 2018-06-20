@@ -2,15 +2,14 @@ package io.mewbase.metrics;
 
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
-import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
+
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
-import io.micrometer.core.instrument.config.NamingConvention;
+
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 
@@ -21,34 +20,29 @@ import static io.micrometer.core.instrument.Metrics.*;
 
 public interface MetricsRegistry {
 
-    static String discoverAllMetrics() {
+    static void ensureRegistry() {
 
-        addRegistry(new SimpleMeterRegistry());
+        if ( globalRegistry.getRegistries().isEmpty() ) addRegistry(new SimpleMeterRegistry());
 
-        MeterRegistry registry = globalRegistry;
+        new ClassLoaderMetrics().bindTo(globalRegistry);
+        new JvmMemoryMetrics().bindTo(globalRegistry);
+        new JvmGcMetrics().bindTo(globalRegistry);
+        new ProcessorMetrics().bindTo(globalRegistry);
+        new JvmThreadMetrics().bindTo(globalRegistry);
 
-        new ClassLoaderMetrics().bindTo(registry);
-        new JvmMemoryMetrics().bindTo(registry);
-        new JvmGcMetrics().bindTo(registry);
-        new ProcessorMetrics().bindTo(registry);
-        new JvmThreadMetrics().bindTo(registry);
+    }
 
-        List<Meter> meters = registry.getMeters();
 
-        BsonObject doc = new BsonObject();
+    static BsonObject allMetricsAsDocument() {
+
+        List<Meter> meters = globalRegistry.getMeters();
+
+        BsonArray metersArray = new BsonArray();
 
         meters.forEach( meter -> {
-            final Meter.Id mId = meter.getId();
-            // mId.getConventionName(NamingConvention.dot);
-            System.out.println(mId.toString());
-            System.out.println(mId.getConventionName(NamingConvention.identity));
-            Iterable<Measurement> vals = meter.measure();
-            vals.forEach( v -> System.out.println(v) );
-
-            BsonArray meterArray = doc.getBsonArray(mId.getName(), new BsonArray());
 
             BsonArray tags = new BsonArray();
-            mId.getTags().forEach( t -> {
+            meter.getId().getTags().forEach( t -> {
                 BsonObject tag = new BsonObject();
                 tag.put(t.getKey(), t.getValue());
                 tags.add(tag);
@@ -61,16 +55,15 @@ public interface MetricsRegistry {
                 measures.add(measure);
             });
 
-            // now put the measures and
-            //
+            // now put the name, measures and tags together
+            BsonObject meterObj =  new BsonObject();
+            meterObj.put("name",meter.getId().getName());
+            meterObj.put("tags",tags);
+            meterObj.put("measures",measures);
 
-
-
-
+            metersArray.add(meterObj);
         } );
 
-
-        // System.out.println(meters);
-        return meters.toString();
+        return new BsonObject().put("meters",metersArray);
     }
 }
