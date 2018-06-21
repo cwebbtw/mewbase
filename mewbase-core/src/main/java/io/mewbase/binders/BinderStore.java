@@ -41,7 +41,7 @@ public interface BinderStore extends AutoCloseable {
     /**
      * Open a new binder of the given name.
      *
-     * If the binder doesnt already exist the binder wil be created.
+     * If the binder doesnt already exist the binder will be created.
      *
      * @param name of the Binder to open or create and open
      * @return succesfull  if Binder is created otherwise complet

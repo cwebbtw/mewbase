@@ -12,7 +12,10 @@ import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import io.restassured.response.ResponseBodyExtractionOptions;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
@@ -22,10 +25,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +35,7 @@ import java.util.function.BiPredicate;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.*;
 import static junit.framework.TestCase.assertTrue;
@@ -306,6 +307,38 @@ public class RESTAdaptorTest extends MewbaseTestBase {
                     statusCode(200).
                     // sample in the set
                     body( "Document-4.Key", is(value) );
+
+        tearDownServer(serv);
+    }
+
+
+    @Test
+    public void testMetrics(TestContext testContext) throws Exception {
+
+        // Create and configure the adaptor
+        RestServiceAdaptor serv = setUpServer();
+        serv.exposeMetrics();
+        serv.start();
+
+        Thread.sleep(100); // let the web server start up
+        final Response resp =
+                given().
+                contentType("application/json").
+                when().
+                get("/metrics").
+                then().
+                statusCode(200).
+                extract().response();
+
+        Optional<Double> cpus = new JsonObject(resp.asString())
+                                    .getJsonArray("meters")
+                                    .stream()
+                                    .map( o -> (JsonObject)o)
+                                    .filter(obj -> obj.getString("name").contains("system.cpu.count"))
+                                    .map( obj -> obj.getJsonArray("measures").getJsonObject(0))
+                                    .map( val -> val.getDouble("VALUE"))
+                                    .findFirst();
+        assertTrue( cpus.get() > 0.0);
 
         tearDownServer(serv);
     }
