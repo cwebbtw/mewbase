@@ -1,7 +1,6 @@
 import com.typesafe.sbt._
 import Dependencies._
 
-
 val basicSettings = Seq(
   shellPrompt           := { s => Project.extract(s).currentProject.id + " > " },
   version               := "0.6.0",
@@ -109,8 +108,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       slf4j, slf4jAPI, lbConfig, micrometer, // logging, config, metrics
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
-      vertx, vertxAuth, vertxWeb // REST frameworks
-
+      vertx, vertxAuth, vertxWeb, // REST frameworks,
     ),
     libraryDependencies ++= Dependencies.test(
       junit, junitIntf, vertxUnit, restAssured
@@ -148,14 +146,21 @@ lazy val mewbaseScala = Project("mewbase-scala", file("mewbase-scala"))
     autoScalaLibrary := true
   )
 
+lazy val mewbaseRestHttp4s = Project("mewbase-rest-http4s", file("mewbase-rest-http4s"))
+  .dependsOn(mewbaseCore)
+  .settings(basicSettings: _*)
+  .settings(
+      libraryDependencies ++= http4s
+  )
+
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))
   .dependsOn(mewbaseJava)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
 
-
 lazy val examplesScala = Project("examples-scala", file("examples-scala"))
   .dependsOn(mewbaseScala % "compile->compile;test->test")
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
+  .settings(libraryDependencies ++= http4s)

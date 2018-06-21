@@ -10,7 +10,6 @@ import io.mewbase.cqrs.QueryManager;
 import io.mewbase.rest.impl.VertxRestServiceAdaptor;
 import io.mewbase.util.CanFactoryFrom;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
