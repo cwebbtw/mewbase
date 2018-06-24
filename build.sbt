@@ -150,7 +150,7 @@ lazy val mewbaseRestHttp4s = Project("mewbase-rest-http4s", file("mewbase-rest-h
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
   .settings(
-      libraryDependencies ++= http4s
+      libraryDependencies ++= http4s :+ circeParser
   )
 
 
