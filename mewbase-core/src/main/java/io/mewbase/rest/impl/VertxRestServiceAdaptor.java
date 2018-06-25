@@ -10,6 +10,7 @@ import io.mewbase.bson.BsonObject;
 
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.QueryManager;
+import io.mewbase.metrics.MetricsRegistry;
 import io.mewbase.rest.DocumentLookup;
 import io.mewbase.rest.IncomingRequest;
 import io.mewbase.rest.RestServiceAdaptor;
@@ -270,6 +271,31 @@ public class VertxRestServiceAdaptor implements RestServiceAdaptor {
                end(payload.encodeToString());
         });
        return this;
+    }
+
+
+    @Override
+    public RestServiceAdaptor exposeMetrics() {
+        return exposeMetrics("");
+    }
+
+
+    @Override
+    public RestServiceAdaptor exposeMetrics(String uriPathPrefix) {
+        // ensure that the
+        MetricsRegistry.ensureRegistry();
+        // magic (sentinel) path to get metrics
+        final String uri = uriPathPrefix + "/metrics";
+        MetricsRegistry.ensureRegistry();
+
+        router.route(HttpMethod.GET, uri).handler(rc -> {
+            // assemble the response from the metrics
+            BsonObject response = MetricsRegistry.allMetricsAsDocument();
+            rc.response().
+                    putHeader("content-type","application/json").
+                    end(response.encodeToString());
+        });
+        return this;
     }
 
 

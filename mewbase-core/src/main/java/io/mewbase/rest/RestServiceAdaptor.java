@@ -10,7 +10,6 @@ import io.mewbase.cqrs.QueryManager;
 import io.mewbase.rest.impl.VertxRestServiceAdaptor;
 import io.mewbase.util.CanFactoryFrom;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -98,23 +97,70 @@ public interface RestServiceAdaptor extends AutoCloseable {
 
 
     /**
-     * Todo
-     * @param qmgr
-     * @param commandName
-     * @return
+     * Expose a call to a command defined in the given command manager
+     * with the given command name.
+     *
+     * @param cmgr - The command manager
+     * @param commandName - The command name
+     * @return the adapter instance.
      */
-    RestServiceAdaptor exposeCommand(CommandManager qmgr, String commandName);
-    RestServiceAdaptor exposeCommand(CommandManager qmgr, String commandName, String uriPathPrefix);
+    RestServiceAdaptor exposeCommand(CommandManager cmgr, String commandName);
+
 
     /**
-     * Todo
-     * @param qmgr
-     * @param queryName
-     * @return
+     * Expose a call to a command defined in the given command manager
+     * with the given command name.
+     *
+     * @param cmgr - The command manager
+     * @param commandName - The command name
+     * @param uriPathPrefix
+     * @return the adapter instance.
+     */
+    RestServiceAdaptor exposeCommand(CommandManager cmgr, String commandName, String uriPathPrefix);
+
+    /**
+     * Expose a call to a query defined in the given query manager
+     * with the given query name.
+     * @param qmgr - The query manager
+     * @param queryName - query name
+     * @return the adapter instance
      */
     RestServiceAdaptor exposeQuery(QueryManager qmgr, String queryName);
+
+
+    /**
+     * Expose a call to a query defined in the given query manager
+     * with the given query name.
+     * @param qmgr - The query manager
+     * @param queryName - query name
+     * @param uriPathPrefix
+     * @return the adapter instance
+     */
     RestServiceAdaptor exposeQuery(QueryManager qmgr, String queryName, String uriPathPrefix);
 
+
+    /**
+     * Expose the ability to get all of the server and mewbase metrics that have been recorded
+     * as a JSON response to a get request.
+     *
+     * Verb : GET
+     * URI : http://Server:Port/metrics
+     *
+     * Please note that this reserves the above URI in the name space hence calling a binder by the same name
+     * with the same path prefix will result in undefined behaviour. I.e. one of the two will be called depending
+     * on the "route resolution" in the underlying REST implementation.
+     *
+     * @return the adapter instance
+     */
+    RestServiceAdaptor exposeMetrics();
+
+
+    /**
+     * As exposeMetrics (as above) with a path prefix
+     * @param uriPathPrefix
+     * @return the adapter instance
+     */
+    RestServiceAdaptor exposeMetrics(String uriPathPrefix);
 
     /**
      * Start this REST adapter asynchronously.

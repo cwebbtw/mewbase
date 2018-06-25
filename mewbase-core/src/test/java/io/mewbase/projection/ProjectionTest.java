@@ -13,7 +13,6 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
-import io.mewbase.eventsource.Subscription;
 import io.mewbase.projection.impl.ProjectionManagerImpl;
 
 
