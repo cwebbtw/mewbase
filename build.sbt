@@ -107,7 +107,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
     libraryDependencies ++= Dependencies.compile(
       jackson, jacksonData , jacksonBson,  // wire-encodings BSON and JSON
       slf4j, slf4jAPI, lbConfig, micrometer, // logging, config, metrics
-      nats, artemis, kafka , // EventSource and/or Sink implementations
+      nats, artemis, kafka, hbase, // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
       vertx, vertxAuth, vertxWeb // REST frameworks
 
