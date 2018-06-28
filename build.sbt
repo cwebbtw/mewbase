@@ -150,7 +150,7 @@ lazy val mewbaseRestHttp4s = Project("mewbase-rest-http4s", file("mewbase-rest-h
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
   .settings(
-      libraryDependencies ++= http4s :+ circeParser
+      libraryDependencies ++= http4s :+ vertx
   )
 
 
@@ -163,4 +163,4 @@ lazy val examplesScala = Project("examples-scala", file("examples-scala"))
   .dependsOn(mewbaseScala % "compile->compile;test->test")
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
-  .settings(libraryDependencies ++= http4s)
+  .settings(libraryDependencies ++= http4s :+ http4sCirce)

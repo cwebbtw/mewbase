@@ -1,6 +1,8 @@
 package io.mewbase.rest;
 
 import io.mewbase.binders.BinderStore;
+import io.mewbase.bson.BsonObject;
+import io.mewbase.cqrs.CommandManager;
 
 public abstract class RestServiceAction {
 
@@ -9,6 +11,7 @@ public abstract class RestServiceAction {
 
     public static interface Visitor<Res> {
         Res visit(RetrieveSingleDocument retrieveSingleDocument);
+        Res visit(ExecuteCommand executeCommand);
     }
 
     public abstract <Res> Res visit(Visitor<Res> visitor);
@@ -34,6 +37,35 @@ public abstract class RestServiceAction {
 
         public String getDocumentId() {
             return documentId;
+        }
+
+        @Override
+        public <Res> Res visit(Visitor<Res> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
+    public static final class ExecuteCommand extends RestServiceAction {
+        private final CommandManager commandManager;
+        private final String commandName;
+        private final BsonObject context;
+
+        public ExecuteCommand(CommandManager commandManager, String commandName, BsonObject context) {
+            this.commandManager = commandManager;
+            this.commandName = commandName;
+            this.context = context;
+        }
+
+        public CommandManager getCommandManager() {
+            return commandManager;
+        }
+
+        public String getCommandName() {
+            return commandName;
+        }
+
+        public BsonObject getContext() {
+            return context;
         }
 
         @Override

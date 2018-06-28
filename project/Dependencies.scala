@@ -21,10 +21,9 @@ object Dependencies {
   val http4sBlaze = "org.http4s"      %% "http4s-blaze-server" % Http4sVersion
   val http4sCirce = "org.http4s"      %% "http4s-circe"        % Http4sVersion
   val http4sDsl = "org.http4s"      %% "http4s-dsl"          % Http4sVersion
+  val http4sClient = "org.http4s"      %% "http4s-client"        % Http4sVersion
 
-  val circeParser = "io.circe" %% "circe-parser" % "0.9.3"
-
-  val http4s = Seq(http4sBlaze, http4sCirce, http4sDsl)
+  val http4s = Seq(http4sBlaze, http4sDsl, http4sClient)
 
   // Logging  Config and Metrics
   val slf4j       = "org.slf4j" % "slf4j-log4j12" % "1.7.21"
