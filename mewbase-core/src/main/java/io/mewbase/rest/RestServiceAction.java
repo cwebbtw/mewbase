@@ -1,26 +1,35 @@
 package io.mewbase.rest;
 
+import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
+import io.mewbase.binders.KeyVal;
+import io.mewbase.bson.Bson;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.CommandManager;
+import io.mewbase.cqrs.Query;
 import io.mewbase.cqrs.QueryManager;
 
-public abstract class RestServiceAction {
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
+public abstract class RestServiceAction<Res> {
 
     private RestServiceAction() {
     }
 
-    public interface Visitor<Res> {
-        Res visit(RetrieveSingleDocument retrieveSingleDocument);
-        Res visit(ExecuteCommand executeCommand);
-        Res visit(ListDocumentIds listDocumentIds);
-        Res visit(ListBinders listBinders);
-        Res visit(RunQuery runQuery);
+    public interface Visitor<VisitorRes> {
+        VisitorRes visit(RetrieveSingleDocument retrieveSingleDocument);
+        VisitorRes visit(ExecuteCommand executeCommand);
+        VisitorRes visit(ListDocumentIds listDocumentIds);
+        VisitorRes visit(ListBinders listBinders);
+        VisitorRes visit(RunQuery runQuery);
     }
 
-    public abstract <Res> Res visit(Visitor<Res> visitor);
+    public abstract <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor);
+    public abstract Res perform();
 
-    public static final class ListBinders extends RestServiceAction {
+    public static final class ListBinders extends RestServiceAction<Stream<String>> {
         private final BinderStore binderStore;
 
         public ListBinders(BinderStore binderStore) {
@@ -32,10 +41,15 @@ public abstract class RestServiceAction {
         }
 
         @Override
-        public <Res> Res visit(Visitor<Res> visitor) { return visitor.visit(this); }
+        public <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor) { return visitor.visit(this); }
+
+        @Override
+        public Stream<String> perform() {
+            return binderStore.binderNames();
+        }
     }
 
-    public static final class ListDocumentIds extends RestServiceAction {
+    public static final class ListDocumentIds extends RestServiceAction<Stream<String>> {
         private final BinderStore binderStore;
         private final String binderName;
 
@@ -53,11 +67,18 @@ public abstract class RestServiceAction {
         }
 
         @Override
-        public <Res> Res visit(Visitor<Res> visitor) { return visitor.visit(this); }
+        public <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor) { return visitor.visit(this); }
+
+        @Override
+        public Stream<String> perform() {
+            final Binder binder = getBinderStore().open(getBinderName());
+            final Stream<KeyVal<String, BsonObject>> documents = binder.getDocuments();
+            return documents.map(KeyVal::getKey);
+        }
 
     }
 
-    public static final class RetrieveSingleDocument extends RestServiceAction {
+    public static final class RetrieveSingleDocument extends RestServiceAction<CompletableFuture<BsonObject>> {
         private final BinderStore binderStore;
         private final String binderName;
         private final String documentId;
@@ -81,12 +102,18 @@ public abstract class RestServiceAction {
         }
 
         @Override
-        public <Res> Res visit(Visitor<Res> visitor) {
+        public <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor) {
             return visitor.visit(this);
+        }
+
+        @Override
+        public CompletableFuture<BsonObject> perform() {
+            final Binder binder = getBinderStore().open(getBinderName());
+            return binder.get(getDocumentId());
         }
     }
 
-    public static final class ExecuteCommand extends RestServiceAction {
+    public static final class ExecuteCommand extends RestServiceAction<CompletableFuture<Long>> {
         private final CommandManager commandManager;
         private final String commandName;
         private final BsonObject context;
@@ -113,9 +140,14 @@ public abstract class RestServiceAction {
         public <Res> Res visit(Visitor<Res> visitor) {
             return visitor.visit(this);
         }
+
+        @Override
+        public CompletableFuture<Long> perform() {
+            return getCommandManager().execute(getCommandName(), getContext());
+        }
     }
 
-    public static final class RunQuery extends RestServiceAction {
+    public static final class RunQuery extends RestServiceAction<Optional<BsonObject>> {
 
         private final QueryManager queryManager;
         private final String queryName;
@@ -128,7 +160,16 @@ public abstract class RestServiceAction {
         }
 
         @Override
-        public <Res> Res visit(Visitor<Res> visitor) { return visitor.visit(this); }
+        public <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor) { return visitor.visit(this); }
+
+        @Override
+        public Optional<BsonObject> perform() {
+            final Optional<Query> queryOpt = getQueryManager().getQuery(getQueryName());
+            return queryOpt.map(query -> {
+               final Stream<KeyVal<String, BsonObject>> result = query.execute(getContext());
+               return BsonObject.from(result);
+            });
+        }
 
         public QueryManager getQueryManager() {
             return queryManager;

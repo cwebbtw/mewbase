@@ -21,7 +21,7 @@ class Http4sRestAdapterTest extends FunSuite with Matchers with OptionValues wit
     bson.put("hello", "world")
     binder.put("testDocument", bson)
 
-    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction]] = {
+    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction[_]]] = {
       case GET -> Root / "binders" / binderName / documentId =>
         IO.pure(new RestServiceAction.RetrieveSingleDocument(binder.binderStore, binderName, documentId))
     }
@@ -39,7 +39,7 @@ class Http4sRestAdapterTest extends FunSuite with Matchers with OptionValues wit
   test("Execute command") {
     val commandManager = new StubCommandManager()
 
-    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction]] = {
+    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction[_]]] = {
       case req @ POST -> Root / "commands" / "helloWorld" =>
         req.as[BsonObject].map { context =>
           new RestServiceAction.ExecuteCommand(commandManager, "helloWorld", context)
@@ -70,7 +70,7 @@ class Http4sRestAdapterTest extends FunSuite with Matchers with OptionValues wit
     binder.put("doc1", bson)
     binder.put("doc2", bson)
 
-    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction]] = {
+    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction[_]]] = {
       case GET -> Root / "binders" / binderName =>
         IO.pure(new RestServiceAction.ListDocumentIds(binder.binderStore, binderName))
     }
@@ -91,7 +91,7 @@ class Http4sRestAdapterTest extends FunSuite with Matchers with OptionValues wit
   test("List binders") {
     val binder = StubBinder("testBinder")
 
-    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction]] = {
+    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction[_]]] = {
       case GET -> Root / "binders" =>
         IO.pure(new RestServiceAction.ListBinders(binder.binderStore))
     }
@@ -120,7 +120,7 @@ class Http4sRestAdapterTest extends FunSuite with Matchers with OptionValues wit
     val query = StubQuery("testQuery", stubQueryResult)
     val queryManager = query.stubQueryManager()
 
-    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction]] = {
+    val restService: java.util.function.Function[Request[IO], IO[RestServiceAction[_]]] = {
       case req @ POST -> Root / "query" / queryName =>
         req.as[BsonObject].map { context =>
           new RestServiceAction.RunQuery(queryManager, queryName, context)

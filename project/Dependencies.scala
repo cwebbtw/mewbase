@@ -18,12 +18,13 @@ object Dependencies {
   val jacksonData = "com.fasterxml.jackson.core" % "jackson-databind" % "2.7.4"
   val jacksonBson = "de.undercouch" % "bson4jackson" % "2.7.0"
 
-  val http4sBlaze = "org.http4s"      %% "http4s-blaze-server" % Http4sVersion
+  val http4sBlazeServer = "org.http4s"      %% "http4s-blaze-server" % Http4sVersion
+  val http4sBlazeClient = "org.http4s"      %% "http4s-blaze-client" % Http4sVersion
   val http4sCirce = "org.http4s"      %% "http4s-circe"        % Http4sVersion
   val http4sDsl = "org.http4s"      %% "http4s-dsl"          % Http4sVersion
   val http4sClient = "org.http4s"      %% "http4s-client"        % Http4sVersion
 
-  val http4s = Seq(http4sBlaze, http4sDsl, http4sClient)
+  val http4s = Seq(http4sBlazeServer, http4sDsl, http4sClient)
 
   // Logging  Config and Metrics
   val slf4j       = "org.slf4j" % "slf4j-log4j12" % "1.7.21"

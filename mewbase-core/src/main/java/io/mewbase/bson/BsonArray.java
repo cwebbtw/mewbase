@@ -26,6 +26,7 @@ import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -584,6 +585,11 @@ public class BsonArray implements Iterable<Object> {
         return new JsonArray(l);
     }
 
+    public static BsonArray from(Stream<String> stringStream) {
+        final BsonArray result = new BsonArray();
+        stringStream.forEach(result::add);
+        return result;
+    }
 
     @Override
     public String toString() {

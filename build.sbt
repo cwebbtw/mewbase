@@ -153,6 +153,20 @@ lazy val mewbaseRestHttp4s = Project("mewbase-rest-http4s", file("mewbase-rest-h
       libraryDependencies ++= http4s :+ vertx
   )
 
+lazy val mewbaseRestVertx = Project("mewbase-rest-vertx", file("mewbase-rest-vertx"))
+  .dependsOn(mewbaseCore)
+  .settings(basicSettings: _*)
+  .settings(
+    libraryDependencies += vertx
+  )
+
+
+lazy val mewbaseRestIntegrationTest = Project("mewbase-rest-integrationtest", file("mewbase-rest-integrationtest"))
+  .dependsOn(mewbaseCore, mewbaseRestHttp4s, mewbaseRestVertx)
+  .settings(basicSettings, Defaults.itSettings)
+  .settings(
+    libraryDependencies ++= http4s :+ http4sBlazeClient :+ http4sCirce
+  )
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))
   .dependsOn(mewbaseJava)
@@ -164,3 +178,4 @@ lazy val examplesScala = Project("examples-scala", file("examples-scala"))
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
   .settings(libraryDependencies ++= http4s :+ http4sCirce)
+

@@ -19,6 +19,7 @@
 
 package io.mewbase.bson;
 
+import io.mewbase.binders.KeyVal;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -792,6 +793,11 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         return toJsonObject().encode();
     }
 
+    public static BsonObject from(Stream<KeyVal<String, BsonObject>> iterable) {
+        final BsonObject result = new BsonObject();
+        iterable.forEach(kv -> result.put(kv.getKey(), kv.getValue()));
+        return result;
+    }
     /**
      * Convert this to a JsonObject
      *
