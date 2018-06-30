@@ -165,7 +165,7 @@ lazy val mewbaseRestIntegrationTest = Project("mewbase-rest-integrationtest", fi
   .dependsOn(mewbaseCore, mewbaseRestHttp4s, mewbaseRestVertx)
   .settings(basicSettings, Defaults.itSettings)
   .settings(
-    libraryDependencies ++= http4s :+ http4sBlazeClient :+ http4sCirce
+    libraryDependencies ++= http4s :+ http4sBlazeClient :+ http4sCirce :+ circeParser
   )
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))

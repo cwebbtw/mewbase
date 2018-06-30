@@ -3,30 +3,26 @@ package io.mewbase.rest
 import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import cats.effect.IO
-import io.circe.Json
+import io.circe.{Json, parser}
 import io.mewbase.bson.BsonObject
-import io.mewbase.rest.http4s.{Http4sRestAdapter, Http4sRestServiceActionVisitor, StubBinder}
-import io.mewbase.rest.impl.VertxRestServiceAdaptor
+import io.mewbase.rest.http4s.BsonEntityCodec._
+import io.mewbase.rest.http4s.Http4sRestServiceActionVisitor
 import io.mewbase.rest.vertx.VertxRestServiceActionVisitor
-import io.vertx.core.http.impl.HttpUtils
-import io.vertx.core.{Handler, Vertx}
-import io.vertx.core.http.{HttpServer, HttpServerOptions, HttpServerRequest}
-import io.vertx.ext.web.{Router, RoutingContext}
-import org.http4s.{EntityDecoder, Headers, HttpService, MediaType, Request, Response, Uri}
-import org.http4s.Status.Successful
+import io.vertx.core.Vertx
+import io.vertx.core.http.{HttpServer, HttpServerOptions}
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
+import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.Http1Client
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.`Content-Type`
+import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.util.threads.threadFactory
+import org.http4s.{HttpService, MediaType, Uri}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
-import org.http4s.circe._
-import org.http4s.server.Server
-import io.mewbase.rest.http4s.BsonEntityCodec._
-import io.vertx.core.buffer.Buffer
-import io.vertx.ext.web.handler.BodyHandler
-import org.http4s.headers.`Content-Type`
 
 import scala.concurrent.ExecutionContext
 
@@ -65,6 +61,20 @@ class Http4sRestServiceActionTest extends RestServiceActionTest {
         val action = RestServiceAction.executeCommand(commandManager, commandName, context)
         restServiceActionVisitor.visit(action)
       }
+
+    case GET -> Root / "binders" / binderName =>
+      val action = RestServiceAction.listDocumentIds(binderStore, binderName)
+      restServiceActionVisitor.visit(action)
+
+    case GET -> Root / "binders" =>
+      val action = RestServiceAction.listBinders(binderStore)
+      restServiceActionVisitor.visit(action)
+
+    case req @ POST -> Root / "query" / queryName =>
+      req.as[BsonObject].flatMap { context =>
+        val action = RestServiceAction.runQuery(queryManager, queryName, context)
+        restServiceActionVisitor.visit(action)
+      }
   }
 
   val server: Server[IO] =
@@ -95,7 +105,7 @@ class VertxRestServiceActionTest extends RestServiceActionTest {
   router.get("/binders/:binderName/:documentId").handler { rc =>
     val actionVisitor = new VertxRestServiceActionVisitor(rc)
     val action = RestServiceAction.retrieveSingleDocument(binderStore, rc.request().getParam("binderName"), rc.request().getParam("documentId"))
-    action.visit(actionVisitor)
+    actionVisitor.visit(action)
   }
 
   router.post("/commands/:commandName").handler { rc =>
@@ -103,7 +113,26 @@ class VertxRestServiceActionTest extends RestServiceActionTest {
     val actionVisitor = new VertxRestServiceActionVisitor(rc)
     val bsonBody = actionVisitor.bodyAsBson()
     val action = RestServiceAction.executeCommand(commandManager, rc.request().getParam("commandName"), bsonBody)
-    action.visit(actionVisitor)
+    actionVisitor.visit(action)
+  }
+
+  router.get("/binders/:binderName").handler { rc =>
+    val actionVisitor = new VertxRestServiceActionVisitor(rc)
+    val action = RestServiceAction.listDocumentIds(binderStore, rc.request().getParam("binderName"))
+    actionVisitor.visit(action)
+  }
+
+  router.get("/binders").handler { rc =>
+    val actionVisitor = new VertxRestServiceActionVisitor(rc)
+    val action = RestServiceAction.listBinders(binderStore)
+    actionVisitor.visit(action)
+  }
+
+  router.post("/query/:queryName").handler { rc =>
+    val actionVisitor = new VertxRestServiceActionVisitor(rc)
+    val body = actionVisitor.bodyAsBson()
+    val action = RestServiceAction.runQuery(queryManager, rc.request().getParam("queryName"), body)
+    actionVisitor.visit(action)
   }
 
   override def start(): Int = {
@@ -123,8 +152,18 @@ trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClien
   val bson = new BsonObject()
   bson.put("hello", "world")
   binder.put("testDocument", bson)
+  binder.put("testDocument2", bson)
 
   val commandManager = new StubCommandManager()
+
+  val stubQueryResult =
+    Map(
+      "doc1" -> bson,
+      "doc2" -> bson
+    )
+
+  val query = StubQuery("testQuery", stubQueryResult)
+  val queryManager = query.stubQueryManager()
 
   def start(): Int
   def stop(): Unit
@@ -160,6 +199,37 @@ trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClien
 
     commandName shouldBe "helloWorld"
     context.getString("hello") shouldBe "world"
+  }
+
+  test("list document ids") {
+    val json = client.expect[Json](s"http://localhost:$port/binders/testBinder").unsafeRunSync()
+    val jsonArray = json.asArray.value
+    jsonArray shouldBe Vector(Json.fromString("testDocument"), Json.fromString("testDocument2"))
+  }
+
+  test("list binders") {
+    val json = client.expect[Json](s"http://localhost:$port/binders").unsafeRunSync()
+    val jsonArray = json.asArray.value
+    jsonArray shouldBe Vector(Json.fromString("testBinder"))
+  }
+
+  test("run query") {
+    val requestContext = Json.obj("hello" -> Json.fromString("world"))
+    val request = POST(
+      Uri.unsafeFromString(s"http://localhost:$port/query/testQuery"),
+      requestContext,
+      `Content-Type`(MediaType.`application/json`)).unsafeRunSync()
+
+    val json = client.expect[Json](request).unsafeRunSync()
+
+    query.executedContexts should have size 1
+    query.executedContexts.head shouldBe bson
+
+    val jsonObject = json.asObject.value
+    jsonObject.size shouldBe 2
+    val bsonAsJson = parser.parse(bson.encodeToString()).toOption.value
+    jsonObject("doc1").value shouldBe bsonAsJson
+    jsonObject("doc2").value shouldBe bsonAsJson
   }
 
 }

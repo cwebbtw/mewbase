@@ -4,6 +4,7 @@ object Dependencies {
 
   val resolutionRepos = Seq( )
   val Http4sVersion = "0.18.12"
+  val CirceVersion = "0.9.3"
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
   def provided  (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
@@ -23,6 +24,8 @@ object Dependencies {
   val http4sCirce = "org.http4s"      %% "http4s-circe"        % Http4sVersion
   val http4sDsl = "org.http4s"      %% "http4s-dsl"          % Http4sVersion
   val http4sClient = "org.http4s"      %% "http4s-client"        % Http4sVersion
+
+  val circeParser = "io.circe" %% "circe-parser" % CirceVersion
 
   val http4s = Seq(http4sBlazeServer, http4sDsl, http4sClient)
 

@@ -3,7 +3,6 @@ package io.mewbase.rest;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.binders.KeyVal;
-import io.mewbase.bson.Bson;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.Query;
@@ -32,6 +31,18 @@ public abstract class RestServiceAction<Res> {
 
     public static ExecuteCommand executeCommand(CommandManager commandManager, String commandName, BsonObject context) {
         return new ExecuteCommand(commandManager, commandName, context);
+    }
+
+    public static ListDocumentIds listDocumentIds(BinderStore binderStore, String binderName) {
+        return new ListDocumentIds(binderStore, binderName);
+    }
+
+    public static ListBinders listBinders(BinderStore binderStore) {
+        return new ListBinders(binderStore);
+    }
+
+    public static RunQuery runQuery(QueryManager queryManager, String queryName, BsonObject context) {
+        return new RunQuery(queryManager, queryName, context);
     }
 
     public abstract <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor);
