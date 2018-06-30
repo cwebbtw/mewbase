@@ -26,6 +26,14 @@ public abstract class RestServiceAction<Res> {
         VisitorRes visit(RunQuery runQuery);
     }
 
+    public static RetrieveSingleDocument retrieveSingleDocument(BinderStore binderStore, String binderName, String documentId) {
+        return new RetrieveSingleDocument(binderStore, binderName, documentId);
+    }
+
+    public static ExecuteCommand executeCommand(CommandManager commandManager, String commandName, BsonObject context) {
+        return new ExecuteCommand(commandManager, commandName, context);
+    }
+
     public abstract <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor);
     public abstract Res perform();
 
