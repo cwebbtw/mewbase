@@ -44,4 +44,4 @@ The current artefacts for mewbase are available on the repository at [sbtage.com
 
 Cloning the [github project](https://github.com/tesco/mewbase) will pull all the necessary source code onto your local machine. Note, the project itself is built unsing sbt 1.x, so will require a working [sbt installation](https://www.scala-sbt.org/download.html).
 
-
+Next, let's look at a simple [Event Sourcing example](https://github.com/Tesco/mewbase/blob/master/docs/commandrest.md) which is exposed over a RESTful interface.
