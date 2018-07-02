@@ -121,4 +121,4 @@ Mewbase:
 * provides an engine for processing them into aggregations.
 * has abstractions for persistance and exposure of these aggregations
 
-Next, get our [local system setup](https://github.com/Tesco/mewbase/blob/master/docs/resrouces.md) and ready to use mewbase before trying out a simple event sourcing example.
+Next, get our [local system setup](https://github.com/Tesco/mewbase/blob/master/docs/resources.md) and ready to use mewbase before trying out a simple event sourcing example.
