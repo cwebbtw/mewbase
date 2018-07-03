@@ -34,6 +34,14 @@ include:
 * A stock inventory needs to maintain current stock of products per warehouse
 * A business process/saga needs to listen to events and maintain state
 
+As a toolkit, mewbase has some fairly broad goals, including:
+
+* Infrastructure agnostic: Mewbase tries to provide a single API which then provides semantic equivalence of over the actual underlying infrastructure and service providers. This is typically a Write Once Run on Anything design goal.
+* Reduced Time To Productive: The toolkit provides enough components to enable a team to be develop an event based solution quickly.
+* Operational Sympathy: The typical plumbing and operational requirements and metrics necessary for a production systems are made available in the toolkit. So operational insight for (close to) free.
+* Call site flexibitility: As more clients frameworks and languages are supported by mewbase, a design goal is to provide the associated idiomatic shims for intuitive call site use.
+* A la carte design: Mewbase is non-prescriptve and allows for whole systems to be built using just mewbase, or have existing systems pick just the eventing features they want or need. This makes mewbase the perfect toolkit for both greenfield projects and as a meabns of migrating exiting code to be more event driven.
+
 ### Getting started 
 
 The best starting point is by [locally installing Mewbase](https://github.com/Tesco/mewbase/blob/master/docs/resources.md), before moveing on the the introductory guide or code examples which is linked too below.
