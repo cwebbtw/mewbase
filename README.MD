@@ -36,6 +36,8 @@ include:
 
 ### Getting started 
 
+The best starting point is by [locally installing Mewbase](https://github.com/Tesco/mewbase/blob/master/docs/resources.md), before moveing on the the introductory guide or code examples which is linked too below.
+
 [This introduction](https://github.com/Tesco/mewbase/blob/master/docs/introduction.md) provides a solid foundation of main components of a Mewbase system.
 
 To get straight into the code examples, there are a number of [Java code examples here](https://github.com/Tesco/mewbase/tree/master/examples-java/src/main/java/example). 
