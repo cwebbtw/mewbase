@@ -1,7 +1,7 @@
 ﻿# mewbase
 [![Build Status](https://travis-ci.org/Tesco/mewbase.svg)](https://travis-ci.org/Tesco/mewbase)
 
-Mewbase is an eventing toolkit of the JVM. Events are one of the fundamental building blocks when developing a [Reactive System](https://www.reactivemanifesto.org/). Designing and building a system based on events typically involves decomposing the system using techniques such as [event storming](https://www.youtube.com/watch?v=sPseA_3UOMk), and there a number of patterns and techniques in which a system can slowly adapt to be more event driven. The goal of mewbase is to provide a number of general purpose patterns and implementations to make both building, migrating and moving to and between event driven systems simple, and without being prescriptive around underlying infrastructure requirements.
+Mewbase is an eventing toolkit for the JVM. Events are one of the fundamental building blocks when developing a [Reactive System](https://www.reactivemanifesto.org/). Designing and building a system based on events typically involves decomposing the system using techniques such as [event storming](https://www.youtube.com/watch?v=sPseA_3UOMk), and there a number of patterns and techniques in which a system can slowly adapt to be more event driven. The goal of mewbase is to provide a number of general purpose patterns and implementations to make both building, migrating and moving to and between event driven systems simple, and without being prescriptive around underlying infrastructure requirements.
 
 Such examples of patterns used when moving to an event based architecture include:
 
