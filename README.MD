@@ -1,12 +1,12 @@
 ﻿# mewbase
 [![Build Status](https://travis-ci.org/Tesco/mewbase.svg)](https://travis-ci.org/Tesco/mewbase)
 
-Mewbase is an eventing toolkit of the JVM. Events are one of the fundamental building blocks when developing a [Reactive System](https://www.reactivemanifesto.org/). Designing and building a system based on events typically involves decomposing the system using techniques such as [event storming](https://www.youtube.com/watch?v=sPseA_3UOMk), and there a number of patterns and techniques in which a system can slowly adapt to be more event driven. The goal of mewbase is to provide a number of general purpose patterns and implementations to make both building, migrating and moving to and between event driven systems simple, and without being prescriptive around underlying infrastructure requirements.
+Mewbase is an eventing toolkit for the JVM. Events are one of the fundamental building blocks when developing a [Reactive System](https://www.reactivemanifesto.org/). Designing and building a system based on events typically involves decomposing the system using techniques such as [event storming](https://www.youtube.com/watch?v=sPseA_3UOMk), and there a number of patterns and techniques in which a system can slowly adapt to be more event driven. The goal of mewbase is to provide a number of general purpose patterns and implementations to make both building, migrating and moving to and between event driven systems simple, and without being prescriptive around underlying infrastructure requirements.
 
 Such examples of patterns used when moving to an event based architecture include:
 
-* Event emitting of changes in a system (typically backed by underlying messaging infrastructure - though mewbase tries to standardise access APIs across providers).
-* Subscribing and responding events.
+* Event emitted through changes in a system (typically backed by underlying messaging infrastructure - though mewbase tries to standardise access APIs across providers).
+* Subscribing to and responding to events.
 * Separating commands and queries (i.e. [CQRS](https://en.wikipedia.org/wiki/Command%E2%80%93query_separation)).
 
 Examples of streams of events might be:
@@ -15,16 +15,16 @@ Examples of streams of events might be:
 * Events from IoT sensors
 * Stock movement events in a supply chain
 
-These events often need to be persisted fast and in high volume and potentially stored for very long periods of time. 
+These events often need to be persisted at high speed and in high volume and potentially stored for very long periods of time. 
 
 Storing logs of events provides many advantages including:
 
 * Complete audit trail of everything that happened
 * Events can be replayed for back-testing or debugging
 * Analytics can be run on the events to extract business value
-* Machine learning models can be trained in the events to do all sorts of funky stuff
+* Machine learning models can be trained from the events to do all sorts of funky stuff
 * Events can be used to co-ordinate busines processes between different services
-* Functions can be used to implement distributed eventually consistent transactions
+* Functions can be used to implement distributed, eventually consistent transactions
 
 Many applications typically want to deal with *aggregated* event data, not the raw event data. Examples would
 include:
@@ -37,14 +37,14 @@ include:
 As a toolkit, mewbase has some fairly broad goals, including:
 
 * Infrastructure agnostic: Mewbase tries to provide a single API which then provides semantic equivalence of over the actual underlying infrastructure and service providers. This is typically a Write Once Run on Anything design goal.
-* Reduced Time To Productive: The toolkit provides enough components to enable a team to be develop an event based solution quickly.
-* Operational Sympathy: The typical plumbing and operational requirements and metrics necessary for a production systems are made available in the toolkit. So operational insight for (close to) free.
+* Reduced Time To Productivity: The toolkit provides enough components to enable a team to be develop an event based solution quickly.
+* Operational Sympathy: The typical plumbing and operational requirements (such as logging and metrics) necessary for a production systems are made available in the toolkit. So operational insight for (close to) free.
 * Call site flexibitility: As more clients frameworks and languages are supported by mewbase, a design goal is to provide the associated idiomatic shims for intuitive call site use.
 * A la carte design: Mewbase is non-prescriptve and allows for whole systems to be built using just mewbase, or have existing systems pick just the eventing features they want or need. This makes mewbase the perfect toolkit for both greenfield projects and as a meabns of migrating exiting code to be more event driven.
 
 ### Getting started 
 
-The best starting point is by [locally installing Mewbase](https://github.com/Tesco/mewbase/blob/master/docs/resources.md), before moveing on the the introductory guide or code examples which is linked too below.
+The best starting point is by [locally installing Mewbase](https://github.com/Tesco/mewbase/blob/master/docs/resources.md), before moving on the the introductory guide or code examples which is linked below.
 
 [This introduction](https://github.com/Tesco/mewbase/blob/master/docs/introduction.md) provides a solid foundation of main components of a Mewbase system.
 
