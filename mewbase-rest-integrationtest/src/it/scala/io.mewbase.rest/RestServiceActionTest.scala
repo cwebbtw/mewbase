@@ -77,26 +77,25 @@ class Http4sRestServiceActionTest extends RestServiceActionTest {
       }
   }
 
-  val server: Server[IO] =
+  val server =
     BlazeBuilder[IO]
     .bindAny()
     .withExecutionContext(TestExecutionContext)
     .mountService(httpService, "/")
-    .start
-    .unsafeRunSync()
 
-  override def start(): Int =
-    server.address.getPort
-
-  override def stop(): Unit =
-    server.shutdownNow()
+  override def withRunningServer[T](portToResult: Int => T): T = {
+    val runningServer: Server[IO] = server.start.unsafeRunSync()
+    val result = portToResult(runningServer.address.getPort)
+    runningServer.shutdownNow()
+    result
+  }
 
 }
 
 class VertxRestServiceActionTest extends RestServiceActionTest {
 
   val vertx: Vertx = Vertx.vertx()
-  val options: HttpServerOptions = new HttpServerOptions().setPort(9081)
+  val options = new HttpServerOptions().setPort(9080)
   val server: HttpServer = vertx.createHttpServer(options)
 
   val router: Router = Router.router(vertx)
@@ -134,14 +133,13 @@ class VertxRestServiceActionTest extends RestServiceActionTest {
     val action = RestServiceAction.runQuery(queryManager, rc.request().getParam("queryName"), body)
     actionVisitor.visit(action)
   }
+  server.requestHandler(router.accept _)
 
-  override def start(): Int = {
-    server.requestHandler(router.accept _)
-    server.listen().actualPort()
-  }
-
-  override def stop(): Unit =
+  override def withRunningServer[T](portToResult: Int => T): T = {
+    val result = portToResult(server.listen().actualPort())
     server.close()
+    result
+  }
 }
 
 trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with Matchers with BeforeAndAfterAll with OptionValues {
@@ -165,71 +163,73 @@ trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClien
   val query = StubQuery("testQuery", stubQueryResult)
   val queryManager = query.stubQueryManager()
 
-  def start(): Int
-  def stop(): Unit
-
-  var port = 0
-
-  override def beforeAll(): Unit =
-    port = start()
-
-  override def afterAll(): Unit =
-    stop()
+  def withRunningServer[T](portToResult: Int => T): T
 
   val client: Client[IO] = Http1Client[IO]().unsafeRunSync()
 
   test("get a single document") {
-    val json = client.expect[Json](s"http://localhost:$port/binders/testBinder/testDocument").unsafeRunSync()
-    val jsonObject = json.asObject.value
-    jsonObject.keys should have size 1
-    jsonObject("hello").value shouldBe Json.fromString("world")
+    withRunningServer { port =>
+      val json = client.expect[Json](s"http://localhost:$port/binders/testBinder/testDocument").unsafeRunSync()
+      val jsonObject = json.asObject.value
+      jsonObject.keys should have size 1
+      jsonObject("hello").value shouldBe Json.fromString("world")
+    }
   }
 
   test("execute command") {
-    val requestContext = Json.obj("hello" -> Json.fromString("world"))
-    val request = POST(
-      Uri.unsafeFromString(s"http://localhost:$port/commands/helloWorld"),
-      requestContext,
-      `Content-Type`(MediaType.`application/json`)).unsafeRunSync()
+    withRunningServer { port =>
+      val requestContext = Json.obj("hello" -> Json.fromString("world"))
+      val request = POST(
+        Uri.unsafeFromString(s"http://localhost:$port/commands/helloWorld"),
+        requestContext,
+        `Content-Type`(MediaType.`application/json`)).unsafeRunSync()
 
-    client.status(request).unsafeRunSync().code shouldBe 200
+      client.status(request).unsafeRunSync().code shouldBe 200
 
-    commandManager.executed should have size(1)
-    val (commandName, context) = commandManager.executed.head
+      commandManager.executed should have size (1)
+      val (commandName, context) = commandManager.executed.head
 
-    commandName shouldBe "helloWorld"
-    context.getString("hello") shouldBe "world"
+      commandName shouldBe "helloWorld"
+      context.getString("hello") shouldBe "world"
+    }
   }
 
   test("list document ids") {
-    val json = client.expect[Json](s"http://localhost:$port/binders/testBinder").unsafeRunSync()
-    val jsonArray = json.asArray.value
-    jsonArray shouldBe Vector(Json.fromString("testDocument"), Json.fromString("testDocument2"))
+    withRunningServer { port =>
+      val json = client.expect[Json](s"http://localhost:$port/binders/testBinder").unsafeRunSync()
+      val jsonArray = json.asArray.value
+      jsonArray shouldBe Vector(Json.fromString("testDocument"), Json.fromString("testDocument2"))
+    }
   }
 
   test("list binders") {
-    val json = client.expect[Json](s"http://localhost:$port/binders").unsafeRunSync()
-    val jsonArray = json.asArray.value
-    jsonArray shouldBe Vector(Json.fromString("testBinder"))
+    withRunningServer { port =>
+      val json = client.expect[Json](s"http://localhost:$port/binders").unsafeRunSync()
+      val jsonArray = json.asArray.value
+      jsonArray shouldBe Vector(Json.fromString("testBinder"))
+    }
   }
 
   test("run query") {
-    val requestContext = Json.obj("hello" -> Json.fromString("world"))
-    val request = POST(
-      Uri.unsafeFromString(s"http://localhost:$port/query/testQuery"),
-      requestContext,
-      `Content-Type`(MediaType.`application/json`)).unsafeRunSync()
+    withRunningServer { port =>
+      println(port)
+      val requestContext = Json.obj("hello" -> Json.fromString("world"))
+      val request = POST(
+        Uri.unsafeFromString(s"http://localhost:$port/query/testQuery"),
+        requestContext,
+        `Content-Type`(MediaType.`application/json`)).unsafeRunSync()
 
-    val json = client.expect[Json](request).unsafeRunSync()
+      val json = client.expect[Json](request).unsafeRunSync()
 
-    query.executedContexts should have size 1
-    query.executedContexts.head shouldBe bson
+      query.executedContexts should have size 1
+      query.executedContexts.head shouldBe bson
 
-    val jsonObject = json.asObject.value
-    jsonObject.size shouldBe 2
-    val bsonAsJson = parser.parse(bson.encodeToString()).toOption.value
-    jsonObject("doc1").value shouldBe bsonAsJson
-    jsonObject("doc2").value shouldBe bsonAsJson
+      val jsonObject = json.asObject.value
+      jsonObject.size shouldBe 2
+      val bsonAsJson = parser.parse(bson.encodeToString()).toOption.value
+      jsonObject("doc1").value shouldBe bsonAsJson
+      jsonObject("doc2").value shouldBe bsonAsJson
+    }
   }
 
 }

@@ -30,7 +30,7 @@ val basicSettings = Seq(
     }
   },
 
-  libraryDependencies  ++= Dependencies.test( junit, vertxUnit, restAssured, scalatest(scalaVersion.value), commonsIo),
+  libraryDependencies  ++= Dependencies.test( junit, vertxUnit, restAssured, scalatest, commonsIo),
 
   // scaladoc settings
   (scalacOptions in doc) ++= Seq("-doc-title", name.value, "-doc-version", version.value),
@@ -93,8 +93,16 @@ def javaDoc = Seq(
 )
 
 
-lazy val root = Project("mewbase", file("."))
-  .aggregate(mewbaseCore, mewbaseJava, mewbaseScala, examplesJava, examplesScala)
+lazy val root = Project("root", file("."))
+  .aggregate(
+    mewbaseCore,
+    mewbaseJava,
+    mewbaseScala,
+    examplesJava,
+    examplesScala,
+    mewbaseRestHttp4s,
+    mewbaseRestVertx,
+    mewbaseRestIntegrationTest)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
 
@@ -139,7 +147,7 @@ lazy val mewbaseScala = Project("mewbase-scala", file("mewbase-scala"))
     libraryDependencies ++= Dependencies.test(
       //"com.typesafe.akka" %% "akka-http-testkit" % "10.0.11"
     ),
-    libraryDependencies ++= Dependencies.test(scalatest(scalaVersion.value)),
+    libraryDependencies ++= Dependencies.test(scalatest),
 
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q"),
     crossPaths := true,
@@ -165,7 +173,13 @@ lazy val mewbaseRestIntegrationTest = Project("mewbase-rest-integrationtest", fi
   .dependsOn(mewbaseCore, mewbaseRestHttp4s, mewbaseRestVertx)
   .settings(basicSettings, Defaults.itSettings)
   .settings(
-    libraryDependencies ++= http4s :+ http4sBlazeClient :+ http4sCirce :+ circeParser
+    libraryDependencies ++= http4s :+ http4sBlazeClient :+ http4sCirce :+ circeParser,
+    libraryDependencies += scalatest % "it",
+    parallelExecution in Test := false,
+    parallelExecution in IntegrationTest := false,
+    testForkedParallel in Test := false,
+    testForkedParallel in IntegrationTest := false,
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
   )
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))

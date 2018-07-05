@@ -59,7 +59,7 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.6"
 
   // Scala Test
-  def scalatest(scalaVersion: String) = "org.scalatest" %% "scalatest" % "3.0.5"
+  val scalatest = "org.scalatest" %% "scalatest" % "3.0.5"
 
 
 }
