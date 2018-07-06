@@ -1,6 +1,8 @@
 package io.mewbase.rest
 
-import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.{CountDownLatch, LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import cats.effect.IO
 import io.circe.{Json, parser}
@@ -8,7 +10,7 @@ import io.mewbase.bson.BsonObject
 import io.mewbase.rest.http4s.BsonEntityCodec._
 import io.mewbase.rest.http4s.Http4sRestServiceActionVisitor
 import io.mewbase.rest.vertx.VertxRestServiceActionVisitor
-import io.vertx.core.Vertx
+import io.vertx.core.{AsyncResult, Handler, Vertx, VertxOptions}
 import io.vertx.core.http.{HttpServer, HttpServerOptions}
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
@@ -22,6 +24,7 @@ import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.util.threads.threadFactory
 import org.http4s.{HttpService, MediaType, Uri}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
 
 import scala.concurrent.ExecutionContext
@@ -94,55 +97,66 @@ class Http4sRestServiceActionTest extends RestServiceActionTest {
 
 class VertxRestServiceActionTest extends RestServiceActionTest {
 
-  val vertx: Vertx = Vertx.vertx()
-  val options = new HttpServerOptions().setPort(9080)
-  val server: HttpServer = vertx.createHttpServer(options)
+  def configueRouter(router: Router): Unit = {
+    router.get("/binders/:binderName/:documentId").handler { rc =>
+      val actionVisitor = new VertxRestServiceActionVisitor(rc)
+      val action = RestServiceAction.retrieveSingleDocument(binderStore, rc.request().getParam("binderName"), rc.request().getParam("documentId"))
+      actionVisitor.visit(action)
+    }
 
-  val router: Router = Router.router(vertx)
-  router.route.handler(BodyHandler.create)
+    router.post("/commands/:commandName").handler { rc =>
+      rc.setAcceptableContentType("application/json")
+      val actionVisitor = new VertxRestServiceActionVisitor(rc)
+      val bsonBody = actionVisitor.bodyAsBson()
+      val action = RestServiceAction.executeCommand(commandManager, rc.request().getParam("commandName"), bsonBody)
+      actionVisitor.visit(action)
+    }
 
-  router.get("/binders/:binderName/:documentId").handler { rc =>
-    val actionVisitor = new VertxRestServiceActionVisitor(rc)
-    val action = RestServiceAction.retrieveSingleDocument(binderStore, rc.request().getParam("binderName"), rc.request().getParam("documentId"))
-    actionVisitor.visit(action)
+    router.get("/binders/:binderName").handler { rc =>
+      val actionVisitor = new VertxRestServiceActionVisitor(rc)
+      val action = RestServiceAction.listDocumentIds(binderStore, rc.request().getParam("binderName"))
+      actionVisitor.visit(action)
+    }
+
+    router.get("/binders").handler { rc =>
+      val actionVisitor = new VertxRestServiceActionVisitor(rc)
+      val action = RestServiceAction.listBinders(binderStore)
+      actionVisitor.visit(action)
+    }
+
+    router.post("/query/:queryName").handler { rc =>
+      val actionVisitor = new VertxRestServiceActionVisitor(rc)
+      val body = actionVisitor.bodyAsBson()
+      val action = RestServiceAction.runQuery(queryManager, rc.request().getParam("queryName"), body)
+      actionVisitor.visit(action)
+    }
   }
-
-  router.post("/commands/:commandName").handler { rc =>
-    rc.setAcceptableContentType("application/json")
-    val actionVisitor = new VertxRestServiceActionVisitor(rc)
-    val bsonBody = actionVisitor.bodyAsBson()
-    val action = RestServiceAction.executeCommand(commandManager, rc.request().getParam("commandName"), bsonBody)
-    actionVisitor.visit(action)
-  }
-
-  router.get("/binders/:binderName").handler { rc =>
-    val actionVisitor = new VertxRestServiceActionVisitor(rc)
-    val action = RestServiceAction.listDocumentIds(binderStore, rc.request().getParam("binderName"))
-    actionVisitor.visit(action)
-  }
-
-  router.get("/binders").handler { rc =>
-    val actionVisitor = new VertxRestServiceActionVisitor(rc)
-    val action = RestServiceAction.listBinders(binderStore)
-    actionVisitor.visit(action)
-  }
-
-  router.post("/query/:queryName").handler { rc =>
-    val actionVisitor = new VertxRestServiceActionVisitor(rc)
-    val body = actionVisitor.bodyAsBson()
-    val action = RestServiceAction.runQuery(queryManager, rc.request().getParam("queryName"), body)
-    actionVisitor.visit(action)
-  }
-  server.requestHandler(router.accept _)
 
   override def withRunningServer[T](portToResult: Int => T): T = {
-    val result = portToResult(server.listen().actualPort())
+    val vertx: Vertx = Vertx.vertx()
+    val router: Router = Router.router(vertx)
+    router.route.handler(BodyHandler.create)
+    configueRouter(router)
+
+    val httpServerOptions = new HttpServerOptions().setPort(0)
+
+    val server: HttpServer = vertx.createHttpServer(httpServerOptions)
+    server.requestHandler(router.accept _)
+
+    val countdownLatch = new CountDownLatch(1)
+    server.listen((event: AsyncResult[HttpServer]) => countdownLatch.countDown())
+    countdownLatch.await()
+
+    val result = portToResult(server.actualPort())
+
     server.close()
+    vertx.close()
+
     result
   }
 }
 
-trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with Matchers with BeforeAndAfterAll with OptionValues {
+trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with Matchers with BeforeAndAfterAll with OptionValues with Eventually {
 
   val binder = StubBinder("testBinder")
   val binderStore = binder.binderStore
@@ -186,11 +200,13 @@ trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClien
 
       client.status(request).unsafeRunSync().code shouldBe 200
 
-      commandManager.executed should have size (1)
-      val (commandName, context) = commandManager.executed.head
+      eventually {
+        commandManager.executed should have size (1)
+        val (commandName, context) = commandManager.executed.head
 
-      commandName shouldBe "helloWorld"
-      context.getString("hello") shouldBe "world"
+        commandName shouldBe "helloWorld"
+        context.getString("hello") shouldBe "world"
+      }
     }
   }
 
@@ -212,7 +228,6 @@ trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClien
 
   test("run query") {
     withRunningServer { port =>
-      println(port)
       val requestContext = Json.obj("hello" -> Json.fromString("world"))
       val request = POST(
         Uri.unsafeFromString(s"http://localhost:$port/query/testQuery"),
@@ -221,14 +236,16 @@ trait RestServiceActionTest extends FunSuite with Http4sDsl[IO] with Http4sClien
 
       val json = client.expect[Json](request).unsafeRunSync()
 
-      query.executedContexts should have size 1
-      query.executedContexts.head shouldBe bson
+      eventually {
+        query.executedContexts should have size 1
+        query.executedContexts.head shouldBe bson
 
-      val jsonObject = json.asObject.value
-      jsonObject.size shouldBe 2
-      val bsonAsJson = parser.parse(bson.encodeToString()).toOption.value
-      jsonObject("doc1").value shouldBe bsonAsJson
-      jsonObject("doc2").value shouldBe bsonAsJson
+        val jsonObject = json.asObject.value
+        jsonObject.size shouldBe 2
+        val bsonAsJson = parser.parse(bson.encodeToString()).toOption.value
+        jsonObject("doc1").value shouldBe bsonAsJson
+        jsonObject("doc2").value shouldBe bsonAsJson
+      }
     }
   }
 

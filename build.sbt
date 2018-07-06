@@ -171,15 +171,18 @@ lazy val mewbaseRestVertx = Project("mewbase-rest-vertx", file("mewbase-rest-ver
 
 lazy val mewbaseRestIntegrationTest = Project("mewbase-rest-integrationtest", file("mewbase-rest-integrationtest"))
   .dependsOn(mewbaseCore, mewbaseRestHttp4s, mewbaseRestVertx)
-  .settings(basicSettings, Defaults.itSettings)
+  .settings(basicSettings)
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings: _*)
   .settings(
     libraryDependencies ++= http4s :+ http4sBlazeClient :+ http4sCirce :+ circeParser,
-    libraryDependencies += scalatest % "it",
+    libraryDependencies += scalatest % "test,it",
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testForkedParallel in Test := false,
     testForkedParallel in IntegrationTest := false,
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
+    fork in IntegrationTest := false,
   )
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))
