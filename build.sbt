@@ -186,13 +186,15 @@ lazy val mewbaseRestIntegrationTest = Project("mewbase-rest-integrationtest", fi
   )
 
 lazy val examplesJava = Project("examples-java", file("examples-java"))
-  .dependsOn(mewbaseJava)
+  .dependsOn(mewbaseJava, mewbaseRestVertx)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
 
 lazy val examplesScala = Project("examples-scala", file("examples-scala"))
-  .dependsOn(mewbaseScala % "compile->compile;test->test")
+  .dependsOn(mewbaseScala % "compile->compile;test->test", mewbaseRestHttp4s)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
-  .settings(libraryDependencies ++= http4s :+ http4sCirce)
+  .settings(
+    libraryDependencies ++= Seq(circeParser, http4sCirce)
+  )
 

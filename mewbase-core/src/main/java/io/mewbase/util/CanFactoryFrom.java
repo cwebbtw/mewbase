@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Supplier;
 
 /**
@@ -27,5 +28,17 @@ public final class CanFactoryFrom {
                 log.error("Factory failed - check config of "+implFQCN + " making default implementation.", exp);
                 return defaultImpl.get();
             }
+        }
+
+        @SuppressWarnings("unchecked")  // becasue T is  capture#1 of ?
+        public static <T>  T instance(final String implFQCN, final Config cfg) {
+            final T impl;
+            try {
+                impl = (T)Class.forName(implFQCN).getDeclaredConstructor(Config.class).newInstance(cfg);
+            } catch (Exception e) {
+                throw new RuntimeException("Could not load instance of " + implFQCN, e);
+            }
+            if (impl == null) throw new RuntimeException("Attempt to factory "+implFQCN+" resulted in null");
+            return impl;
         }
 }

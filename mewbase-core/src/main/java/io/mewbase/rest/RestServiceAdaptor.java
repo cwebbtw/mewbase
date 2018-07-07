@@ -7,11 +7,9 @@ import com.typesafe.config.ConfigFactory;
 import io.mewbase.binders.BinderStore;
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.QueryManager;
-import io.mewbase.rest.impl.VertxRestServiceAdaptor;
 import io.mewbase.util.CanFactoryFrom;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * Adapted by Nige on 19/12/17.
@@ -36,7 +34,7 @@ public interface RestServiceAdaptor extends AutoCloseable {
      * @return
      */
     static RestServiceAdaptor instance(Config cfg) {
-        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg, () -> new VertxRestServiceAdaptor(cfg) );
+        return CanFactoryFrom.instance(cfg.getString(factoryConfigPath), cfg);
     }
 
     /**
@@ -81,8 +79,6 @@ public interface RestServiceAdaptor extends AutoCloseable {
      */
     RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String uriPathPrefix);
 
-    RestServiceAdaptor exposeGetDocument(BinderStore binderStore, String uri, Function<IncomingRequest, DocumentLookup> requestToDocumentLookup);
-
     /**
      * This method is exposes only the named Binder in the binder store and all of its contained
      * documents. It places a single limit on the scope of the binders that can be accessed.
@@ -122,6 +118,8 @@ public interface RestServiceAdaptor extends AutoCloseable {
      * @return
      */
     CompletableFuture<Void> start();
+
+    int getServerPort();
 
     /**
      * Stop this REST adapter asynchronously.
