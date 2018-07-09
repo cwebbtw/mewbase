@@ -4,9 +4,11 @@ import cats.effect.{Effect, IO}
 import com.typesafe.config.ConfigFactory
 import fs2.StreamApp
 import io.circe.Json
+import io.mewbase.binders.BinderStore
 import io.mewbase.bson.BsonObject
 import io.mewbase.cqrs.CommandManager
-import io.mewbase.eventsource.EventSink
+import io.mewbase.eventsource.{EventSink, EventSource}
+import io.mewbase.projection.ProjectionManager
 import io.mewbase.rest.{RestServiceAction, RestServiceAdaptor}
 import io.mewbase.rest.http4s.Http4sRestServiceActionVisitor
 import org.http4s.HttpService
@@ -33,18 +35,28 @@ class HelloWorldService(commandManager: CommandManager) extends Http4sDsl[IO] {
 
     case req@POST -> Root / "buy" =>
       req.as[BsonObject].flatMap { body =>
-        actionVisitor.visit(RestServiceAction.executeCommand(commandManager, "buy", body))
+        actionVisitor.visit(RestServiceAction.executeCommand(commandManager, Main.buyCommand.getName, body))
       }
+
+    case GET -> Root / "purchase" =>
+      actionVisitor.visit(RestServiceAction.listDocumentIds(Main.binderStore, Main.projectionOutputChannel))
+
+    case GET -> Root / "purchase" / purchaseNumber =>
+      actionVisitor.visit(RestServiceAction.retrieveSingleDocument(Main.binderStore, Main.projectionOutputChannel, purchaseNumber))
 
   }
 
 }
 
 object Main extends StreamApp[IO] {
-  val config = ConfigFactory.load("example.gettingstarted.commandrest/configuration.conf")
 
-  val eventSink = EventSink.instance(config)
-  val commandManager = CommandManager.instance(eventSink)
+  val binderStore: BinderStore = BinderStore.instance()
+  val eventSink: EventSink = EventSink.instance()
+  val commandManager: CommandManager = CommandManager.instance(eventSink)
+  val eventSource: EventSource = EventSource.instance()
+  val projectionManager: ProjectionManager = ProjectionManager.instance(eventSource, binderStore)
+  val projectionOutputChannel = "processed_purchase_events"
+
 
   val buyCommand =
     commandManager
@@ -59,6 +71,19 @@ object Main extends StreamApp[IO] {
           event
         }
         .create()
+
+
+  projectionManager
+    .builder()
+    .named("projection1")
+    .projecting(buyCommand.getOutputChannel)
+    .onto(projectionOutputChannel)
+    .filteredBy(event => event.getBson.containsKey("action"))
+    .identifiedBy(event => event.getEventNumber.toString)
+    .as((current, event) => {
+      event.getBson
+    })
+    .create().get()
 
 
   override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] =
