@@ -166,6 +166,39 @@ class Http4sRestServiceAdapter(config: Config) extends RestServiceAdaptor with H
   }
 
   /**
+    * Expose the ability to get all of the server and mewbase metrics that have been recorded
+    * as a JSON response to a get request.
+    *
+    * Verb : GET
+    * URI : http://Server:Port/metrics
+    *
+    * Please note that this reserves the above URI in the name space hence calling a binder by the same name
+    * with the same path prefix will result in undefined behaviour. I.e. one of the two will be called depending
+    * on the "route resolution" in the underlying REST implementation.
+    *
+    * @return the adapter instance
+    */
+  override def exposeMetrics(): RestServiceAdaptor =
+    exposeMetrics("metrics")
+
+  /**
+    * As exposeMetrics (as above) with a path prefix
+    *
+    * @param uriPathPrefix
+    * @return the adapter instance
+    */
+  override def exposeMetrics(uriPathPrefix: String): RestServiceAdaptor = {
+    val prefix = prefixWithoutSlash(uriPathPrefix)
+
+    endpoints += {
+      case GET -> Root / `prefix` =>
+        actionVisitor.visit(RestServiceAction.getMetrics)
+    }
+
+    this
+  }
+
+  /**
     * Start this REST adapter asynchronously.
     * Multiple rest adapters may be started on the same host and
     * bound to different endpoints (ipaddr:port) combinations.
@@ -202,5 +235,4 @@ class Http4sRestServiceAdapter(config: Config) extends RestServiceAdaptor with H
 
   override def close(): Unit =
     stop.get(5, TimeUnit.SECONDS)
-
 }

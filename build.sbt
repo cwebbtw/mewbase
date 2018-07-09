@@ -6,9 +6,9 @@ val basicSettings = Seq(
   version               := "0.6.0",
   scalaVersion          := "2.12.4",
   homepage              := Some(new URL("https://github.com/Tesco/mewbase")),
-  organization          := "com.tesco",
+  organization          := "io.mewbase",
   organizationHomepage  := Some(new URL("http://www.tesco.com")),
-  description           := "Event Sourcing and CQRS Library for Java and Scala",
+  description           := "Event Sourcing and CQRS Library for the JVM",
   startYear             := Some(2016),
   licenses              := Seq("MIT" -> new URL("https://github.com/Tesco/mewbase/blob/master/LICENSE.txt")),
   resolvers             ++= resolutionRepos,
@@ -55,6 +55,13 @@ val basicSettings = Seq(
       <url>git@github.com:Tesco/mewbase</url>
       <connection>scm:git:git@github.com:Tesco/mewbase.git</connection>
     </scm>
+    <repositories>
+      <repository>
+        <id>sbtage</id>
+        <name>sbtage staging repo</name>
+        <url>http://sbtage.com/maven2/</url>
+      </repository>
+    </repositories>
     <developers>
       <developer>
         <id>Tesco</id>

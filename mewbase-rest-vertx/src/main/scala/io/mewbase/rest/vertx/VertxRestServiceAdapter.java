@@ -136,6 +136,20 @@ public class VertxRestServiceAdapter implements RestServiceAdaptor {
         return this;
     }
 
+    @Override
+    public RestServiceAdaptor exposeMetrics() {
+        return exposeMetrics("/metrics");
+    }
+
+    @Override
+    public RestServiceAdaptor exposeMetrics(String uriPathPrefix) {
+        router.route(HttpMethod.GET, uriPathPrefix).handler(routingContext -> {
+            final VertxRestServiceActionVisitor actionVisitor = new VertxRestServiceActionVisitor(routingContext);
+            actionVisitor.visit(RestServiceAction.getMetrics());
+        });
+        return this;
+    }
+
     public CompletableFuture<Void> start() {
         AsyncResCF<HttpServer> ar = new AsyncResCF<>();
         logger.info("Starting Rest Adapter");

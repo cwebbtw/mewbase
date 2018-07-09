@@ -220,4 +220,23 @@ trait RestServiceAdapterTest extends FunSuite with Http4sDsl[IO] with Http4sClie
     }
   }
 
+  test("exposeMetrics(uriBasePrefix)") {
+    withAdapter { adapter =>
+      adapter.exposeMetrics();
+
+      withRunningServer(adapter) {
+        val request = GET(Uri.unsafeFromString(s"http://localhost:${adapter.getServerPort}/metrics")).unsafeRunSync()
+        val json = client.expect[Json](request).unsafeRunSync()
+
+        val meters = json.hcursor
+          .downField("meters")
+          .focus
+          .flatMap(_.asArray)
+          .getOrElse(Vector.empty)
+
+        meters should not be empty
+      }
+    }
+  }
+
 }

@@ -84,4 +84,15 @@ public class VertxRestServiceActionVisitor implements RestServiceAction.Visitor<
         return null;
     }
 
+    @Override
+    public Void visit(RestServiceAction.GetMetrics getMetrics) {
+        final BsonObject metrics = getMetrics.perform();
+
+        rc.response()
+                .putHeader("Content-Type", "application/json")
+                .end(metrics.encodeToString());
+
+        return null;
+    }
+
 }

@@ -44,4 +44,8 @@ class Http4sRestServiceActionVisitor[F[_]: Effect] extends RestServiceAction.Vis
         NotFound("Query not found")
     }
 
+  override def visit(getMetrics: RestServiceAction.GetMetrics): F[Response[F]] =
+    implicitly[Effect[F]].suspend {
+      Ok(getMetrics.perform())
+    }
 }

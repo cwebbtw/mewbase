@@ -7,6 +7,7 @@ import io.mewbase.bson.BsonObject;
 import io.mewbase.cqrs.CommandManager;
 import io.mewbase.cqrs.Query;
 import io.mewbase.cqrs.QueryManager;
+import io.mewbase.metrics.MetricsRegistry;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +24,7 @@ public abstract class RestServiceAction<Res> {
         VisitorRes visit(ListDocumentIds listDocumentIds);
         VisitorRes visit(ListBinders listBinders);
         VisitorRes visit(RunQuery runQuery);
+        VisitorRes visit(GetMetrics getMetrics);
     }
 
     public static RetrieveSingleDocument retrieveSingleDocument(BinderStore binderStore, String binderName, String documentId) {
@@ -43,6 +45,10 @@ public abstract class RestServiceAction<Res> {
 
     public static RunQuery runQuery(QueryManager queryManager, String queryName, BsonObject context) {
         return new RunQuery(queryManager, queryName, context);
+    }
+
+    public static GetMetrics getMetrics() {
+        return new GetMetrics();
     }
 
     public abstract <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor);
@@ -201,6 +207,24 @@ public abstract class RestServiceAction<Res> {
         public BsonObject getContext() {
             return context;
         }
+    }
+
+    public static final class GetMetrics extends RestServiceAction<BsonObject> {
+
+        public GetMetrics() {
+            MetricsRegistry.ensureRegistry();
+        }
+
+        @Override
+        public <VisitorRes> VisitorRes visit(Visitor<VisitorRes> visitor) {
+            return visitor.visit(this);
+        }
+
+        @Override
+        public BsonObject perform() {
+            return MetricsRegistry.allMetricsAsDocument();
+        }
+
     }
 
 }
