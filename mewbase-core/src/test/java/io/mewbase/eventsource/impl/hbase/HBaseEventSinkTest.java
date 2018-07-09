@@ -24,8 +24,8 @@ public class HBaseEventSinkTest extends MewbaseTestBase {
 
         EventSink hbSink = new HBaseEventSink();
 
-        //final String channelName = UUID.randomUUID().toString();
-        final String channelName = "Dennis";
+        final String channelName = UUID.randomUUID().toString();
+        System.out.println("Table -> "+channelName);
         final String dataValue = UUID.randomUUID().toString();
         final BsonObject bsonEvent = new BsonObject().put("data", dataValue);
         hbSink.publishSync(channelName, bsonEvent);

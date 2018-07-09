@@ -41,7 +41,7 @@ public class HBaseEventSink implements EventSink {
             put.addColumn(colFamily,qualifier,event.encode().getBytes());
             table.put(put);
         } catch (Exception exp) {
-            log.error("failed to get table from connection");
+            log.error("Failed to publish event",exp);
         }
         return EventSink.SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
     }
@@ -66,13 +66,14 @@ public class HBaseEventSink implements EventSink {
      * Check if the table exists and if not then create
      * @return
      */
-    private Table ensureTable(final String channelName ) throws IOException  {
+    private Table ensureTable(final String channelName ) throws Exception  {
 
         TableName tableName = TableName.valueOf(channelName);
         final Admin admin = connection.getAdmin();
         // Todo - Use local hash map to store "live" tables if the client API doesnt
         if (! admin.tableExists( tableName ) ) {
             createTable( tableName,  admin);
+            Thread.sleep(1000);
         }
         admin.close();
         Table table = connection.getTable(tableName);
@@ -82,7 +83,7 @@ public class HBaseEventSink implements EventSink {
 
     private void createTable(final TableName tableName, final Admin admin) throws IOException {
         TableDescriptorBuilder tableBuilder = TableDescriptorBuilder.newBuilder(tableName);
-        ColumnFamilyDescriptor cfdb = ColumnFamilyDescriptorBuilder.of("Event");
+        ColumnFamilyDescriptor cfdb = ColumnFamilyDescriptorBuilder.of(colFamily);
         tableBuilder.setColumnFamily(cfdb);
         admin.createTable( tableBuilder.build() );
     }
