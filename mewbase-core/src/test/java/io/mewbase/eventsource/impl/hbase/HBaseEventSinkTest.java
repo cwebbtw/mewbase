@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 
 public class HBaseEventSinkTest extends MewbaseTestBase {
@@ -25,10 +26,23 @@ public class HBaseEventSinkTest extends MewbaseTestBase {
         EventSink hbSink = new HBaseEventSink();
 
         final String channelName = UUID.randomUUID().toString();
-        System.out.println("Table -> "+channelName);
         final String dataValue = UUID.randomUUID().toString();
         final BsonObject bsonEvent = new BsonObject().put("data", dataValue);
         hbSink.publishSync(channelName, bsonEvent);
+        
+        hbSink.close();
+    }
+
+
+    @Test  // Requires HBase to be running see mewbase wiki
+    public void testMultiEvent() throws IOException {
+
+        EventSink hbSink = new HBaseEventSink();
+
+        final String channelName = UUID.randomUUID().toString();
+        final BsonObject evt = new BsonObject();
+        IntStream.range(0, 10).forEach(i -> hbSink.publishSync(channelName, evt.put("evt",""+i)) );
+
         hbSink.close();
     }
 
