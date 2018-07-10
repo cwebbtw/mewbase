@@ -3,6 +3,8 @@ import sbt._
 object Dependencies {
 
   val resolutionRepos = Seq( )
+  val Http4sVersion = "0.18.12"
+  val CirceVersion = "0.9.3"
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
   def provided  (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
@@ -16,6 +18,16 @@ object Dependencies {
   val jackson     = "com.fasterxml.jackson.core" % "jackson-core" % "2.7.4"
   val jacksonData = "com.fasterxml.jackson.core" % "jackson-databind" % "2.7.4"
   val jacksonBson = "de.undercouch" % "bson4jackson" % "2.7.0"
+
+  val http4sBlazeServer = "org.http4s"      %% "http4s-blaze-server" % Http4sVersion
+  val http4sBlazeClient = "org.http4s"      %% "http4s-blaze-client" % Http4sVersion
+  val http4sCirce = "org.http4s"      %% "http4s-circe"        % Http4sVersion
+  val http4sDsl = "org.http4s"      %% "http4s-dsl"          % Http4sVersion
+  val http4sClient = "org.http4s"      %% "http4s-client"        % Http4sVersion
+
+  val circeParser = "io.circe" %% "circe-parser" % CirceVersion
+
+  val http4s = Seq(http4sBlazeServer, http4sDsl, http4sClient)
 
   // Logging  Config and Metrics
   val slf4j       = "org.slf4j" % "slf4j-log4j12" % "1.7.21"
@@ -47,7 +59,7 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.6"
 
   // Scala Test
-  def scalatest(scalaVersion: String) = "org.scalatest" %% "scalatest" % "3.0.5"
+  val scalatest = "org.scalatest" %% "scalatest" % "3.0.5"
 
 
 }
