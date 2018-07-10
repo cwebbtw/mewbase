@@ -35,15 +35,17 @@ public class HBaseEventSink implements EventSink {
     @Override
     public Long publishSync(String channelName, BsonObject event) {
         try {
-            Table table = ensureTable(channelName);
-            AtomicLong l = seqNums.computeIfAbsent(channelName, s -> new AtomicLong());
-            Put put = new Put(Bytes.toBytes( l.getAndIncrement()) );
+            final Table table = ensureTable(channelName);
+            final AtomicLong l = seqNums.computeIfAbsent(channelName, s -> new AtomicLong());
+            final Put put = new Put(Bytes.toBytes( l.get() ) );
             put.addColumn(colFamily,qualifier,event.encode().getBytes());
             table.put(put);
+            return l.getAndIncrement();
         } catch (Exception exp) {
             log.error("Failed to publish event",exp);
+            return EventSink.SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
         }
-        return EventSink.SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
+
     }
 
     @Override
@@ -73,7 +75,6 @@ public class HBaseEventSink implements EventSink {
         // Todo - Use local hash map to store "live" tables if the client API doesnt
         if (! admin.tableExists( tableName ) ) {
             createTable( tableName,  admin);
-            Thread.sleep(1000);
         }
         admin.close();
         Table table = connection.getTable(tableName);
