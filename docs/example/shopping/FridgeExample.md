@@ -7,14 +7,14 @@ This example gives a practical introduction to fundamental concepts in Mewbase:
 * Event Sinks
 * Projections
 
-We will model a set of Fridges (Refrigerators), which are always in either an "open" or a "closed" state.
+We will model a set of Fridges (Refrigerators), in which the doors are always in either an "open" or a "closed" state. We have choosen a very simple example in order to show some of the principles of Mewbase, rather than tackle a complex example that may obscure the core principles. You are of course able to extend the example to include other details and device related properties.
 
 * One part of our system emits an event to a Mewbase Event Sink, recording when a fridge door is opened or closed.
 
 ![](images/EmitEvent.png)
 
 
-* A Mewbase Projection Function models the current state of each fridge, in reaction to incoming events. The state is stored in a document, indexed within a binder
+* A Mewbase Projection Function models the current state of each fridge, in reaction to incoming events. The state is stored in a document, indexed within a binder.
 
 ![](images/ProjectionFunction.png)
 
@@ -39,8 +39,8 @@ try (
 
 | Resource  | Description   |
 |---|---|
-|EventSource   | A source of raw event data, could be an encoded file, a Kafka Broker, or NATS streaming server. This example will use an encoded file.<br/>Events can be <i>consumed</i> from an EventSource. |
-|EventSink     | A publisher of raw event data, could be an encoded file, a Kafka Broker, or NATS streaming server. This example writes events to the same file the EventSource reads events from.<br/>Events can be <i>published</i> to an EventSource.  |
+|EventSource   | A source of raw event data. This could be an encoded file, a Kafka Broker, NATS streaming server or other event store implementation. This example will use an encoded file.<br/>Events can be <i>consumed</i> from an EventSource. |
+|EventSink     | A publisher of raw event data, could be an encoded file, a Kafka Broker, NATS streaming server, or other. This example writes events to the same store that the EventSource reads events from.<br/>Events can be <i>published</i> to an EventSource.  |
 |BinderStore   | Persists a collection of binders. Each binder holds a collection of documents, indexed by a String. Each document is an object.  |
 |ProjectionManager | Reacts to events arriving at an EventSource, possibly altering the state of documents in a binder. |
 
