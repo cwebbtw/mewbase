@@ -18,6 +18,7 @@ object Dependencies {
   val jackson     = "com.fasterxml.jackson.core" % "jackson-core" % "2.7.4"
   val jacksonData = "com.fasterxml.jackson.core" % "jackson-databind" % "2.7.4"
   val jacksonBson = "de.undercouch" % "bson4jackson" % "2.7.0"
+  val jacksonJsr353 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr353" % "2.7.4"
 
   val http4sBlazeServer = "org.http4s"      %% "http4s-blaze-server" % Http4sVersion
   val http4sBlazeClient = "org.http4s"      %% "http4s-blaze-client" % Http4sVersion

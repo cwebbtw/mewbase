@@ -4,6 +4,7 @@ package io.mewbase.metrics;
 
 import io.mewbase.bson.BsonArray;
 import io.mewbase.bson.BsonObject;
+import io.mewbase.bson.BsonValue;
 import org.junit.Test;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public class MetricsRegistryTest {
         final BsonObject metersDoc = MetricsRegistry.allMetricsAsDocument();
 
         final BsonArray meters = metersDoc.getBsonArray("meters");
-        final Stream<BsonObject> metrsObjs = meters.getList().stream().map( m -> (BsonObject)m);
+        final Stream<BsonObject> metrsObjs = meters.getList().stream().map( m -> ((BsonValue.BsonObjectBsonValue)m).getValue());
         final Predicate<BsonObject> pred = (BsonObject meter) -> meter.getString("name").equals("jvm.classes.loaded");
 
         final List<BsonObject> classesLoaded = metrsObjs.filter(  pred ).collect(Collectors.toList());

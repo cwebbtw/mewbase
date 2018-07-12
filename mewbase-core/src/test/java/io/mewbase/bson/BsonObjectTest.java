@@ -26,7 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -1249,9 +1248,9 @@ public class BsonObjectTest {
     public void testRemove() {
         bsonObject.put("mystr", "bar");
         bsonObject.put("myint", 123);
-        assertEquals("bar", bsonObject.remove("mystr"));
+        assertEquals(BsonValue.of("bar"), bsonObject.remove("mystr"));
         assertTrue(bsonObject.isAbsent("mystr"));
-        assertEquals(123, bsonObject.remove("myint"));
+        assertEquals(BsonValue.of(123), bsonObject.remove("myint"));
         assertTrue(bsonObject.isAbsent("myint"));
         assertTrue(bsonObject.isEmpty());
     }
@@ -1262,19 +1261,19 @@ public class BsonObjectTest {
         bsonObject.put("quux", 123);
         BsonObject obj = createBsonObject();
         bsonObject.put("wibble", obj);
-        Iterator<Map.Entry<String, Object>> iter = bsonObject.iterator();
+        Iterator<Map.Entry<String, BsonValue>> iter = bsonObject.iterator();
         assertTrue(iter.hasNext());
-        Map.Entry<String, Object> entry = iter.next();
+        Map.Entry<String, BsonValue> entry = iter.next();
         assertEquals("foo", entry.getKey());
-        assertEquals("bar", entry.getValue());
+        assertEquals(BsonValue.of("bar"), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("quux", entry.getKey());
-        assertEquals(123, entry.getValue());
+        assertEquals(BsonValue.of(123), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("wibble", entry.getKey());
-        assertEquals(obj, entry.getValue());
+        assertEquals(BsonValue.of(obj), entry.getValue());
         assertFalse(iter.hasNext());
         iter.remove();
         assertFalse(obj.containsKey("wibble"));
@@ -1283,21 +1282,21 @@ public class BsonObjectTest {
 
     @Test
     public void testIteratorDoesntChangeObject() {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("nestedMap", new HashMap<>());
-        map.put("nestedList", new ArrayList<>());
+        Map<String, BsonValue> map = new LinkedHashMap<>();
+        map.put("nestedMap", BsonValue.of(new HashMap<>()));
+        map.put("nestedList", BsonValue.of(new ArrayList<>()));
         BsonObject obj = new BsonObject(map);
-        Iterator<Map.Entry<String, Object>> iter = obj.iterator();
-        Map.Entry<String, Object> entry1 = iter.next();
+        Iterator<Map.Entry<String, BsonValue>> iter = obj.iterator();
+        Map.Entry<String, BsonValue> entry1 = iter.next();
         assertEquals("nestedMap", entry1.getKey());
-        Object val1 = entry1.getValue();
-        assertTrue(val1 instanceof BsonObject);
-        Map.Entry<String, Object> entry2 = iter.next();
+        BsonValue val1 = entry1.getValue();
+        assertTrue(val1 instanceof BsonValue.BsonObjectBsonValue);
+        Map.Entry<String, BsonValue> entry2 = iter.next();
         assertEquals("nestedList", entry2.getKey());
-        Object val2 = entry2.getValue();
-        assertTrue(val2 instanceof BsonArray);
-        assertTrue(map.get("nestedMap") instanceof HashMap);
-        assertTrue(map.get("nestedList") instanceof ArrayList);
+        BsonValue val2 = entry2.getValue();
+        assertTrue(val2 instanceof BsonValue.BsonArrayBsonValue);
+        assertTrue(map.get("nestedMap") instanceof BsonValue.BsonObjectBsonValue);
+        assertTrue(map.get("nestedList") instanceof BsonValue.BsonArrayBsonValue);
     }
 
     @Test
@@ -1306,20 +1305,20 @@ public class BsonObjectTest {
         bsonObject.put("quux", 123);
         BsonObject obj = createBsonObject();
         bsonObject.put("wibble", obj);
-        List<Map.Entry<String, Object>> list = bsonObject.stream().collect(Collectors.toList());
-        Iterator<Map.Entry<String, Object>> iter = list.iterator();
+        List<Map.Entry<String, BsonValue>> list = bsonObject.stream().collect(Collectors.toList());
+        Iterator<Map.Entry<String, BsonValue>> iter = list.iterator();
         assertTrue(iter.hasNext());
-        Map.Entry<String, Object> entry = iter.next();
+        Map.Entry<String, BsonValue> entry = iter.next();
         assertEquals("foo", entry.getKey());
-        assertEquals("bar", entry.getValue());
+        assertEquals(BsonValue.of("bar"), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("quux", entry.getKey());
-        assertEquals(123, entry.getValue());
+        assertEquals(BsonValue.of(123), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("wibble", entry.getKey());
-        assertEquals(obj, entry.getValue());
+        assertEquals(BsonValue.of(obj), entry.getValue());
         assertFalse(iter.hasNext());
     }
 
@@ -1351,74 +1350,28 @@ public class BsonObjectTest {
     }
 
     @Test
-    public void testInvalidValsOnCopy1() {
-        Map<String, Object> invalid = new HashMap<>();
-        invalid.put("foo", new SomeClass());
-        BsonObject object = new BsonObject(invalid);
-        try {
-            object.copy();
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testInvalidValsOnCopy2() {
-        Map<String, Object> invalid = new HashMap<>();
-        Map<String, Object> invalid2 = new HashMap<>();
-        invalid2.put("foo", new SomeClass());
-        invalid.put("bar", invalid2);
-        BsonObject object = new BsonObject(invalid);
-        try {
-            object.copy();
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testInvalidValsOnCopy3() {
-        Map<String, Object> invalid = new HashMap<>();
-        List<Object> invalid2 = new ArrayList<>();
-        invalid2.add(new SomeClass());
-        invalid.put("bar", invalid2);
-        BsonObject object = new BsonObject(invalid);
-        try {
-            object.copy();
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-    }
-
-    class SomeClass {
-    }
-
-    @Test
     public void testGetMap() {
         bsonObject.put("foo", "bar");
         bsonObject.put("quux", 123);
         BsonObject obj = createBsonObject();
         bsonObject.put("wibble", obj);
-        Map<String, Object> map = bsonObject.getMap();
+        Map<String, BsonValue> map = bsonObject.getMap();
         map.remove("foo");
         assertFalse(bsonObject.containsKey("foo"));
-        map.put("bleep", "flarp");
+        map.put("bleep", BsonValue.of("flarp"));
         assertTrue(bsonObject.containsKey("bleep"));
         bsonObject.remove("quux");
         assertFalse(map.containsKey("quux"));
         bsonObject.put("wooble", "plink");
         assertTrue(map.containsKey("wooble"));
-        assertSame(obj, map.get("wibble"));
+        assertSame(BsonValue.of(obj), map.get("wibble"));
     }
 
     @Test
     public void testCreateFromMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("foo", "bar");
-        map.put("quux", 123);
+        Map<String, BsonValue> map = new HashMap<>();
+        map.put("foo", BsonValue.of("bar"));
+        map.put("quux", BsonValue.of(123));
         BsonObject obj = new BsonObject(map);
         assertEquals("bar", obj.getString("foo"));
         assertEquals(Integer.valueOf(123), obj.getInteger("quux"));
@@ -1427,10 +1380,10 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapCharSequence() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("foo", "bar");
-        map.put("quux", 123);
-        map.put("eeek", new StringBuilder("blah"));
+        Map<String, BsonValue> map = new HashMap<>();
+        map.put("foo", BsonValue.of("bar"));
+        map.put("quux", BsonValue.of(123));
+        map.put("eeek", BsonValue.of(new StringBuilder("blah")));
         BsonObject obj = new BsonObject(map);
         assertEquals("bar", obj.getString("foo"));
         assertEquals(Integer.valueOf(123), obj.getInteger("quux"));
@@ -1440,9 +1393,9 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedBsonObject() {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, BsonValue> map = new HashMap<>();
         BsonObject nestedObj = new BsonObject().put("foo", "bar");
-        map.put("nested", nestedObj);
+        map.put("nested", BsonValue.of(nestedObj));
         BsonObject obj = new BsonObject(map);
         BsonObject nestedRetrieved = obj.getBsonObject("nested");
         assertEquals("bar", nestedRetrieved.getString("foo"));
@@ -1450,10 +1403,10 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedMap() {
-        Map<String, Object> map = new HashMap<>();
-        Map<String, Object> nestedMap = new HashMap<>();
-        nestedMap.put("foo", "bar");
-        map.put("nested", nestedMap);
+        Map<String, BsonValue> map = new HashMap<>();
+        Map<String, BsonValue> nestedMap = new HashMap<>();
+        nestedMap.put("foo", BsonValue.of("bar"));
+        map.put("nested", BsonValue.of(nestedMap));
         BsonObject obj = new BsonObject(map);
         BsonObject nestedRetrieved = obj.getBsonObject("nested");
         assertEquals("bar", nestedRetrieved.getString("foo"));
@@ -1461,9 +1414,9 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedBsonArray() {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, BsonValue> map = new HashMap<>();
         BsonArray nestedArr = new BsonArray().add("foo");
-        map.put("nested", nestedArr);
+        map.put("nested", BsonValue.of(nestedArr));
         BsonObject obj = new BsonObject(map);
         BsonArray nestedRetrieved = obj.getBsonArray("nested");
         assertEquals("foo", nestedRetrieved.getString(0));
@@ -1471,9 +1424,9 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedList() {
-        Map<String, Object> map = new HashMap<>();
-        List<String> nestedArr = Arrays.asList("foo");
-        map.put("nested", nestedArr);
+        Map<String, BsonValue> map = new HashMap<>();
+        List<BsonValue> nestedArr = Arrays.asList(BsonValue.of("foo"));
+        map.put("nested", BsonValue.of(nestedArr));
         BsonObject obj = new BsonObject(map);
         BsonArray nestedRetrieved = obj.getBsonArray("nested");
         assertEquals("foo", nestedRetrieved.getString(0));
@@ -1527,6 +1480,24 @@ public class BsonObjectTest {
         }
     }
 
+    private void tryAdd(BsonArray array, Number value) {
+        if (value instanceof Integer) {
+            array.add((Integer) value);
+        }
+        else if (value instanceof Long) {
+            array.add((Long) value);
+        }
+        else if (value instanceof Double) {
+            array.add((Double) value);
+        }
+        else if (value instanceof Float) {
+            array.add((Float) value);
+        }
+        else {
+            throw new IllegalArgumentException("Unable to add " + value.getClass().getSimpleName() + " into BsonArray");
+        }
+    }
+
     private void assertNumberEquals(Number value1, Number value2) {
         BsonObject o1 = new BsonObject();
         tryPut(o1, "key", value1);
@@ -1537,8 +1508,10 @@ public class BsonObjectTest {
             fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
                     value2.getClass().getSimpleName() + ":" + value2);
         }
-        BsonArray a1 = new BsonArray().add(value1);
-        BsonArray a2 = new BsonArray().add(value2);
+        BsonArray a1 = new BsonArray();
+        tryAdd(a1, value1);
+        BsonArray a2 = new BsonArray();
+        tryAdd(a2, value2);
         if (!a1.equals(a2)) {
             fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
                     value2.getClass().getSimpleName() + ":" + value2);
@@ -1558,35 +1531,36 @@ public class BsonObjectTest {
 
     @Test
     public void testBsonObjectEquality() {
-        BsonObject obj = new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3)));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3))));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3L))));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", new BsonObject().put("def", 3))));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", new BsonObject().put("def", 3L))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 4))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", new BsonObject().put("def", 4))));
-        BsonArray array = new BsonArray(Collections.singletonList(Collections.singletonMap("def", 3)));
-        assertEquals(array, new BsonArray(Collections.singletonList(Collections.singletonMap("def", 3))));
-        assertEquals(array, new BsonArray(Collections.singletonList(Collections.singletonMap("def", 3L))));
-        assertEquals(array, new BsonArray(Collections.singletonList(new BsonObject().put("def", 3))));
-        assertEquals(array, new BsonArray(Collections.singletonList(new BsonObject().put("def", 3L))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(Collections.singletonMap("def", 4))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(new BsonObject().put("def", 4))));
+        BsonObject obj = new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3)))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3))))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3)))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3L)))));
+        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(4))))));
+        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 4)))));
+
+        BsonArray array = new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3)))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3))))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3)))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3L)))));
+        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(4))))));
+        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 4)))));
     }
 
     @Test
     public void testBsonObjectEquality2() {
         BsonObject obj1 = new BsonObject().put("arr", new BsonArray().add("x"));
-        List<Object> list = new ArrayList<>();
-        list.add("x");
-        Map<String, Object> map = new HashMap<>();
-        map.put("arr", list);
+        List<BsonValue> list = new ArrayList<>();
+        list.add(BsonValue.of("x"));
+        Map<String, BsonValue> map = new HashMap<>();
+        map.put("arr", BsonValue.of(list));
         BsonObject obj2 = new BsonObject(map);
-        Iterator<Map.Entry<String, Object>> iter = obj2.iterator();
+        Iterator<Map.Entry<String, BsonValue>> iter = obj2.iterator();
         // There was a bug where iteration of entries caused the underlying object to change resulting in a
         // subsequent equals changing
         while (iter.hasNext()) {
-            Map.Entry<String, Object> entry = iter.next();
+            Map.Entry<String, BsonValue> entry = iter.next();
         }
         assertEquals(obj2, obj1);
     }
@@ -1611,15 +1585,15 @@ public class BsonObjectTest {
         assertNull(removed);
 
         removed = obj.remove("simple");
-        assertTrue(removed instanceof String);
+        assertTrue(removed instanceof BsonValue.StringBsonValue);
 
         removed = obj.remove("object");
-        assertTrue(removed instanceof BsonObject);
-        assertEquals(((BsonObject)removed).getString("name"), "vert.x");
+        assertTrue(removed instanceof BsonValue.BsonObjectBsonValue);
+        assertEquals(((BsonValue.BsonObjectBsonValue)removed).getValue().getString("name"), "vert.x");
 
         removed = obj.remove("array");
-        assertTrue(removed instanceof BsonArray);
-        assertEquals(((BsonArray)removed).getDouble(0), 1.0, 0.0);
+        assertTrue(removed instanceof BsonValue.BsonArrayBsonValue);
+        assertEquals(((BsonValue.BsonArrayBsonValue)removed).getValue().getDouble(0), 1.0, 0.0);
     }
 
     @Test
@@ -1636,7 +1610,7 @@ public class BsonObjectTest {
             String key = entry.getKey();
             Object val = entry.getValue();
             assertEquals("object1", key);
-            assertTrue("Expecting BsonObject, found: " + val.getClass().getCanonicalName(), val instanceof BsonObject);
+            assertTrue("Expecting BsonObject, found: " + val.getClass().getCanonicalName(), val instanceof BsonValue.BsonObjectBsonValue);
         });
     }
 
