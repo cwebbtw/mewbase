@@ -93,6 +93,14 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         this.map = jsonObject.getMap();
     }
 
+    public boolean isNull(String key) {
+        return map.get(key) == null;
+    }
+
+    public boolean isAbsent(String key) {
+        return !map.containsKey(key);
+    }
+
     /**
      * Get the string value with the specified key
      *
@@ -265,23 +273,6 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
     }
 
     /**
-     * Get the value with the specified key, as an Object
-     *
-     * @param key the key to lookup
-     * @return the value
-     */
-    public Object getValue(String key) {
-        Objects.requireNonNull(key);
-        Object val = map.get(key);
-        if (val instanceof Map) {
-            val = new BsonObject((Map<String, Object>)val);
-        } else if (val instanceof List) {
-            val = new BsonArray((List)val);
-        }
-        return val;
-    }
-
-    /**
      * Like {@link #getString(String)} but specifying a default value to return if there is no entry.
      *
      * @param key the key to lookup
@@ -448,19 +439,6 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         Object val = map.get(key);
         return val != null || map.containsKey(key) ?
                 (val == null ? null : Instant.from(ISO_INSTANT.parse((String)val))) : def;
-    }
-
-    /**
-     * Like {@link #getValue(String)} but specifying a default value to return if there is no entry.
-     *
-     * @param key the key to lookup
-     * @param def the default value to use if the entry is not present
-     * @return the value or {@code def} if no entry present
-     */
-    public Object getValue(String key, Object def) {
-        Objects.requireNonNull(key);
-        Object val = getValue(key);
-        return val != null || map.containsKey(key) ? val : def;
     }
 
     /**
@@ -656,20 +634,6 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
     public BsonObject put(String key, Instant value) {
         Objects.requireNonNull(key);
         map.put(key, value == null ? null : ISO_INSTANT.format(value));
-        return this;
-    }
-
-    /**
-     * Put an Object into the JSON object with the specified key.
-     *
-     * @param key   the key
-     * @param value the value
-     * @return a reference to this, so the API can be used fluently
-     */
-    public BsonObject put(String key, Object value) {
-        Objects.requireNonNull(key);
-        value = Bson.checkAndCopy(value, false);
-        map.put(key, value);
         return this;
     }
 

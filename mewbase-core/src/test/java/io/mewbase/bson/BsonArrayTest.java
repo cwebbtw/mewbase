@@ -355,41 +355,41 @@ public class BsonArrayTest {
     @Test
     public void testGetValue() {
         bsonArray.add(123);
-        assertEquals(123, bsonArray.getValue(0));
-        bsonArray.add(123l);
-        assertEquals(123l, bsonArray.getValue(1));
+        assertEquals(Integer.valueOf(123), bsonArray.getInteger(0));
+        bsonArray.add(123L);
+        assertEquals(Long.valueOf(123L), bsonArray.getLong(1));
         bsonArray.add(123f);
-        assertEquals(123f, bsonArray.getValue(2));
+        assertEquals(Float.valueOf(123f), bsonArray.getFloat(2));
         bsonArray.add(123d);
-        assertEquals(123d, bsonArray.getValue(3));
+        assertEquals(Double.valueOf(123d), bsonArray.getDouble(3));
         bsonArray.add(false);
-        assertEquals(false, bsonArray.getValue(4));
+        assertEquals(false, bsonArray.getBoolean(4));
         bsonArray.add(true);
-        assertEquals(true, bsonArray.getValue(5));
+        assertEquals(true, bsonArray.getBoolean(5));
         bsonArray.add("bar");
-        assertEquals("bar", bsonArray.getValue(6));
+        assertEquals("bar", bsonArray.getString(6));
         BsonObject obj = new BsonObject().put("blah", "wibble");
         bsonArray.add(obj);
-        assertEquals(obj, bsonArray.getValue(7));
+        assertEquals(obj, bsonArray.getBsonObject(7));
         BsonArray arr = new BsonArray().add("blah").add("wibble");
         bsonArray.add(arr);
-        assertEquals(arr, bsonArray.getValue(8));
+        assertEquals(arr, bsonArray.getBsonArray(8));
         byte[] bytes = TestUtils.randomByteArray(100);
         bsonArray.add(bytes);
-        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)bsonArray.getValue(9))));
+        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)bsonArray.getString(9))));
         Instant now = Instant.now();
         bsonArray.add(now);
         assertEquals(now, bsonArray.getInstant(10));
         bsonArray.addNull();
-        assertNull(bsonArray.getValue(11));
+        assertNull(bsonArray.getString(11));
         try {
-            bsonArray.getValue(-1);
+            bsonArray.getString(-1);
             fail();
         } catch (IndexOutOfBoundsException e) {
             // OK
         }
         try {
-            bsonArray.getValue(12);
+            bsonArray.getString(12);
             fail();
         } catch (IndexOutOfBoundsException e) {
             // OK
@@ -400,7 +400,7 @@ public class BsonArrayTest {
         innerMap.put("blah", "wibble");
         list.add(innerMap);
         bsonArray = new BsonArray(list);
-        obj = (BsonObject)bsonArray.getValue(0);
+        obj = bsonArray.getBsonObject(0);
         assertEquals("wibble", obj.getString("blah"));
         // BsonObject with inner List
         list = new ArrayList<>();
@@ -408,7 +408,7 @@ public class BsonArrayTest {
         innerList.add("blah");
         list.add(innerList);
         bsonArray = new BsonArray(list);
-        arr = (BsonArray)bsonArray.getValue(0);
+        arr = bsonArray.getBsonArray(0);
         assertEquals("blah", arr.getString(0));
     }
 

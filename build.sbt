@@ -123,7 +123,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       slf4j, slf4jAPI, lbConfig, micrometer, // logging, config, metrics
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
-      vertx, vertxAuth, vertxWeb, // REST frameworks,
+      vertx, // REST frameworks,
     ),
     libraryDependencies ++= Dependencies.test(
       junit, junitIntf, vertxUnit, restAssured
@@ -196,6 +196,9 @@ lazy val examplesJava = Project("examples-java", file("examples-java"))
   .dependsOn(mewbaseJava, mewbaseRestVertx)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
+  .settings(
+    libraryDependencies += vertxWeb
+  )
 
 lazy val examplesScala = Project("examples-scala", file("examples-scala"))
   .dependsOn(mewbaseScala % "compile->compile;test->test", mewbaseRestHttp4s)

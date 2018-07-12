@@ -233,22 +233,6 @@ public class BsonArray implements Iterable<Object> {
     }
 
     /**
-     * Get the Object value at position {@code pos} in the array.
-     *
-     * @param pos the position in the array
-     * @return the Integer, or null if a null value present
-     */
-    public Object getValue(int pos) {
-        Object val = list.get(pos);
-        if (val instanceof Map) {
-            val = new BsonObject((Map<String,Object>)val);
-        } else if (val instanceof List) {
-            val = new BsonArray((List<Object>)val);
-        }
-        return val;
-    }
-
-    /**
      * Is there a null value at position pos?
      *
      * @param pos the position in the array
