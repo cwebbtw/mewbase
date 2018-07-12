@@ -172,7 +172,7 @@ lazy val mewbaseRestVertx = Project("mewbase-rest-vertx", file("mewbase-rest-ver
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
   .settings(
-    libraryDependencies += vertx
+    libraryDependencies ++= Seq(vertx, vertxWeb)
   )
 
 
@@ -196,9 +196,6 @@ lazy val examplesJava = Project("examples-java", file("examples-java"))
   .dependsOn(mewbaseJava, mewbaseRestVertx)
   .settings(basicSettings: _*)
   .settings(noPublishing: _*)
-  .settings(
-    libraryDependencies += vertxWeb
-  )
 
 lazy val examplesScala = Project("examples-scala", file("examples-scala"))
   .dependsOn(mewbaseScala % "compile->compile;test->test", mewbaseRestHttp4s)
