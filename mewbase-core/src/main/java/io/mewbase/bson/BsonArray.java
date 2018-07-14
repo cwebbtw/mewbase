@@ -224,6 +224,12 @@ public class BsonArray implements Iterable<BsonValue> {
         return getBsonValue(pos).isNull();
     }
 
+    public BsonArray add(BsonValue value) {
+        Objects.requireNonNull(value);
+        list.add(value);
+        return this;
+    }
+
     /**
      * Add an enum to the JSON array.
      * <p>

@@ -411,6 +411,12 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
         return this;
     }
 
+    public BsonObject put(String key, BsonValue value) {
+        Objects.requireNonNull(key);
+        map.put(key, value);
+        return this;
+    }
+
     /**
      * Put an CharSequence into the JSON object with the specified key.
      *
