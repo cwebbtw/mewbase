@@ -2,9 +2,9 @@ package io.mewbase.rest.http4s
 
 import cats.Monad
 import cats.effect.Sync
-import io.mewbase.bson.{BsonArray, BsonObject}
-import io.vertx.core.json.{JsonArray, JsonObject}
-import org.http4s.{DecodeFailure, DecodeResult, EntityDecoder, EntityEncoder, InvalidMessageBodyFailure, MediaType}
+import io.mewbase.bson.{BsonArray, BsonCodec, BsonObject}
+import io.vertx.core.json.JsonArray
+import org.http4s.{DecodeFailure, EntityDecoder, EntityEncoder, InvalidMessageBodyFailure, MediaType}
 import org.http4s.headers.`Content-Type`
 
 import scala.util.Try
@@ -18,11 +18,7 @@ object BsonEntityCodec {
 
   implicit def BsonObjectEntityDecoder[F[_]](implicit F: Sync[F]): EntityDecoder[F, BsonObject] =
     EntityDecoder.text.transform { stringDecode =>
-      stringDecode.right.flatMap[DecodeFailure, JsonObject] { string =>
-        def buildError(throwable: Throwable): DecodeFailure =
-          InvalidMessageBodyFailure(throwable.getMessage, Some(throwable))
-        Try(new JsonObject(string)).toEither.left.map(buildError)
-      }.map(new BsonObject(_))
+      stringDecode.map(BsonCodec.jsonStringToBsonObject)
     }
 
   implicit def BsonArrayEncoder[F[_]](implicit F: Monad[F]): EntityEncoder[F, BsonArray] =

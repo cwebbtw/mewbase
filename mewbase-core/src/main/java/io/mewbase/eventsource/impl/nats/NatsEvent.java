@@ -1,5 +1,6 @@
 package io.mewbase.eventsource.impl.nats;
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.nats.stan.Message;
@@ -18,7 +19,7 @@ class NatsEvent implements Event {
 
     @Override
     public BsonObject getBson() {
-            return new BsonObject(Buffer.buffer(msg.getData()));
+            return BsonCodec.bsonBytesToBsonObject(msg.getData());
     }
 
     @Override

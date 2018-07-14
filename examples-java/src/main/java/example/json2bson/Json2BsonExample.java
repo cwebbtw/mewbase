@@ -1,6 +1,7 @@
 package example.json2bson;
 
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
@@ -29,7 +30,7 @@ public class Json2BsonExample {
 
         // make a JsonObject from the String could one line this
         JsonObject jobj = new JsonObject(json);
-        BsonObject bobj = new BsonObject(jobj);
+        BsonObject bobj = BsonCodec.jsonStringToBsonObject(jobj.encode());
 
         // compare encoding size just FYI not necessary
         System.out.println("Size of Json :"+json.length()+" Size of Bson :"+bobj.encode().length());

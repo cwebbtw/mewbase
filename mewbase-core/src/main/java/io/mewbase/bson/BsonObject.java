@@ -50,16 +50,6 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
     private Map<String, BsonValue> map;
 
     /**
-     * Create an instance from a Buffer
-     *
-     * @param buffer the buffer containing the BSON
-     */
-    public BsonObject(Buffer buffer) {
-        fromBson(new ByteArrayInputStream(buffer.getBytes()));
-    }
-
-
-    /**
      * Create an instance from a byte array
      *
      * @param buffer the byte array containing the BSON
@@ -83,16 +73,6 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      */
     public BsonObject(Map<String, BsonValue> map) {
         this.map = map;
-    }
-
-    /**
-     * Create an instance from a JsonObject
-     *
-     * @param jsonObject the JsonObject to create the BsonObject from
-     */
-    public BsonObject(JsonObject jsonObject) {
-        final Map<String, Object> untypedMap = jsonObject.getMap();
-        this.map = Maps.transformValues(untypedMap, BsonValue::fromObjectUnsafe);
     }
 
     public boolean isNull(String key) {

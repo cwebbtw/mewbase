@@ -1,6 +1,7 @@
 package io.mewbase.rest.vertx;
 
 import io.mewbase.bson.BsonArray;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.rest.RestServiceAction;
 import io.vertx.ext.web.RoutingContext;
@@ -18,7 +19,7 @@ public class VertxRestServiceActionVisitor implements RestServiceAction.Visitor<
     }
 
     public BsonObject bodyAsBson() {
-        return rc.getBody().length() == 0 ? new BsonObject() : new BsonObject(rc.getBodyAsJson());
+        return rc.getBody().length() == 0 ? new BsonObject() : BsonCodec.jsonStringToBsonObject(rc.getBodyAsString());
     }
 
     private void sendResponse(Stream<String> response) {

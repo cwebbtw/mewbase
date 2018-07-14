@@ -8,6 +8,7 @@ import de.undercouch.bson4jackson.BsonModule;
 
 import javax.json.*;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.function.Consumer;
 
 public class BsonCodec {
@@ -16,6 +17,12 @@ public class BsonCodec {
 
     static {
         objectMapper.registerModules(new BsonModule(), new JSR353Module());
+    }
+
+    public static BsonObject jsonStringToBsonObject(String jsonString) {
+        final StringReader stringReader = new StringReader(jsonString);
+        final JsonObject jsonObject = Json.createReader(stringReader).readObject();
+        return jsonObjectToBsonObject(jsonObject);
     }
 
     public static byte[] jsonObjectToBsonBytes(JsonObject jsonObject) {
@@ -32,6 +39,14 @@ public class BsonCodec {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static byte[] bsonObjectToBsonBytes(BsonObject bsonObject) {
+        return jsonObjectToBsonBytes(bsonObjectToJsonObject(bsonObject));
+    }
+
+    public static BsonObject bsonBytesToBsonObject(byte[] bytes) {
+        return jsonObjectToBsonObject(bsonBytesToJsonObject(bytes));
     }
 
     public static JsonObject bsonBytesToJsonObject(byte[] bytes) {
@@ -218,7 +233,7 @@ public class BsonCodec {
         }
     }
 
-    public static BsonValue toBsonValue(JsonValue jsonValue) {
+    private static BsonValue toBsonValue(JsonValue jsonValue) {
         switch (jsonValue.getValueType()) {
             case STRING:
                 return BsonValue.of(((JsonString) jsonValue).getString());
