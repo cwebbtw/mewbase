@@ -1,6 +1,7 @@
 package io.mewbase.stream;
 
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 
 import java.math.BigInteger;
@@ -83,7 +84,7 @@ public class DeDuper {
     private BigInteger hash(BsonObject event) {
         try { // poss "SHA-512","MD5"
             final MessageDigest md = MessageDigest.getInstance("MD5");
-            return new BigInteger(1,md.digest(event.encode().getBytes()));
+            return new BigInteger(1,md.digest(BsonCodec.bsonObjectToBsonBytes(event)));
         }
         catch(Exception exp) {
             throw new RuntimeException("Could not hash event");

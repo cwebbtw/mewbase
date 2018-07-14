@@ -1,6 +1,7 @@
 package io.mewbase.eventsource.impl.file;
 
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.impl.EventUtils;
 import io.netty.buffer.ByteBuf;
@@ -95,7 +96,7 @@ public interface FileEventUtils {
 
     static byte[] eventToByteArray(final BsonObject event) {
         ByteBuf headedBuf = Unpooled.buffer();
-        final byte [] bytes =  event.encode().getBytes();
+        final byte [] bytes = BsonCodec.bsonObjectToBsonBytes(event);
         headedBuf.writeLong(Instant.now().toEpochMilli());
         headedBuf.writeLong(EventUtils.checksum(bytes));
         headedBuf.writeBytes(bytes);

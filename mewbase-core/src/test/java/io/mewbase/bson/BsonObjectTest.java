@@ -1208,7 +1208,7 @@ public class BsonObjectTest {
     @Test
     public void testEncodeSize() throws Exception {
         bsonObject.put("foo", "bar");
-        Buffer encoded = bsonObject.encode();
+        Buffer encoded = Buffer.buffer(BsonCodec.bsonObjectToBsonBytes(bsonObject));
         int length = encoded.getIntLE(0);
         assertEquals(encoded.length(), length);
     }

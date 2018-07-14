@@ -19,13 +19,9 @@
 
 package io.mewbase.bson;
 
-import com.google.common.collect.Maps;
 import io.mewbase.binders.KeyVal;
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
-import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -50,16 +46,6 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
     private Map<String, BsonValue> map;
 
     /**
-     * Create an instance from a byte array
-     *
-     * @param buffer the byte array containing the BSON
-     */
-    public BsonObject(byte []  buffer) {
-        fromBson(new ByteArrayInputStream(buffer));
-    }
-
-
-    /**
      * Create a new, empty instance
      */
     public BsonObject() {
@@ -71,7 +57,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      *
      * @param map the map to create the instance from.
      */
-    public BsonObject(Map<String, BsonValue> map) {
+    BsonObject(Map<String, BsonValue> map) {
         this.map = map;
     }
 
@@ -584,27 +570,6 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
     }
 
     /**
-     * Encode this JSON object as a string.
-     *
-     * @return the string encoding.
-     */
-    public void encode(OutputStream outputStream) {
-        Bson.encode(map, outputStream);
-    }
-
-    public Buffer encode() {
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Bson.encode(map, os);
-            os.flush();
-            return Buffer.buffer(os.toByteArray());
-        } catch (IOException e) {
-            throw new VertxException(e);
-        }
-    }
-
-
-    /**
      * Copy the JSON object
      *
      * @return a copy of the object
@@ -717,11 +682,6 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
     @Override
     public int hashCode() {
         return Objects.hash(map);
-    }
-
-    private void fromBson(InputStream inputStream) {
-        Map<String, Object> untypedMap = (Map<String, Object>) Bson.decodeValue(inputStream, Map.class);
-        this.map = Maps.transformValues(untypedMap, BsonValue::fromObjectUnsafe);
     }
 
 }

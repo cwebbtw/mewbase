@@ -4,6 +4,7 @@ package io.mewbase.binders.impl.filestore;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public class FileBinder extends StreamableBinder implements Binder {
             if (file.exists()) {
                 try {
                     byte[] buffer = Files.readAllBytes(file.toPath());
-                    doc = new BsonObject(buffer);
+                    doc = BsonCodec.bsonBytesToBsonObject(buffer);
                     log.debug("Read Document " + id + " : " + doc);
                 } catch (Exception exp) {
                     log.error("Error getting document with key : " + id);
@@ -80,7 +81,7 @@ public class FileBinder extends StreamableBinder implements Binder {
     @Override
     public CompletableFuture<Boolean> put(final String id, final BsonObject doc) {
         final File file = new File(binderDir, id);
-        final byte[] valBytes = doc.encode().getBytes();
+        final byte[] valBytes = BsonCodec.bsonObjectToBsonBytes(doc);
 
         CompletableFuture<Boolean> fut = new CompletableFuture<>();
         stexec.submit( () -> {
@@ -141,7 +142,7 @@ public class FileBinder extends StreamableBinder implements Binder {
                 for (Path entry: stream) {
                     String key = entry.getFileName().toString();
                     byte[] buffer = Files.readAllBytes(entry);
-                    final BsonObject doc = new BsonObject(buffer);
+                    final BsonObject doc = BsonCodec.bsonBytesToBsonObject(buffer);
                     KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
                     if (filter.test(kv)) resultSet.add(kv);
                 }

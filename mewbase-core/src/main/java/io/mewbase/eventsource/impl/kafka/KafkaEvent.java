@@ -1,5 +1,6 @@
 package io.mewbase.eventsource.impl.kafka;
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.mewbase.eventsource.impl.EventUtils;
@@ -25,7 +26,7 @@ public class KafkaEvent implements Event {
 
     @Override
     public BsonObject getBson() {
-        if (event == null) event = new BsonObject(eventBuf);
+        if (event == null) event = BsonCodec.bsonBytesToBsonObject(eventBuf);
         return event;
     }
 

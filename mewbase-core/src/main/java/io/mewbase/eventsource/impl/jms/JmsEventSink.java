@@ -2,6 +2,7 @@ package io.mewbase.eventsource.impl.jms;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 import org.slf4j.Logger;
@@ -97,7 +98,7 @@ public class JmsEventSink implements EventSink {
         final Destination destination = jmsSession.createQueue(channelName);
         final MessageProducer msgProducer = jmsSession.createProducer(destination);
         final BytesMessage msg = jmsSession.createBytesMessage();
-        msg.writeBytes(event.encode().getBytes());
+        msg.writeBytes(BsonCodec.bsonObjectToBsonBytes(event));
         msgProducer.send(msg);
         return SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
     }

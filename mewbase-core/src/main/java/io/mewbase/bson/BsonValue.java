@@ -1,8 +1,5 @@
 package io.mewbase.bson;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,43 +8,6 @@ import java.util.function.Function;
 public abstract class BsonValue {
 
     private BsonValue() {
-    }
-
-    public static BsonValue fromObjectUnsafe(Object object) {
-        if (object == null) {
-            return NullBsonValue.INSTANCE;
-        }
-        else if (object instanceof String) {
-            return of((String) object);
-        }
-        else if (object instanceof Integer) {
-            return of((Integer) object);
-        }
-        else if (object instanceof java.lang.Long) {
-            return of((java.lang.Long) object);
-        }
-        else if (object instanceof Double) {
-            return of((Double) object);
-        }
-        else if (object instanceof Float) {
-            return of((Float) object);
-        }
-        else if (object instanceof Boolean) {
-            return of((Boolean) object);
-        }
-        else if (object instanceof Map<?, ?>) {
-            final Map<String, Object> objectMap = (Map<String, Object>) object;
-            final Map<String, BsonValue> bsonValueMap = Maps.transformValues(objectMap, BsonValue::fromObjectUnsafe);
-            return of(bsonValueMap);
-        }
-        else if (object instanceof List<?>) {
-            final List<Object> objectList= (List<Object>) object;
-            final List<BsonValue> bsonValueList = Lists.transform(objectList, BsonValue::fromObjectUnsafe);
-            return of(bsonValueList);
-        }
-        else {
-            throw new IllegalArgumentException("Could not convert value of a " + object.getClass().getSimpleName() + " to a BsonValue");
-        }
     }
 
     public interface Visitor<Res> {

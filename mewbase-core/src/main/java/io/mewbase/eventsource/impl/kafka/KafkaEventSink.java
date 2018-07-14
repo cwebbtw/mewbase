@@ -2,6 +2,7 @@ package io.mewbase.eventsource.impl.kafka;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
@@ -81,7 +82,7 @@ public class KafkaEventSink implements EventSink {
      * @return
      */
     private ProducerRecord<String, byte[]> producerRecord(final String channelName, final BsonObject event) {
-        final byte [] eventBytes = event.encode().getBytes();
+        final byte [] eventBytes = BsonCodec.bsonObjectToBsonBytes(event);
         return new ProducerRecord<>(channelName, channelName, eventBytes);
     }
 

@@ -83,7 +83,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
     public CompletableFuture<Boolean> put(final String id, final BsonObject doc) {
         CompletableFuture<Boolean> fut = CompletableFuture.supplyAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
-            byte[] valBytes = doc.encode().getBytes();
+            byte[] valBytes = BsonCodec.bsonObjectToBsonBytes(doc);
             final ByteBuffer val = allocateDirect(valBytes.length);
             val.put(valBytes).flip();
             synchronized (this) {
