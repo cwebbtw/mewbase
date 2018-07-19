@@ -33,20 +33,7 @@ public class HBaseEventSource implements EventSource {
     public HBaseEventSource() throws IOException {
 
     }
-
-
-    // For prototype purposes
-    public Long publishSync(String channelName, BsonObject event) {
-        try {
-            final Table table = ensureTable(channelName);
-
-        } catch (Exception exp) {
-            log.error("Failed to publish event",exp);
-            return EventSink.SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
-        }
-
-    }
-
+    
 
     @Override
     public CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler) {
@@ -62,8 +49,6 @@ public class HBaseEventSource implements EventSource {
     public CompletableFuture<Subscription> subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
         // TODO
         // final Table table = ensureTable(channelName);
-
-
         return null;
     }
 
