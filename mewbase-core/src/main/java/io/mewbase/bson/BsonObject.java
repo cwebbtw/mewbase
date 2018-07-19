@@ -634,32 +634,26 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
         return this;
     }
 
-    /**
-     * Encode this to a String
-     *
-     * @return the string form
-     */
-    public String encodeToString() {
-        return toJsonObject().encode();
-    }
-
     public static BsonObject from(Stream<KeyVal<String, BsonObject>> iterable) {
         final BsonObject result = new BsonObject();
         iterable.forEach(kv -> result.put(kv.getKey(), kv.getValue()));
         return result;
     }
-    /**
-     * Convert this to a JsonObject
-     *
-     * @return the equivalent JsonObject
-     */
-    public JsonObject toJsonObject() {
-        return VertxJsonObjectValueVisitor.build(this);
-    }
 
     @Override
     public String toString() {
-        return encodeToString();
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("BsonObject{");
+
+        final List<String> elements = new ArrayList<>();
+        for (Map.Entry<String, BsonValue> entry : map.entrySet()) {
+            elements.add(entry.getKey() + ": " + entry.getValue().toString());
+        }
+
+        stringBuilder.append(String.join(", ", elements));
+        stringBuilder.append("}");
+
+        return stringBuilder.toString();
     }
 
     /**

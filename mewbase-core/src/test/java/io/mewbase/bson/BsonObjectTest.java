@@ -1184,12 +1184,10 @@ public class BsonObjectTest {
     }
 
     @Test
-    public void testEncodeToString() throws Exception {
+    public void testJsonEncoding() throws Exception {
         bsonObject.put("mystr", "foo");
         bsonObject.put("mycharsequence", new StringBuilder("oob"));
-        bsonObject.put("myint", 123);
-        bsonObject.put("mylong", 1234l);
-        bsonObject.put("myfloat", 1.23f);
+        bsonObject.put("mylong", 1234L);
         bsonObject.put("mydouble", 2.34d);
         bsonObject.put("myboolean", true);
         byte[] bytes = new byte[] {4, 7, 89, 32, 24};
@@ -1198,11 +1196,12 @@ public class BsonObjectTest {
         bsonObject.put("myinstant", now);
         bsonObject.putNull("mynull");
         bsonObject.put("myobj", new BsonObject().put("foo", "bar"));
-        bsonObject.put("myarr", new BsonArray().add("foo").add(123));
-        String str = bsonObject.encodeToString();
-        assertEquals("{\"myboolean\":true,\"myfloat\":1.23,\"myobj\":{\"foo\":\"bar\"},\"mylong\":1234,\"mydou" +
-                "ble\":2.34,\"mycharsequence\":\"oob\",\"mybinary\":\"BAdZIBg=\",\"myinstant\":\"2484-06-20T13:18:32.63" +
-                "5Z\",\"myint\":123,\"mystr\":\"foo\",\"myarr\":[\"foo\",123],\"mynull\":null}", str);
+        bsonObject.put("myarr", new BsonArray().add("foo").add(123L));
+        final String jsonString = BsonCodec.bsonObjectToJsonObject(bsonObject).toString();
+        final javax.json.JsonReader reader = javax.json.Json.createReader(new StringReader(jsonString));
+        final BsonObject parsed = BsonCodec.jsonObjectToBsonObject(reader.readObject());
+
+        assertEquals(bsonObject, parsed);
     }
 
     @Test

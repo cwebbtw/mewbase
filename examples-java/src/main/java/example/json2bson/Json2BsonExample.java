@@ -47,7 +47,7 @@ public class Json2BsonExample {
         CountDownLatch cdl = new CountDownLatch(1);
         // Grab the event from the top of the stream and convert it to a json String
         src.subscribeFromMostRecent(CHANNEL_NAME, event -> {
-            String result = event.getBson().encodeToString();
+            String result = BsonCodec.bsonObjectToJsonObject(event.getBson()).toString();
             // check it is equivalent to the original string
             System.out.println("Equivalent : "+ areEquivalentJson(json,result));
             cdl.countDown();

@@ -18,11 +18,6 @@
 
 package io.mewbase.bson;
 
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
-
-import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -47,15 +42,6 @@ public class BsonArray implements Iterable<BsonValue> {
     private List<BsonValue> list;
 
     /**
-     * Create an instance from a buffer
-     *
-     * @param bson the buffer containing the BSON
-     */
-    public BsonArray(Buffer bson) {
-        fromBson(new ByteArrayInputStream(bson.getBytes()));
-    }
-
-    /**
      * Create an empty instance
      */
     public BsonArray() {
@@ -67,7 +53,7 @@ public class BsonArray implements Iterable<BsonValue> {
      *
      * @param list
      */
-    public BsonArray(List<BsonValue> list) {
+    BsonArray(List<BsonValue> list) {
         this.list = list;
     }
 
@@ -474,61 +460,6 @@ public class BsonArray implements Iterable<BsonValue> {
         return list.iterator();
     }
 
-    /**
-     * Encode the BSON object as a buffer
-     *
-     * @return the buffer
-     */
-    public Buffer encode() {
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Bson.encode(list, os);
-            os.flush();
-            return Buffer.buffer(os.toByteArray());
-        } catch (IOException e) {
-            throw new VertxException(e);
-        }
-    }
-
-    /**
-     * Encode this BSON object in an output stream
-     *
-     * @return the string encoding.
-     */
-    public void encode(OutputStream outputStream) {
-        Bson.encode(list, outputStream);
-    }
-
-    /**
-     * Encode this to a String
-     *
-     * @return the string form
-     */
-    public String encodeToString() {
-        return toJsonArray().encode();
-    }
-
-    /**
-     * Convert this into a JsonArray
-     *
-     * @return the equivalent JsonArray
-     */
-    public JsonArray toJsonArray() {
-        List<Object> l = new ArrayList<>();
-        for (Object o: list) {
-            if (o instanceof BsonObject) {
-                BsonObject bo = (BsonObject)o;
-                l.add(bo.toJsonObject());
-            } else if (o instanceof BsonArray) {
-                BsonArray ba = (BsonArray)o;
-                l.add(ba.toJsonArray());
-            } else {
-                l.add(o);
-            }
-        }
-        return new JsonArray(l);
-    }
-
     public static BsonArray from(Stream<String> stringStream) {
         final BsonArray result = new BsonArray();
         stringStream.forEach(result::add);
@@ -537,9 +468,18 @@ public class BsonArray implements Iterable<BsonValue> {
 
     @Override
     public String toString() {
-        return encodeToString();
-    }
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("BsonArray{");
 
+        final List<String> elements = new ArrayList<>();
+        for (BsonValue value : list) {
+            elements.add(value.toString());
+        }
+
+        stringBuilder.append(String.join(", ", elements));
+        stringBuilder.append("}");
+        return stringBuilder.toString();
+    }
 
     /**
      * Make a copy of the JSON array
@@ -561,11 +501,6 @@ public class BsonArray implements Iterable<BsonValue> {
      */
     public Stream<BsonValue> stream() {
         return Bson.asStream(iterator());
-    }
-
-
-    private void fromBson(InputStream bson) {
-        list = Bson.decodeValue(bson, List.class);
     }
 
     @Override

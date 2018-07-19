@@ -790,9 +790,9 @@ public class BsonArrayTest {
 
     @Test
     public void testInvalidJson() {
-        Buffer invalid = Buffer.buffer(TestUtils.randomByteArray(100));
+        byte[] invalid = TestUtils.randomByteArray(100);
         try {
-            new BsonArray(invalid);
+            BsonCodec.bsonBytesToJsonArray(invalid);
             fail();
         } catch (Exception e) {
             // OK
