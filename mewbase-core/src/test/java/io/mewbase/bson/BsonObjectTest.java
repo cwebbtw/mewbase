@@ -148,11 +148,11 @@ public class BsonObjectTest {
         }
         // Put as different Number types
         bsonObject.put("foo", 123);
-        assertEquals(Long.valueOf(123l), bsonObject.getLong("foo"));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo"));
         bsonObject.put("foo", 123d);
-        assertEquals(Long.valueOf(123l), bsonObject.getLong("foo"));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo"));
         bsonObject.put("foo", 123f);
-        assertEquals(Long.valueOf(123l), bsonObject.getLong("foo"));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo"));
         bsonObject.put("foo", Long.MAX_VALUE);
         assertEquals(Long.valueOf(Long.MAX_VALUE), bsonObject.getLong("foo"));
 
@@ -1435,20 +1435,20 @@ public class BsonObjectTest {
     @Test
     public void testNumberEquality() {
         assertNumberEquals(4, 4);
-        assertNumberNotEquals(4, 4f);
-        assertNumberNotEquals(4, 4D);
+        assertNumberEquals(4, 4f);
+        assertNumberEquals(4, 4D);
         assertNumberEquals((long)4, (long)4);
-        assertNumberNotEquals((long)4, 4f);
-        assertNumberNotEquals((long)4, 4D);
+        assertNumberEquals((long)4, 4f);
+        assertNumberEquals((long)4, 4D);
         assertNumberEquals(4f, 4f);
-        assertNumberNotEquals(4f, 4D);
+        assertNumberEquals(4f, 4D);
         assertNumberEquals(4D, 4D);
         assertNumberEquals(4.1D, 4.1D);
         assertNumberEquals(4.1f, 4.1f);
         assertNumberNotEquals(4.1f, 4.1D);
         assertNumberEquals(4.5D, 4.5D);
         assertNumberEquals(4.5f, 4.5f);
-        assertNumberNotEquals(4.5f, 4.5D);
+        assertNumberEquals(4.5f, 4.5D);
         assertNumberNotEquals(4, 5);
         assertNumberNotEquals(4, (long)5);
         assertNumberNotEquals(4, 5D);
@@ -1532,17 +1532,17 @@ public class BsonObjectTest {
     public void testBsonObjectEquality() {
         BsonObject obj = new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3)))));
         assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3))))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
         assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3)))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3L)))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3L)))));
         assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(4))))));
         assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 4)))));
 
         BsonArray array = new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3)))));
         assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3))))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
         assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3)))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3L)))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3L)))));
         assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(4))))));
         assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 4)))));
     }

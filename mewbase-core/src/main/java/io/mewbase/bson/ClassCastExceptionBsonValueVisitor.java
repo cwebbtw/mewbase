@@ -13,82 +13,43 @@ abstract class ClassCastExceptionBsonValueVisitor<T> implements BsonValue.Visito
         }
     };
     static final BsonValue.Visitor<Integer> integerVisitor = new ClassCastExceptionBsonValueVisitor<Integer>() {
+
         @Override
         public Integer visit(BsonValue.NullBsonValue nullValue) {
             return null;
         }
 
         @Override
-        public Integer visit(BsonValue.IntBsonValue value) {
-            return value.getValue();
+        public Integer visit(BsonValue.BigDecimalBsonValue value) {
+            return value.getValue().intValue();
         }
 
-        @Override
-        public Integer visit(BsonValue.LongBsonValue value) {
-            return (int) value.getValue();
-        }
-
-        @Override
-        public Integer visit(BsonValue.DoubleBsonValue value) {
-            return (int) value.getValue();
-        }
-
-        @Override
-        public Integer visit(BsonValue.FloatBsonValue value) {
-            return (int) value.getValue();
-        }
     };
     static final BsonValue.Visitor<Long> longVisitor = new ClassCastExceptionBsonValueVisitor<Long>() {
+
         @Override
         public Long visit(BsonValue.NullBsonValue nullValue) {
             return null;
         }
 
         @Override
-        public Long visit(BsonValue.IntBsonValue value) {
-            return (long) value.getValue();
+        public Long visit(BsonValue.BigDecimalBsonValue value) {
+            return value.getValue().longValue();
         }
 
-        @Override
-        public Long visit(BsonValue.LongBsonValue value) {
-            return value.getValue();
-        }
-
-        @Override
-        public Long visit(BsonValue.DoubleBsonValue value) {
-            return (long) value.getValue();
-        }
-
-        @Override
-        public Long visit(BsonValue.FloatBsonValue value) {
-            return (long) value.getValue();
-        }
     };
     static final BsonValue.Visitor<Double> doubleVisitor = new ClassCastExceptionBsonValueVisitor<Double>() {
+
         @Override
         public Double visit(BsonValue.NullBsonValue nullValue) {
             return null;
         }
 
         @Override
-        public Double visit(BsonValue.IntBsonValue value) {
-            return (double) value.getValue();
+        public Double visit(BsonValue.BigDecimalBsonValue value) {
+            return value.getValue().doubleValue();
         }
 
-        @Override
-        public Double visit(BsonValue.LongBsonValue value) {
-            return (double) value.getValue();
-        }
-
-        @Override
-        public Double visit(BsonValue.DoubleBsonValue value) {
-            return value.getValue();
-        }
-
-        @Override
-        public Double visit(BsonValue.FloatBsonValue value) {
-            return (double) value.getValue();
-        }
     };
     static final BsonValue.Visitor<Float> floatVisitor = new ClassCastExceptionBsonValueVisitor<Float>() {
         @Override
@@ -96,25 +57,12 @@ abstract class ClassCastExceptionBsonValueVisitor<T> implements BsonValue.Visito
             return null;
         }
 
-        @Override
-        public Float visit(BsonValue.IntBsonValue value) {
-            return (float) value.getValue();
-        }
 
         @Override
-        public Float visit(BsonValue.LongBsonValue value) {
-            return (float) value.getValue();
+        public Float visit(BsonValue.BigDecimalBsonValue value) {
+            return value.getValue().floatValue();
         }
 
-        @Override
-        public Float visit(BsonValue.DoubleBsonValue value) {
-            return (float) value.getValue();
-        }
-
-        @Override
-        public Float visit(BsonValue.FloatBsonValue value) {
-            return value.getValue();
-        }
     };
     static final BsonValue.Visitor<Boolean> booleanVisitor = new ClassCastExceptionBsonValueVisitor<Boolean>() {
         @Override
@@ -161,26 +109,6 @@ abstract class ClassCastExceptionBsonValueVisitor<T> implements BsonValue.Visito
     }
 
     @Override
-    public T visit(BsonValue.IntBsonValue value) {
-        throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
-    }
-
-    @Override
-    public T visit(BsonValue.LongBsonValue value) {
-        throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
-    }
-
-    @Override
-    public T visit(BsonValue.DoubleBsonValue value) {
-        throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
-    }
-
-    @Override
-    public T visit(BsonValue.FloatBsonValue value) {
-        throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
-    }
-
-    @Override
     public T visit(BsonValue.BooleanBsonValue value) {
         throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
     }
@@ -192,6 +120,11 @@ abstract class ClassCastExceptionBsonValueVisitor<T> implements BsonValue.Visito
 
     @Override
     public T visit(BsonValue.BsonArrayBsonValue value) {
+        throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
+    }
+
+    @Override
+    public T visit(BsonValue.BigDecimalBsonValue value) {
         throw new ClassCastException("Unexpected " + value.getClass().getSimpleName());
     }
 }

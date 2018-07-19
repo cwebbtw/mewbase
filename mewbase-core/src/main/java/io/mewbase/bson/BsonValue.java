@@ -1,5 +1,6 @@
 package io.mewbase.bson;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -14,10 +15,7 @@ public abstract class BsonValue {
     public interface Visitor<Res> {
         Res visit(NullBsonValue nullValue);
         Res visit(StringBsonValue value);
-        Res visit(IntBsonValue value);
-        Res visit(LongBsonValue value);
-        Res visit(DoubleBsonValue value);
-        Res visit(FloatBsonValue value);
+        Res visit(BigDecimalBsonValue value);
         Res visit(BooleanBsonValue value);
         Res visit(BsonObjectBsonValue value);
         Res visit(BsonArrayBsonValue value);
@@ -43,36 +41,28 @@ public abstract class BsonValue {
         return fromNullable(string, StringBsonValue::new);
     }
 
-    public static IntBsonValue of(int value) {
-        return new IntBsonValue(value);
+    public static BigDecimalBsonValue of(long value) {
+        return new BigDecimalBsonValue(new BigDecimal(value));
     }
 
-    public static BsonValue of(Integer value) {
-        return fromNullable(value, IntBsonValue::new);
-    }
-
-    public static LongBsonValue of(long value) {
-        return new LongBsonValue(value);
+    public static BsonValue of(java.lang.Integer value) {
+        return fromNullable(value, i -> of(i.longValue()));
     }
 
     public static BsonValue of(java.lang.Long value) {
-        return fromNullable(value, LongBsonValue::new);
+        return fromNullable(value, l -> of(l.longValue()));
     }
 
-    public static DoubleBsonValue of(double value) {
-        return new DoubleBsonValue(value);
+    public static BsonValue of(java.lang.Float value) {
+        return fromNullable(value, f -> of(f.doubleValue()));
+    }
+
+    public static BigDecimalBsonValue of(double value) {
+        return new BigDecimalBsonValue(new BigDecimal(value));
     }
 
     public static BsonValue of(Double value) {
-        return fromNullable(value, DoubleBsonValue::new);
-    }
-
-    public static FloatBsonValue of(float value) {
-        return new FloatBsonValue(value);
-    }
-
-    public static BsonValue of(Float value) {
-        return fromNullable(value, FloatBsonValue::new);
+        return fromNullable(value, d -> of(d.doubleValue()));
     }
 
     public static BooleanBsonValue of(boolean value) {
@@ -97,6 +87,54 @@ public abstract class BsonValue {
 
     public static BsonValue of(List<BsonValue> value) {
         return of(new BsonArray(value));
+    }
+
+    public static final class BigDecimalBsonValue extends BsonValue {
+
+        private final BigDecimal value;
+
+        private BigDecimalBsonValue(BigDecimal value) {
+            this.value = value;
+        }
+
+        @Override
+        public <Res> Res visit(Visitor<Res> res) {
+            return res.visit(this);
+        }
+
+        @Override
+        public BsonValue copy() {
+            return this; // immutable
+        }
+
+        @Override
+        public boolean isNull() {
+            return false;
+        }
+
+        public BigDecimal getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BigDecimalBsonValue that = (BigDecimalBsonValue) o;
+            return Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        @Override
+        public String toString() {
+            return "BigDecimalBsonValue{" +
+                    "value=" + value +
+                    '}';
+        }
     }
 
     public static final class StringBsonValue extends BsonValue {
@@ -142,196 +180,6 @@ public abstract class BsonValue {
         public String toString() {
             return "StringBsonValue{" +
                     "value='" + value + '\'' +
-                    '}';
-        }
-    }
-
-    public static final class IntBsonValue extends BsonValue {
-        private final int value;
-
-        private IntBsonValue(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public <Res> Res visit(Visitor<Res> res) {
-            return res.visit(this);
-        }
-
-        @Override
-        public BsonValue copy() {
-            return this; // immutable
-        }
-
-        @Override
-        public boolean isNull() {
-            return false;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            IntBsonValue that = (IntBsonValue) o;
-            return value == that.value;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-
-        @Override
-        public String toString() {
-            return "IntBsonValue{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
-
-    public static final class LongBsonValue extends BsonValue {
-        private final long value;
-
-        private LongBsonValue(long value) {
-            this.value = value;
-        }
-
-        @Override
-        public <Res> Res visit(Visitor<Res> res) {
-            return res.visit(this);
-        }
-
-        @Override
-        public BsonValue copy() {
-            return this; // immutable
-        }
-
-        @Override
-        public boolean isNull() {
-            return false;
-        }
-
-        public long getValue() {
-            return value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            LongBsonValue that = (LongBsonValue) o;
-            return value == that.value;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-
-        @Override
-        public String toString() {
-            return "LongBsonValue{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
-
-    public static final class DoubleBsonValue extends BsonValue {
-        private final double value;
-
-        private DoubleBsonValue(double value) {
-            this.value = value;
-        }
-
-        @Override
-        public <Res> Res visit(Visitor<Res> res) {
-            return res.visit(this);
-        }
-
-        @Override
-        public BsonValue copy() {
-            return this; // immutable
-        }
-
-        @Override
-        public boolean isNull() {
-            return false;
-        }
-
-        public double getValue() {
-            return value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            DoubleBsonValue that = (DoubleBsonValue) o;
-            return Double.compare(that.value, value) == 0;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-
-        @Override
-        public String toString() {
-            return "DoubleBsonValue{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
-
-    public static final class FloatBsonValue extends BsonValue {
-        private final float value;
-
-        private FloatBsonValue(float value) {
-            this.value = value;
-        }
-
-        @Override
-        public <Res> Res visit(Visitor<Res> res) {
-            return res.visit(this);
-        }
-
-        @Override
-        public BsonValue copy() {
-            return this; // immutable
-        }
-
-        @Override
-        public boolean isNull() {
-            return false;
-        }
-
-        public float getValue() {
-            return value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            FloatBsonValue that = (FloatBsonValue) o;
-            return Float.compare(that.value, value) == 0;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-
-        @Override
-        public String toString() {
-            return "FloatBsonValue{" +
-                    "value=" + value +
                     '}';
         }
     }

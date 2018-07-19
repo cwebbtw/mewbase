@@ -901,16 +901,16 @@ public class BsonArrayTest {
     public void testBsonArrayEquality() {
         BsonObject obj = new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonList(BsonValue.of(3)))));
         assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonList(BsonValue.of(3))))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonList(BsonValue.of(3L))))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonList(BsonValue.of(3L))))));
         assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonArray().add(3)))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonArray().add(3L)))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonArray().add(3L)))));
         assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonList(BsonValue.of(4))))));
         assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonArray().add(4)))));
         BsonArray array = new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonList(BsonValue.of(3)))));
         assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonList(BsonValue.of(3))))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonList(BsonValue.of(3L))))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonList(BsonValue.of(3L))))));
         assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonArray().add(3)))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonArray().add(3L)))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonArray().add(3L)))));
         assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonList(BsonValue.of(4))))));
         assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonArray().add(4)))));
     }

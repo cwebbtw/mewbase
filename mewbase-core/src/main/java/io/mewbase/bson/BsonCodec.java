@@ -142,25 +142,7 @@ public class BsonCodec {
         }
 
         @Override
-        public Void visit(BsonValue.IntBsonValue value) {
-            builder.add(value.getValue());
-            return null;
-        }
-
-        @Override
-        public Void visit(BsonValue.LongBsonValue value) {
-            builder.add(value.getValue());
-            return null;
-        }
-
-        @Override
-        public Void visit(BsonValue.DoubleBsonValue value) {
-            builder.add(value.getValue());
-            return null;
-        }
-
-        @Override
-        public Void visit(BsonValue.FloatBsonValue value) {
+        public Void visit(BsonValue.BigDecimalBsonValue value) {
             builder.add(value.getValue());
             return null;
         }
@@ -203,22 +185,7 @@ public class BsonCodec {
         }
 
         @Override
-        public Consumer<String> visit(BsonValue.IntBsonValue value) {
-            return fieldName -> builder.add(fieldName, value.getValue());
-        }
-
-        @Override
-        public Consumer<String> visit(BsonValue.LongBsonValue value) {
-            return fieldName -> builder.add(fieldName, value.getValue());
-        }
-
-        @Override
-        public Consumer<String> visit(BsonValue.DoubleBsonValue value) {
-            return fieldName -> builder.add(fieldName, value.getValue());
-        }
-
-        @Override
-        public Consumer<String> visit(BsonValue.FloatBsonValue value) {
+        public Consumer<String> visit(BsonValue.BigDecimalBsonValue value) {
             return fieldName -> builder.add(fieldName, value.getValue());
         }
 
