@@ -3,8 +3,7 @@ package io.mewbase.rest.http4s
 import cats.Monad
 import cats.effect.Sync
 import io.mewbase.bson.{BsonArray, BsonCodec, BsonObject}
-import io.vertx.core.json.JsonArray
-import org.http4s.{DecodeFailure, EntityDecoder, EntityEncoder, InvalidMessageBodyFailure, MediaType}
+import org.http4s.{EntityDecoder, EntityEncoder, MediaType}
 import org.http4s.headers.`Content-Type`
 
 object BsonEntityCodec {

@@ -13,6 +13,7 @@ import io.mewbase.binders.impl.StreamableBinder;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
+import io.mewbase.bson.BsonValue;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 
@@ -243,10 +244,10 @@ public class BinderTests extends MewbaseTestBase {
             assertTrue(binder2.put("id0", docPut2).get());
 
             BsonObject docGet1 = binder1.get("id0").get();
-            assertEquals("binder1", docGet1.remove("binder"));
+            assertEquals(BsonValue.of("binder1"), docGet1.remove("binder"));
 
             BsonObject docGet2 = binder2.get("id0").get();
-            assertEquals("binder2", docGet2.remove("binder"));
+            assertEquals(BsonValue.of("binder2"), docGet2.remove("binder"));
         });
     }
 

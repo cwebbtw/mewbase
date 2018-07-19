@@ -7,6 +7,8 @@ import io.mewbase.rest.http4s.BsonEntityCodec._
 import org.http4s.Response
 import org.http4s.dsl.Http4sDsl
 
+import scala.language.higherKinds
+
 class Http4sRestServiceActionVisitor[F[_]: Effect] extends RestServiceAction.Visitor[F[Response[F]]] with Http4sDsl[F] {
 
   override def visit(retrieveSingleDocument: RestServiceAction.RetrieveSingleDocument): F[Response[F]] =

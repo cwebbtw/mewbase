@@ -100,18 +100,19 @@ def javaDoc = Seq(
 )
 
 
-lazy val root = Project("root", file("."))
-  .aggregate(
-    mewbaseCore,
-    mewbaseJava,
-    mewbaseScala,
-    examplesJava,
-    examplesScala,
-    mewbaseRestHttp4s,
-    mewbaseRestVertx,
-    mewbaseRestIntegrationTest)
-  .settings(basicSettings: _*)
-  .settings(noPublishing: _*)
+lazy val root =
+  Project("root", file("."))
+    .aggregate(
+      mewbaseCore,
+      mewbaseJava,
+      mewbaseScala,
+      examplesJava,
+      examplesScala,
+      mewbaseRestHttp4s,
+      mewbaseRestVertx,
+      mewbaseRestIntegrationTest)
+    .settings(basicSettings: _*)
+    .settings(noPublishing: _*)
 
 
 lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
@@ -165,7 +166,7 @@ lazy val mewbaseRestHttp4s = Project("mewbase-rest-http4s", file("mewbase-rest-h
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
   .settings(
-      libraryDependencies ++= http4s :+ vertx
+    libraryDependencies ++= http4s
   )
 
 lazy val mewbaseRestVertx = Project("mewbase-rest-vertx", file("mewbase-rest-vertx"))
