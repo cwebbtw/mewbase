@@ -1,8 +1,10 @@
 package io.mewbase.eventsource.impl.hbase;
 
 import io.mewbase.bson.BsonObject;
+import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSink;
-
+import io.mewbase.eventsource.EventSource;
+import io.mewbase.eventsource.Subscription;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -10,37 +12,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public class HBaseEventSink implements EventSink {
+public class HBaseEventSource implements EventSource {
 
-    private final static Logger log = LoggerFactory.getLogger(HBaseEventSink.class);
-
-    static final byte[] colFamily = Bytes.toBytes("Events");
-    static final byte[] qualifier = Bytes.toBytes("event");
+    private final static Logger log = LoggerFactory.getLogger(HBaseEventSource.class);
 
     final Connection connection = ConnectionFactory.createConnection();
 
-    final Map<String,AtomicLong> seqNums = new HashMap<>();
+    final byte[] colFamily = Bytes.toBytes("Events");
+    final byte[] qualifier = Bytes.toBytes("event");
 
-    public HBaseEventSink() throws IOException {
+
+
+    public HBaseEventSource() throws IOException {
 
     }
 
 
-    @Override
+    // For prototype purposes
     public Long publishSync(String channelName, BsonObject event) {
         try {
             final Table table = ensureTable(channelName);
-            final AtomicLong l = seqNums.computeIfAbsent(channelName, s -> new AtomicLong());
-            final Put put = new Put( Bytes.toBytes( l.get() ) );
-            put.addColumn(colFamily,qualifier,event.encode().getBytes());
-            table.put(put);
-            return l.getAndIncrement();
+
         } catch (Exception exp) {
             log.error("Failed to publish event",exp);
             return EventSink.SADLY_NO_CONCEPT_OF_A_MESSAGE_NUMBER;
@@ -48,9 +47,34 @@ public class HBaseEventSink implements EventSink {
 
     }
 
+
     @Override
-    public CompletableFuture<Long> publishAsync(String channelName, BsonObject event) {
-        return CompletableFuture.supplyAsync( () -> publishSync( channelName,  event));
+    public CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Subscription> subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Subscription> subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
+        // TODO
+        // final Table table = ensureTable(channelName);
+
+
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Subscription> subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler) {
+        return null;
     }
 
 
@@ -72,7 +96,7 @@ public class HBaseEventSink implements EventSink {
 
         TableName tableName = TableName.valueOf(channelName);
         final Admin admin = connection.getAdmin();
-        // Todo - Use local hash map to store "live" tables if the client API doesnt
+        // Optimisation - Use local hash map to store "live" tables if the client API doesnt
         if (! admin.tableExists( tableName ) ) {
             createTable( tableName,  admin);
         }
