@@ -10,6 +10,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 
 import io.vertx.core.http.WebSocket;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

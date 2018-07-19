@@ -20,7 +20,6 @@
 package io.mewbase.bson;
 
 import io.mewbase.binders.KeyVal;
-import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
 import java.util.*;

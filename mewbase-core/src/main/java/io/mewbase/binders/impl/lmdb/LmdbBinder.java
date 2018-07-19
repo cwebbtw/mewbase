@@ -6,8 +6,6 @@ import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
 
-import io.vertx.core.buffer.Buffer;
-
 import org.lmdbjava.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

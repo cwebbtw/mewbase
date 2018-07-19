@@ -4,7 +4,6 @@ import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.nats.stan.Message;
-import io.vertx.core.buffer.Buffer;
 
 import java.time.Instant;
 
