@@ -25,12 +25,22 @@ public class BsonCodec {
         return jsonObjectToBsonObject(jsonObject);
     }
 
+    public static BsonArray jsonStringToBsonArray(String jsonString) {
+        final StringReader stringReader = new StringReader(jsonString);
+        final JsonArray jsonArray = Json.createReader(stringReader).readArray();
+        return jsonArrayToBsonArray(jsonArray);
+    }
+
     public static byte[] jsonObjectToBsonBytes(JsonObject jsonObject) {
         try {
             return objectMapper.writeValueAsBytes(jsonObject);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static byte[] bsonArrayToBsonBytes(BsonArray bsonArray) {
+        return jsonArrayToBsonBytes(bsonArrayToJsonArray(bsonArray));
     }
 
     public static byte[] jsonArrayToBsonBytes(JsonArray jsonArray) {
@@ -47,6 +57,10 @@ public class BsonCodec {
 
     public static BsonObject bsonBytesToBsonObject(byte[] bytes) {
         return jsonObjectToBsonObject(bsonBytesToJsonObject(bytes));
+    }
+
+    public static BsonArray bsonBytesToBsonArray(byte[] bytes) {
+        return jsonArrayToBsonArray(bsonBytesToJsonArray(bytes));
     }
 
     public static JsonObject bsonBytesToJsonObject(byte[] bytes) {

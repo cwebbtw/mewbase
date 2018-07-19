@@ -10,6 +10,7 @@ public abstract class BsonValue {
     private BsonValue() {
     }
 
+
     public interface Visitor<Res> {
         Res visit(NullBsonValue nullValue);
         Res visit(StringBsonValue value);
@@ -75,11 +76,11 @@ public abstract class BsonValue {
     }
 
     public static BooleanBsonValue of(boolean value) {
-        return new BooleanBsonValue(value);
+        return BooleanBsonValue.from(value);
     }
 
     public static BsonValue of(Boolean value) {
-        return fromNullable(value, BooleanBsonValue::new);
+        return fromNullable(value, BooleanBsonValue::from);
     }
 
     public static BsonValue of(BsonObject value) {
@@ -337,6 +338,13 @@ public abstract class BsonValue {
 
     public static final class BooleanBsonValue extends BsonValue {
         private final boolean value;
+
+        public static final BooleanBsonValue TRUE = new BooleanBsonValue(true);
+        public static final BooleanBsonValue FALSE = new BooleanBsonValue(false);
+
+        public static BooleanBsonValue from(boolean value) {
+            return value ? TRUE : FALSE;
+        }
 
         private BooleanBsonValue(boolean value) {
             this.value = value;

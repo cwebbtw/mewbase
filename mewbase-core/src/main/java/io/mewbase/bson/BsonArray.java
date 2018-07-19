@@ -71,15 +71,6 @@ public class BsonArray implements Iterable<BsonValue> {
         this.list = list;
     }
 
-    /**
-     * Create an instance from a JsonArray
-     *
-     * @param jsonArray the JsonArray to create the BsonArray from
-     */
-    public BsonArray(JsonArray jsonArray) {
-        this.list = jsonArray.getList();
-    }
-
     public BsonValue getBsonValue(int pos) {
         return list.get(pos);
     }
@@ -410,7 +401,7 @@ public class BsonArray implements Iterable<BsonValue> {
      * @param value the value
      * @return true if it contains the value, false if not
      */
-    public boolean contains(Object value) {
+    public boolean contains(BsonValue value) {
         return list.contains(value);
     }
 
@@ -421,7 +412,7 @@ public class BsonArray implements Iterable<BsonValue> {
      * @param value the value to remove
      * @return true if it removed it, false if not found
      */
-    public boolean remove(Object value) {
+    public boolean remove(BsonValue value) {
         return list.remove(value);
     }
 
@@ -587,7 +578,6 @@ public class BsonArray implements Iterable<BsonValue> {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(list);
     }
 }

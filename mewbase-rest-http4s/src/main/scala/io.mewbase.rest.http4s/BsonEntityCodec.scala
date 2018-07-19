@@ -28,11 +28,7 @@ object BsonEntityCodec {
 
   implicit def BsonArrayDecoder[F[_]](implicit F: Sync[F]): EntityDecoder[F, BsonArray] =
     EntityDecoder.text.transform { stringDecode =>
-      stringDecode.right.flatMap[DecodeFailure, JsonArray] { string =>
-        def buildError(throwable: Throwable): DecodeFailure =
-          InvalidMessageBodyFailure(throwable.getMessage, Some(throwable))
-        Try(new JsonArray(string)).toEither.left.map(buildError)
-      }.map(new BsonArray(_))
+      stringDecode.map(BsonCodec.jsonStringToBsonArray)
     }
 
 }
