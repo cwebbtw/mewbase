@@ -757,49 +757,6 @@ public class BsonArrayTest {
     }
 
     @Test
-    public void testEncode() throws Exception {
-        bsonArray.add("foo");
-        bsonArray.add(123);
-        bsonArray.add(1234L);
-        bsonArray.add(1.23f);
-        bsonArray.add(2.34d);
-        bsonArray.add(true);
-        byte[] bytes = TestUtils.randomByteArray(10);
-        bsonArray.add(bytes);
-        bsonArray.addNull();
-        bsonArray.add(new BsonObject().put("foo", "bar"));
-        bsonArray.add(new BsonArray().add("foo").add(123));
-
-        final byte[] encoded = BsonCodec.bsonArrayToBsonBytes(bsonArray);
-
-        BsonArray arr = BsonCodec.bsonBytesToBsonArray(encoded);
-        assertEquals("foo", arr.getString(0));
-        assertEquals(Integer.valueOf(123), arr.getInteger(1));
-        assertEquals(Long.valueOf(1234l), arr.getLong(2));
-        assertEquals(Float.valueOf(1.23f), arr.getFloat(3));
-        assertEquals(2.34d, arr.getDouble(4), 0.001);
-        assertEquals(true, arr.getBoolean(5));
-        assertTrue(TestUtils.byteArraysEqual(bytes, arr.getBinary(6)));
-        assertTrue(arr.hasNull(7));
-        BsonObject obj = arr.getBsonObject(8);
-        assertEquals("bar", obj.getString("foo"));
-        BsonArray arr2 = arr.getBsonArray(9);
-        assertEquals("foo", arr2.getString(0));
-        assertEquals(Integer.valueOf(123), arr2.getInteger(1));
-    }
-
-    @Test
-    public void testInvalidJson() {
-        byte[] invalid = TestUtils.randomByteArray(100);
-        try {
-            BsonCodec.bsonBytesToJsonArray(invalid);
-            fail();
-        } catch (Exception e) {
-            // OK
-        }
-    }
-
-    @Test
     public void testGetList() {
         BsonObject obj = new BsonObject().put("quux", "wibble");
         bsonArray.add("foo").add(123).add(obj);
@@ -916,7 +873,7 @@ public class BsonArrayTest {
     }
 
     @Test
-    public void testStreamCorrectTypes() throws Exception {
+    public void testStreamCorrectTypes() {
         BsonObject object = new BsonObject();
         object.put("object1", new BsonArray().add(new BsonObject().put("object2", 12)));
         testStreamCorrectTypes(object.copy());
@@ -940,23 +897,6 @@ public class BsonArrayTest {
         removed = obj.remove(0);
         assertTrue(removed instanceof BsonValue.BsonArrayBsonValue);
         assertEquals(((BsonValue.BsonArrayBsonValue)removed).getValue().getDouble(0), 1.0, 0.0);
-    }
-
-    @Test
-    public void testJsonArrayConversion() {
-        javax.json.JsonObject jsonObject =
-                javax.json.Json.createObjectBuilder().add("foo", "bar").build();
-        final BsonObject bsonObject = new BsonObject().put("foo", "bar");
-        javax.json.JsonArray jsonArray =
-                javax.json.Json.createArrayBuilder().add("foo").add(123).add(jsonObject).build();
-
-        BsonArray bsonArray = BsonCodec.jsonArrayToBsonArray(jsonArray);
-        assertEquals(bsonObject, bsonArray.getBsonObject(2));
-        assertEquals(123L, bsonArray.getInteger(1).longValue());
-        assertEquals("foo", bsonArray.getString(0));
-
-        javax.json.JsonArray jsonArray2 = BsonCodec.bsonArrayToJsonArray(bsonArray);
-        assertEquals(jsonArray, jsonArray2);
     }
 
     private void testStreamCorrectTypes(BsonObject object) {

@@ -436,7 +436,7 @@ public class BsonArray implements Iterable<BsonValue> {
      *
      * @return the underlying List
      */
-    public List<BsonValue> getList() {
+    List<BsonValue> getList() {
         return list;
     }
 

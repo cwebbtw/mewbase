@@ -586,7 +586,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      *
      * @return the underlying Map.
      */
-    public Map<String, BsonValue> getMap() {
+    Map<String, BsonValue> getMap() {
         return map;
     }
 

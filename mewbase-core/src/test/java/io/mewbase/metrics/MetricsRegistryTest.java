@@ -32,7 +32,7 @@ public class MetricsRegistryTest {
         final BsonObject metersDoc = MetricsRegistry.allMetricsAsDocument();
 
         final BsonArray meters = metersDoc.getBsonArray("meters");
-        final Stream<BsonObject> metrsObjs = meters.getList().stream().map( m -> ((BsonValue.BsonObjectBsonValue)m).getValue());
+        final Stream<BsonObject> metrsObjs = meters.stream().map( m -> ((BsonValue.BsonObjectBsonValue)m).getValue());
         final Predicate<BsonObject> pred = (BsonObject meter) -> meter.getString("name").equals("jvm.classes.loaded");
 
         final List<BsonObject> classesLoaded = metrsObjs.filter(  pred ).collect(Collectors.toList());
