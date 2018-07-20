@@ -23,6 +23,7 @@ import io.mewbase.binders.KeyVal;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -198,6 +199,14 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
         return encoded == null ? null : Instant.from(ISO_INSTANT.parse(encoded));
     }
 
+    private <T> T getOrDefault(String key, Function<String, T> supplier, T def) {
+        Objects.requireNonNull(key);
+        if (map.containsKey(key))
+            return supplier.apply(key);
+        else
+            return def;
+    }
+
     /**
      * Like {@link #getString(String)} but specifying a default value to return if there is no entry.
      *
@@ -206,9 +215,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public String getString(String key, String def) {
-        Objects.requireNonNull(key);
-        final String string = getString(key);
-        return string != null || map.containsKey(key) ? string : def;
+        return getOrDefault(key, this::getString, def);
     }
 
     /**
@@ -219,12 +226,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public Integer getInteger(String key, Integer def) {
-        Objects.requireNonNull(key);
-        if (map.containsKey(key)) {
-            return getInteger(key);
-        } else {
-            return def;
-        }
+        return getOrDefault(key, this::getInteger, def);
     }
 
     /**
@@ -235,12 +237,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public Long getLong(String key, Long def) {
-        Objects.requireNonNull(key);
-        if (map.containsKey(key)) {
-            return getLong(key);
-        } else {
-            return def;
-        }
+        return getOrDefault(key, this::getLong, def);
     }
 
     /**
@@ -251,12 +248,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public Double getDouble(String key, Double def) {
-        Objects.requireNonNull(key);
-        if (map.containsKey(key)) {
-            return getDouble(key);
-        } else {
-            return def;
-        }
+        return getOrDefault(key, this::getDouble, def);
     }
 
     /**
@@ -267,12 +259,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public Float getFloat(String key, Float def) {
-        Objects.requireNonNull(key);
-        if (map.containsKey(key)) {
-            return getFloat(key);
-        } else {
-            return def;
-        }
+        return getOrDefault(key, this::getFloat, def);
     }
 
     /**
@@ -283,9 +270,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public Boolean getBoolean(String key, Boolean def) {
-        Objects.requireNonNull(key);
-        final Boolean val = getBoolean(key);
-        return val != null || map.containsKey(key) ? val : def;
+        return getOrDefault(key, this::getBoolean, def);
     }
 
     /**
@@ -296,8 +281,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public BsonObject getBsonObject(String key, BsonObject def) {
-        BsonObject val = getBsonObject(key);
-        return val != null || map.containsKey(key) ? val : def;
+        return getOrDefault(key, this::getBsonObject, def);
     }
 
     /**
@@ -308,8 +292,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public BsonArray getBsonArray(String key, BsonArray def) {
-        BsonArray val = getBsonArray(key);
-        return val != null || map.containsKey(key) ? val : def;
+        return getOrDefault(key, this::getBsonArray, def);
     }
 
     /**
@@ -320,9 +303,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public byte[] getBinary(String key, byte[] def) {
-        Objects.requireNonNull(key);
-        final String val = getString(key);
-        return val != null || map.containsKey(key) ? (val == null ? null : Base64.getDecoder().decode(val)) : def;
+        return getOrDefault(key, this::getBinary, def);
     }
 
     /**
@@ -333,10 +314,7 @@ public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
      * @return the value or {@code def} if no entry present
      */
     public Instant getInstant(String key, Instant def) {
-        Objects.requireNonNull(key);
-        final String val = getString(key);
-        return val != null || map.containsKey(key) ?
-                (val == null ? null : Instant.from(ISO_INSTANT.parse(val))) : def;
+        return getOrDefault(key, this::getInstant, def);
     }
 
     /**
