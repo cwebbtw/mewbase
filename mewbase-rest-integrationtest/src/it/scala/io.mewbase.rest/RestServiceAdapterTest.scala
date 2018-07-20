@@ -5,7 +5,7 @@ import java.util.concurrent.CountDownLatch
 import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
 import io.circe.{Json, parser}
-import io.mewbase.bson.BsonObject
+import io.mewbase.bson.{BsonCodec, BsonObject}
 import io.mewbase.rest.http4s.Http4sRestServiceAdapter
 import io.mewbase.rest.vertx.VertxRestServiceAdapter
 import io.vertx.core.{AsyncResult, Vertx}
@@ -213,7 +213,7 @@ trait RestServiceAdapterTest extends FunSuite with Http4sDsl[IO] with Http4sClie
 
         val jsonObject = json.asObject.value
         jsonObject.size shouldBe 2
-        val bsonAsJson = parser.parse(bson.encodeToString()).toOption.value
+        val bsonAsJson = parser.parse(BsonCodec.bsonObjectToJsonObject(bson).toString).toOption.value
         jsonObject("doc1").value shouldBe bsonAsJson
         jsonObject("doc2").value shouldBe bsonAsJson
       }

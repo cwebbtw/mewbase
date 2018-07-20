@@ -100,18 +100,19 @@ def javaDoc = Seq(
 )
 
 
-lazy val root = Project("root", file("."))
-  .aggregate(
-    mewbaseCore,
-    mewbaseJava,
-    mewbaseScala,
-    examplesJava,
-    examplesScala,
-    mewbaseRestHttp4s,
-    mewbaseRestVertx,
-    mewbaseRestIntegrationTest)
-  .settings(basicSettings: _*)
-  .settings(noPublishing: _*)
+lazy val root =
+  Project("root", file("."))
+    .aggregate(
+      mewbaseCore,
+      mewbaseJava,
+      mewbaseScala,
+      examplesJava,
+      examplesScala,
+      mewbaseRestHttp4s,
+      mewbaseRestVertx,
+      mewbaseRestIntegrationTest)
+    .settings(basicSettings: _*)
+    .settings(noPublishing: _*)
 
 
 lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
@@ -119,11 +120,11 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
   .settings(javaDoc: _*)
   .settings(
     libraryDependencies ++= Dependencies.compile(
-      jackson, jacksonData , jacksonBson,  // wire-encodings BSON and JSON
+      jackson, jacksonData , jacksonBson, jacksonJsr353,   // wire-encodings BSON and JSON
       slf4j, slf4jAPI, lbConfig, micrometer, // logging, config, metrics
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
-      vertx, vertxAuth, vertxWeb, // REST frameworks,
+      vertx, // REST frameworks,
     ),
     libraryDependencies ++= Dependencies.test(
       junit, junitIntf, vertxUnit, restAssured
@@ -165,14 +166,14 @@ lazy val mewbaseRestHttp4s = Project("mewbase-rest-http4s", file("mewbase-rest-h
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
   .settings(
-      libraryDependencies ++= http4s :+ vertx
+    libraryDependencies ++= http4s
   )
 
 lazy val mewbaseRestVertx = Project("mewbase-rest-vertx", file("mewbase-rest-vertx"))
   .dependsOn(mewbaseCore)
   .settings(basicSettings: _*)
   .settings(
-    libraryDependencies += vertx
+    libraryDependencies ++= Seq(vertx, vertxWeb)
   )
 
 

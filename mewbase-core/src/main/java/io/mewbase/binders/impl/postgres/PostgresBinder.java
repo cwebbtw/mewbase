@@ -5,6 +5,7 @@ import com.google.common.base.Throwables;
 import io.mewbase.binders.Binder;
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
                     try (final ResultSet resultSet = statement.executeQuery()) {
                         if (resultSet.next()) {
                             byte[] buffer = resultSet.getBytes("data");
-                            doc = new BsonObject(buffer);
+                            doc = BsonCodec.bsonBytesToBsonObject(buffer);
                         }
                     }
                 }
@@ -109,7 +110,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
 
     @Override
     public CompletableFuture<Boolean> put(final String key, final BsonObject doc) {
-        final byte[] valBytes = doc.encode().getBytes();
+        final byte[] valBytes = BsonCodec.bsonObjectToBsonBytes(doc);
 
         CompletableFuture<Boolean> fut = CompletableFuture.supplyAsync( () -> {
             try {
@@ -180,7 +181,7 @@ public class PostgresBinder extends StreamableBinder implements Binder {
                         while(dbrs.next()) {
                             final String key = dbrs.getString("key");
                             byte[] bytes = dbrs.getBytes("data");
-                            final BsonObject doc = new BsonObject(bytes);
+                            final BsonObject doc = BsonCodec.bsonBytesToBsonObject(bytes);
                             KeyVal<String,BsonObject> kv = KeyVal.create(key, doc);
                             if (filter.test(kv)) resultSet.add(kv);
                         }

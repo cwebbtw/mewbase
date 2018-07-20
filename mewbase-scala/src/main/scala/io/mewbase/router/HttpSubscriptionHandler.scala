@@ -2,9 +2,13 @@ package io.mewbase.router
 
 
 
+import java.nio.ByteBuffer
+
+import io.mewbase.bson.BsonCodec
 import io.mewbase.eventsource.{Event, EventHandler, EventSource, Subscription}
 import io.mewbase.eventsource.impl.http.{HttpEvent, SubscriptionRequest}
 import io.mewbase.eventsource.impl.http.SubscriptionRequest.SubscriptionType
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.Channel
 import io.netty.handler.codec.http.websocketx.{BinaryWebSocketFrame, CloseWebSocketFrame, WebSocketServerHandshaker}
 import org.slf4j.LoggerFactory
@@ -22,9 +26,7 @@ case class HttpSubscriptionHandler (val nettyChannel : Channel,
 
   val handler : EventHandler = (evt: Event) => {
     val bsonEvent = new HttpEvent(evt).toBson()
-    if (nettyChannel.isActive) {
-      nettyChannel.writeAndFlush(new BinaryWebSocketFrame(bsonEvent.encode().getByteBuf))
-    } else {
+    if (nettyChannel.isActive) nettyChannel.writeAndFlush(new BinaryWebSocketFrame(Unpooled.wrappedBuffer(BsonCodec.bsonObjectToBsonBytes(bsonEvent)))) else {
       logger.info("Attempt to write event on an inactive socket - stopping subscription")
       stop
     }

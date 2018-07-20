@@ -3,7 +3,7 @@ package io.mewbase.router
 
 import java.util.UUID
 
-import io.mewbase.bson.BsonObject
+import io.mewbase.bson.{BsonCodec, BsonObject}
 import io.mewbase.eventsource.{EventSink, EventSource}
 import io.mewbase.eventsource.impl.http.{HttpEventSink, SubscriptionRequest}
 import io.netty.buffer.Unpooled
@@ -90,8 +90,7 @@ case class HttpEventRouterHandler(val eventSink : EventSink,
         req.uri match {
           case "/publish" => {
             // use Vert.x buffer to copy out PooledUnsafeDirectByteBuf contents
-            val vertxBuff = Buffer.buffer(req.content())
-            val publishBody = new BsonObject(vertxBuff)
+            val publishBody = BsonCodec.bsonBytesToBsonObject(req.content().array())
             val channel = publishBody.getString(HttpEventSink.CHANNEL_TAG)
             val event = publishBody.getBsonObject(HttpEventSink.EVENT_TAG)
             logger.debug("Published on channel "+channel+" event "+ event)
@@ -101,8 +100,7 @@ case class HttpEventRouterHandler(val eventSink : EventSink,
 
           case "/subscribe" => {
             // use Vert.x buffer to copy out PooledUnsafeDirectByteBuf contents
-            val vertxBuff = Buffer.buffer(req.content())
-            val binaryRequest = new BsonObject(vertxBuff)
+            val binaryRequest = BsonCodec.bsonBytesToBsonObject(req.content().array())
             val subscriptionRequest = new SubscriptionRequest(binaryRequest)
             val subscriptionUUID = UUID.randomUUID()
             subscriptionRequests.put(subscriptionUUID,subscriptionRequest)

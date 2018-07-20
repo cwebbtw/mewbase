@@ -1,5 +1,6 @@
 package io.mewbase.eventsource.impl.http;
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 
@@ -20,7 +21,7 @@ public class HttpEvent implements Event {
 
 
     public HttpEvent(byte[] httpEventArray) {
-        BsonObject boj = new BsonObject(httpEventArray);
+        BsonObject boj = BsonCodec.bsonBytesToBsonObject(httpEventArray);
         this.eventNumber = boj.getLong(NUMBER_KEY);
         this.epochMillis = boj.getLong(START_TIME_KEY);
         this.crc32 = boj.getLong(CRC32_KEY);

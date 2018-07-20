@@ -71,50 +71,6 @@ public class Bson {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    static Object checkAndCopy(Object val, boolean copy) {
-        if (val == null) {
-            // OK
-        } else if (val instanceof Number && !(val instanceof BigDecimal)) {
-            // OK
-        } else if (val instanceof Boolean) {
-            // OK
-        } else if (val instanceof String) {
-            // OK
-        } else if (val instanceof Character) {
-            // OK
-        } else if (val instanceof CharSequence) {
-            val = val.toString();
-        } else if (val instanceof BsonObject) {
-            if (copy) {
-                val = ((BsonObject)val).copy();
-            }
-        } else if (val instanceof BsonArray) {
-            if (copy) {
-                val = ((BsonArray)val).copy();
-            }
-        } else if (val instanceof Map) {
-            if (copy) {
-                val = (new BsonObject((Map)val)).copy();
-            } else {
-                val = new BsonObject((Map)val);
-            }
-        } else if (val instanceof List) {
-            if (copy) {
-                val = (new BsonArray((List)val)).copy();
-            } else {
-                val = new BsonArray((List)val);
-            }
-        } else if (val instanceof byte[]) {
-            val = Base64.getEncoder().encodeToString((byte[])val);
-        } else if (val instanceof Instant) {
-            val = ISO_INSTANT.format((Instant)val);
-        } else {
-            throw new IllegalStateException("Illegal type in BsonObject: " + val.getClass());
-        }
-        return val;
-    }
-
     static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
         Iterable<T> iterable = () -> sourceIterator;
         return StreamSupport.stream(iterable.spliterator(), false);

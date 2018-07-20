@@ -1,6 +1,7 @@
 package io.mewbase.rest.vertx;
 
 import io.mewbase.bson.BsonArray;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.rest.RestServiceAction;
 import io.vertx.ext.web.RoutingContext;
@@ -18,20 +19,20 @@ public class VertxRestServiceActionVisitor implements RestServiceAction.Visitor<
     }
 
     public BsonObject bodyAsBson() {
-        return rc.getBody().length() == 0 ? new BsonObject() : new BsonObject(rc.getBodyAsJson());
+        return rc.getBody().length() == 0 ? new BsonObject() : BsonCodec.jsonStringToBsonObject(rc.getBodyAsString());
     }
 
     private void sendResponse(Stream<String> response) {
         final BsonArray result = BsonArray.from(response);
         rc.response()
                 .putHeader("content-type", "application/json")
-                .end(result.encodeToString());
+                .end(BsonCodec.bsonArrayToJsonArray(result).toString());
     }
 
     private void sendResponse(BsonObject bsonObject) {
         rc.response()
                 .putHeader("content-type", "application/json")
-                .end(bsonObject.encodeToString());
+                .end(BsonCodec.bsonObjectToJsonObject(bsonObject).toString());
     }
 
     @Override
@@ -42,7 +43,7 @@ public class VertxRestServiceActionVisitor implements RestServiceAction.Visitor<
             document = documentFuture.get();
             rc.response()
                     .putHeader("content-type", "application/json")
-                    .end(document.encodeToString());
+                    .end(BsonCodec.bsonObjectToJsonObject(document).toString());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -90,7 +91,7 @@ public class VertxRestServiceActionVisitor implements RestServiceAction.Visitor<
 
         rc.response()
                 .putHeader("Content-Type", "application/json")
-                .end(metrics.encodeToString());
+                .end(BsonCodec.bsonObjectToJsonObject(metrics).toString());
 
         return null;
     }

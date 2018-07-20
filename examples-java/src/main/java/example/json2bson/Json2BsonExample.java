@@ -1,6 +1,8 @@
 package example.json2bson;
 
 
+import io.mewbase.bson.Bson;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
@@ -29,10 +31,10 @@ public class Json2BsonExample {
 
         // make a JsonObject from the String could one line this
         JsonObject jobj = new JsonObject(json);
-        BsonObject bobj = new BsonObject(jobj);
+        BsonObject bobj = BsonCodec.jsonStringToBsonObject(jobj.encode());
 
         // compare encoding size just FYI not necessary
-        System.out.println("Size of Json :"+json.length()+" Size of Bson :"+bobj.encode().length());
+        System.out.println("Size of Json :"+json.length()+" Size of Bson :" + BsonCodec.bsonObjectToBsonBytes(bobj).length);
 
         // set up a sink
         EventSink sink = EventSink.instance();
@@ -45,7 +47,7 @@ public class Json2BsonExample {
         CountDownLatch cdl = new CountDownLatch(1);
         // Grab the event from the top of the stream and convert it to a json String
         src.subscribeFromMostRecent(CHANNEL_NAME, event -> {
-            String result = event.getBson().encodeToString();
+            String result = BsonCodec.bsonObjectToJsonObject(event.getBson()).toString();
             // check it is equivalent to the original string
             System.out.println("Equivalent : "+ areEquivalentJson(json,result));
             cdl.countDown();

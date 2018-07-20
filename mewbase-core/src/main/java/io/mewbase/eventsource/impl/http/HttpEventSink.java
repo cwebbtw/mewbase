@@ -3,10 +3,12 @@ package io.mewbase.eventsource.impl.http;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import org.slf4j.Logger;
@@ -93,7 +95,7 @@ public class HttpEventSink implements EventSink {
                         fut.completeExceptionally(exp);
                     }
                 })
-        ).end(body.encode());
+        ).end(Buffer.buffer(BsonCodec.bsonObjectToBsonBytes(body)));
         return fut;
     }
 
