@@ -33,7 +33,7 @@ public class HBaseEventSource implements EventSource {
     public HBaseEventSource() throws IOException {
 
     }
-    
+
 
     @Override
     public CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler) {
