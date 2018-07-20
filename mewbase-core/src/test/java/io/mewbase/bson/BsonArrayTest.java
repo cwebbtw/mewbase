@@ -20,9 +20,6 @@ package io.mewbase.bson;
 
 import io.mewbase.TestUtils;
 
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
