@@ -5,6 +5,7 @@ import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.EventSink;
 import io.mewbase.eventsource.EventSource;
 import io.mewbase.eventsource.Subscription;
+import io.mewbase.util.FallibleFuture;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -47,9 +48,12 @@ public class HBaseEventSource implements EventSource {
 
     @Override
     public CompletableFuture<Subscription> subscribeFromEventNumber(String channelName, Long startInclusive, EventHandler eventHandler) {
-        // TODO
-        // final Table table = ensureTable(channelName);
-        return null;
+        try {
+            final Table table = ensureTable(channelName);
+            return new HBaseEventSubscription(table,startInclusive,eventHandler).initialisingFuture;
+        } catch (Exception exp) {
+            return FallibleFuture.failedFuture(exp);
+        }
     }
 
     @Override
@@ -81,7 +85,7 @@ public class HBaseEventSource implements EventSource {
 
         TableName tableName = TableName.valueOf(channelName);
         final Admin admin = connection.getAdmin();
-        // Optimisation - Use local hash map to store "live" tables if the client API doesnt
+        // Optimisation - Use local hash map to store "live" tables if the client API doesn't
         if (! admin.tableExists( tableName ) ) {
             createTable( tableName,  admin);
         }

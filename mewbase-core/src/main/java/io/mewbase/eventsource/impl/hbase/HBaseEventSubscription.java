@@ -66,6 +66,8 @@ public class HBaseEventSubscription implements Subscription {
             logger.info("Subscription closed for channel "+ table.getName());
         });
 
+
+
     }
 
     @Override
