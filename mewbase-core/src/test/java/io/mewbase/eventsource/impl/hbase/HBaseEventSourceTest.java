@@ -48,7 +48,7 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
 
         final CompletableFuture<Event> evtRes = new CompletableFuture<>();
 
-        final CompletableFuture<Subscription> subFut = source.subscribeFromEventNumber(testChannelName, START_EVT_NUMBER,
+        final CompletableFuture<Subscription> subFut = source.subscribe(testChannelName,
                 event -> {
                     evtRes.complete(event);
                     latch.countDown();

@@ -26,24 +26,31 @@ public class HBaseEventSource implements EventSource {
 
     final Connection connection = ConnectionFactory.createConnection();
 
-    final byte[] colFamily = Bytes.toBytes("Events");
-    final byte[] qualifier = Bytes.toBytes("event");
-
-
-
     public HBaseEventSource() throws IOException {
 
     }
 
-
     @Override
     public CompletableFuture<Subscription> subscribe(String channelName, EventHandler eventHandler) {
-        return null;
+        try {
+            final Table table = ensureTable(channelName);
+            final long startInclusive = getMostRecentEventNumber(table) + 1L;
+            return new HBaseEventSubscription(table, startInclusive, eventHandler).initialisingFuture;
+        } catch (Exception exp) {
+            return FallibleFuture.failedFuture(exp);
+        }
     }
 
     @Override
     public CompletableFuture<Subscription> subscribeFromMostRecent(String channelName, EventHandler eventHandler) {
-        return null;
+        try {
+            final Table table = ensureTable(channelName);
+            final long mren = getMostRecentEventNumber(table);
+            final long startInclusive = Math.max(0L,mren);
+            return new HBaseEventSubscription(table, startInclusive, eventHandler).initialisingFuture;
+        } catch (Exception exp) {
+            return FallibleFuture.failedFuture(exp);
+        }
     }
 
     @Override
@@ -63,7 +70,7 @@ public class HBaseEventSource implements EventSource {
 
     @Override
     public CompletableFuture<Subscription> subscribeAll(String channelName, EventHandler eventHandler) {
-        return null;
+        return subscribeFromEventNumber(channelName, 0L,  eventHandler);
     }
 
 
@@ -97,9 +104,24 @@ public class HBaseEventSource implements EventSource {
 
     private void createTable(final TableName tableName, final Admin admin) throws IOException {
         TableDescriptorBuilder tableBuilder = TableDescriptorBuilder.newBuilder(tableName);
-        ColumnFamilyDescriptor cfdb = ColumnFamilyDescriptorBuilder.of(colFamily);
+        ColumnFamilyDescriptor cfdb = ColumnFamilyDescriptorBuilder.of(HBaseEventSink.colFamily);
         tableBuilder.setColumnFamily(cfdb);
         admin.createTable( tableBuilder.build() );
     }
 
+
+    private long getMostRecentEventNumber(final Table table) throws IOException  {
+        Scan scan = new Scan();
+        scan.setReversed(true);
+        scan.setMaxResultSize(1); // i.e. search only the most recent item
+        scan.addColumn(HBaseEventSink.colFamily, HBaseEventSink.qualifier);
+        final ResultScanner scanner = table.getScanner(scan);
+        Result result = scanner.next();
+        long mostRecentEventNumber = -1L;
+        if ( result !=null && !result.isEmpty() ) {
+            mostRecentEventNumber = Bytes.toLong(result.getRow());
+        }
+        log.info("Most recent Event for "+table.getName()+" is "+ mostRecentEventNumber);
+        return mostRecentEventNumber;
+    }
 }
