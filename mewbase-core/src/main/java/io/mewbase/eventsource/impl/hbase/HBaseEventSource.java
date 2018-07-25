@@ -65,7 +65,14 @@ public class HBaseEventSource implements EventSource {
 
     @Override
     public CompletableFuture<Subscription> subscribeFromInstant(String channelName, Instant startInstant, EventHandler eventHandler) {
-        return null;
+        try {
+            final Table table = ensureTable(channelName);
+            final long mren = getTimestampEventNumber(table,startInstant.toEpochMilli());
+            final long startInclusive = Math.max(0L,mren);
+            return new HBaseEventSubscription(table, startInclusive, eventHandler).initialisingFuture;
+        } catch (Exception exp) {
+            return FallibleFuture.failedFuture(exp);
+        }
     }
 
     @Override
@@ -124,4 +131,22 @@ public class HBaseEventSource implements EventSource {
         log.info("Most recent Event for "+table.getName()+" is "+ mostRecentEventNumber);
         return mostRecentEventNumber;
     }
+
+
+    private long getTimestampEventNumber(final Table table, long epochTimestampInclusive) throws IOException  {
+        Scan scan = new Scan();
+        scan.setTimeRange(epochTimestampInclusive, Long.MAX_VALUE);
+        scan.setMaxResultSize(1); // i.e. search only for the nearest item.
+        scan.addColumn(HBaseEventSink.colFamily, HBaseEventSink.qualifier);
+        final ResultScanner scanner = table.getScanner(scan);
+        Result result = scanner.next();
+        long timeStampedEventNumber = -1L;
+        if ( result !=null && !result.isEmpty() ) {
+            timeStampedEventNumber = Bytes.toLong(result.getRow());
+        }
+        log.info("Time Stamped Event for "+table.getName()+" is "+ timeStampedEventNumber);
+        return timeStampedEventNumber;
+    }
+
+
 }

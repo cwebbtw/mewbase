@@ -1,16 +1,16 @@
 package io.mewbase.eventsource.impl.hbase;
 
 
+
 import io.mewbase.MewbaseTestBase;
 import io.mewbase.bson.BsonObject;
-import io.mewbase.eventsource.Event;
-import io.mewbase.eventsource.EventSink;
-import io.mewbase.eventsource.EventSource;
-import io.mewbase.eventsource.Subscription;
+import io.mewbase.eventsource.*;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -78,6 +78,52 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
         sink.close();
     }
 
+
+    @Test
+    public void testSubscribeFromInstant() throws Exception {
+
+        final EventSink sink = new HBaseEventSink();
+        final EventSource source = new HBaseEventSource();
+
+        final String testChannelName = "TestFromInstantChannel"+UUID.randomUUID();;
+        final long START_EVENT_NUMBER = 0;
+        final long END_EVENT_NUMBER = 64;
+        final long RESTART_EVENT_NUMBER = 65;
+        final long REEND_EVENT_NUMBER = 128;
+
+        final int expectedEvents = (int) (REEND_EVENT_NUMBER - RESTART_EVENT_NUMBER + 1);
+
+        final CountDownLatch latch = new CountDownLatch(expectedEvents);
+        final List<Long> nums = new LinkedList<>();
+
+        final EventSinkUtils utils =  new EventSinkUtils(sink);
+
+        utils.sendNumberedEvents(testChannelName,(long)START_EVENT_NUMBER, END_EVENT_NUMBER);
+
+        Thread.sleep(100); // give the events time to rest in the event source
+
+        Instant then = Instant.now();
+
+        Thread.sleep(10); // some room the other side of the time window
+
+        utils.sendNumberedEvents(testChannelName,RESTART_EVENT_NUMBER,REEND_EVENT_NUMBER);
+
+        final CompletableFuture<Subscription> subFut = source.subscribeFromInstant(testChannelName, then, event -> {
+            nums.add(event.getBson().getLong("num"));
+            latch.countDown();
+        });
+
+        // will throw if the subscription doesnt set up in the given time
+        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        latch.await();
+        // Done - Checked that the correct number of event have occoured.
+        // Todo - Check the numbers in order
+
+        sub.close();
+        source.close();
+        sink.close();
+    }
 
 
 }
