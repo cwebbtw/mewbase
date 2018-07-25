@@ -9,6 +9,7 @@ import io.mewbase.eventsource.impl.EventDispatcher;
 import io.mewbase.eventsource.impl.file.FileEvent;
 
 import io.netty.buffer.Unpooled;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
@@ -66,8 +67,6 @@ public class HBaseEventSubscription implements Subscription {
             logger.info("Subscription closed for channel "+ table.getName());
         });
 
-
-
     }
 
     @Override
@@ -86,17 +85,19 @@ public class HBaseEventSubscription implements Subscription {
         logger.debug("Waiting for event " + eventNumber);
         Get getter = new Get(Bytes.toBytes( eventNumber ));
 
-        byte[] value = null;
-        while ( value == null ) {
+        Event event = null;
+        while ( event == null ) {
             Result r = channelTable.get(getter);
             if ( r.isEmpty() ) {
                 Thread.sleep( WATCH_WINDOW_MILLIS);
             } else {
-                value = r.getValue(HBaseEventSink.colFamily, HBaseEventSink.qualifier);
+                final long timeStamp = r.rawCells()[0].getTimestamp();
+                final byte[] value = r.getValue(HBaseEventSink.colFamily, HBaseEventSink.qualifier);
+                event = new FileEvent(eventNumber,timeStamp,0L, Unpooled.wrappedBuffer(value));
             }
         }
         logger.debug("Got Event " + eventNumber);
-        return new FileEvent(eventNumber,0L,0L, Unpooled.wrappedBuffer(value));
+        return event;
     }
 
 }
