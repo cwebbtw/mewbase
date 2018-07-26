@@ -3,6 +3,7 @@ package io.mewbase.eventsource.impl.hbase;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
+
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -28,6 +29,7 @@ public class HBaseEventSink implements EventSink {
     final Map<String,AtomicLong> seqNums = new HashMap<>();
 
     public HBaseEventSink() throws IOException {
+
 
     }
 

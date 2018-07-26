@@ -1,8 +1,6 @@
 package io.mewbase.eventsource.impl.hbase;
 
 
-
-
 import io.mewbase.MewbaseTestBase;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.*;
@@ -79,6 +77,7 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
         sink.close();
     }
 
+
     @Test
     public void testSubscribeFromEventNumber() throws Exception {
 
@@ -114,6 +113,7 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
         source.close();
         sink.close();
     }
+
 
     @Test
     public void testSubscribeFromInstant() throws Exception {
@@ -153,8 +153,8 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
         final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
         latch.await();
-        // Done - Checked that the correct number of event have occoured.
-        // Todo - Check the numbers in order
+        // Done - Checked that the correct number of event have occurred.
+
 
         sub.close();
         source.close();
