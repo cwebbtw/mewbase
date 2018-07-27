@@ -1,5 +1,6 @@
 package io.mewbase.eventsource.impl.hbase;
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
@@ -40,7 +41,8 @@ public class HBaseEventSink implements EventSink {
             final Table table = ensureTable(channelName);
             final AtomicLong l = seqNums.computeIfAbsent(channelName, s -> new AtomicLong());
             final Put put = new Put( Bytes.toBytes( l.get() ) );
-            put.addColumn(colFamily,qualifier,event.encode().getBytes());
+            final byte [] bytes = BsonCodec.bsonObjectToBsonBytes(event);
+            put.addColumn(colFamily,qualifier,bytes);
             table.put(put);
             return l.getAndIncrement();
         } catch (Exception exp) {
