@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 public class HBaseEventSinkTest extends MewbaseTestBase {
 
-    @Test  // Requires HBase to be running see mewbase wiki
+    //@Test  // Requires HBase to be running see mewbase wiki
     public void testCreateHBaseEventSink() throws IOException {
 
         EventSink hbSink = new HBaseEventSink();
@@ -23,7 +23,7 @@ public class HBaseEventSinkTest extends MewbaseTestBase {
     }
 
 
-    @Test  // Requires HBase to be running see mewbase wiki
+    //@Test  // Requires HBase to be running see mewbase wiki
     public void testSingleEvent() throws IOException {
 
         EventSink hbSink = new HBaseEventSink();
@@ -37,7 +37,7 @@ public class HBaseEventSinkTest extends MewbaseTestBase {
     }
 
 
-    @Test  // Requires HBase to be running see mewbase wiki
+    //@Test  // Requires HBase to be running see mewbase wiki
     public void testSingleAsyncEvent() throws IOException {
 
         EventSink hbSink = new HBaseEventSink();
@@ -53,7 +53,7 @@ public class HBaseEventSinkTest extends MewbaseTestBase {
     }
 
 
-    @Test  // Requires HBase to be running see mewbase wiki
+    //@Test  // Requires HBase to be running see mewbase wiki
     public void testMultiEvent() throws IOException {
 
         EventSink hbSink = new HBaseEventSink();

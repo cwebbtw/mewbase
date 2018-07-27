@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class HBaseEventSourceTest extends MewbaseTestBase {
 
-    @Test  // Requires HBase to be running see mewbase wiki
+    //@Test  // Requires HBase to be running see mewbase wiki
     public void testCreateHBaseEventSource() throws IOException {
 
         EventSource hbSource = new HBaseEventSource();
@@ -31,7 +31,7 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
     }
 
 
-    @Test // Requires HBase to be running see mewbase wiki
+    //@Test // Requires HBase to be running see mewbase wiki
     public void testSingleEvent() throws Exception {
 
         final EventSink sink = new HBaseEventSink();
@@ -78,7 +78,7 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
     }
 
 
-    @Test
+    //@Test
     public void testSubscribeFromEventNumber() throws Exception {
 
         // use test local config
@@ -115,7 +115,7 @@ public class HBaseEventSourceTest extends MewbaseTestBase {
     }
 
 
-    @Test
+    // @Test
     public void testSubscribeFromInstant() throws Exception {
 
         final EventSink sink = new HBaseEventSink();
