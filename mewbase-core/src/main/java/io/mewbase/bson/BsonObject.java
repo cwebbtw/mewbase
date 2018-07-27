@@ -19,13 +19,11 @@
 
 package io.mewbase.bson;
 
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonObject;
+import io.mewbase.binders.KeyVal;
 
-import java.io.*;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -43,35 +41,15 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BsonObject implements Iterable<Map.Entry<String, Object>> {
+public class BsonObject implements Iterable<Map.Entry<String, BsonValue>> {
 
-    private Map<String, Object> map;
-
-    /**
-     * Create an instance from a Buffer
-     *
-     * @param buffer the buffer containing the BSON
-     */
-    public BsonObject(Buffer buffer) {
-        fromBson(new ByteArrayInputStream(buffer.getBytes()));
-    }
-
-
-    /**
-     * Create an instance from a byte array
-     *
-     * @param buffer the byte array containing the BSON
-     */
-    public BsonObject(byte []  buffer) {
-        fromBson(new ByteArrayInputStream(buffer));
-    }
-
+    private Map<String, BsonValue> map;
 
     /**
      * Create a new, empty instance
      */
     public BsonObject() {
-        map = new LinkedHashMap<String, Object>();
+        map = new LinkedHashMap<>();
     }
 
     /**
@@ -79,17 +57,22 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      *
      * @param map the map to create the instance from.
      */
-    public BsonObject(Map<String, Object> map) {
+    BsonObject(Map<String, BsonValue> map) {
         this.map = map;
     }
 
-    /**
-     * Create an instance from a JsonObject
-     *
-     * @param jsonObject the JsonObject to create the BsonObject from
-     */
-    public BsonObject(JsonObject jsonObject) {
-        this.map = jsonObject.getMap();
+    public boolean isNull(String key) {
+        return map.get(key).isNull();
+    }
+
+    public boolean isAbsent(String key) {
+        return !map.containsKey(key);
+    }
+
+    public BsonValue getBsonValue(String key) {
+        Objects.requireNonNull(key);
+        final BsonValue result = map.get(key);
+        return result == null ? BsonValue.nullValue() : result;
     }
 
     /**
@@ -100,9 +83,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a String
      */
     public String getString(String key) {
-        Objects.requireNonNull(key);
-        CharSequence cs = (CharSequence)map.get(key);
-        return cs == null ? null : cs.toString();
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.stringVisitor);
     }
 
     /**
@@ -113,15 +94,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not an Integer
      */
     public Integer getInteger(String key) {
-        Objects.requireNonNull(key);
-        Number number = (Number)map.get(key);
-        if (number == null) {
-            return null;
-        } else if (number instanceof Integer) {
-            return (Integer)number;  // Avoids unnecessary unbox/box
-        } else {
-            return number.intValue();
-        }
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.integerVisitor);
     }
 
     /**
@@ -132,15 +105,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a Long
      */
     public Long getLong(String key) {
-        Objects.requireNonNull(key);
-        Number number = (Number)map.get(key);
-        if (number == null) {
-            return null;
-        } else if (number instanceof Long) {
-            return (Long)number;  // Avoids unnecessary unbox/box
-        } else {
-            return number.longValue();
-        }
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.longVisitor);
     }
 
     /**
@@ -151,15 +116,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a Double
      */
     public Double getDouble(String key) {
-        Objects.requireNonNull(key);
-        Number number = (Number)map.get(key);
-        if (number == null) {
-            return null;
-        } else if (number instanceof Double) {
-            return (Double)number;  // Avoids unnecessary unbox/box
-        } else {
-            return number.doubleValue();
-        }
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.doubleVisitor);
     }
 
     /**
@@ -170,15 +127,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a Float
      */
     public Float getFloat(String key) {
-        Objects.requireNonNull(key);
-        Number number = (Number)map.get(key);
-        if (number == null) {
-            return null;
-        } else if (number instanceof Float) {
-            return (Float)number;  // Avoids unnecessary unbox/box
-        } else {
-            return number.floatValue();
-        }
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.floatVisitor);
     }
 
     /**
@@ -189,8 +138,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a Boolean
      */
     public Boolean getBoolean(String key) {
-        Objects.requireNonNull(key);
-        return (Boolean)map.get(key);
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.booleanVisitor);
     }
 
     /**
@@ -201,12 +149,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a BsonObject
      */
     public BsonObject getBsonObject(String key) {
-        Objects.requireNonNull(key);
-        Object val = map.get(key);
-        if (val instanceof Map) {
-            val = new BsonObject((Map<String, Object>)val);
-        }
-        return (BsonObject)val;
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.bsonObjectVisitor);
     }
 
     /**
@@ -217,12 +160,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws ClassCastException if the value is not a BsonArray
      */
     public BsonArray getBsonArray(String key) {
-        Objects.requireNonNull(key);
-        Object val = map.get(key);
-        if (val instanceof List) {
-            val = new BsonArray((List)val);
-        }
-        return (BsonArray)val;
+        return getBsonValue(key).visit(ClassCastExceptionBsonValueVisitor.bsonArrayVisitor);
     }
 
     /**
@@ -239,8 +177,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws IllegalArgumentException if the String value is not a legal Base64 encoded value
      */
     public byte[] getBinary(String key) {
-        Objects.requireNonNull(key);
-        String encoded = (String)map.get(key);
+        final String encoded = getString(key);
         return encoded == null ? null : Base64.getDecoder().decode(encoded);
     }
 
@@ -258,26 +195,16 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @throws IllegalArgumentException if the String value is not a legal Base64 encoded value
      */
     public Instant getInstant(String key) {
-        Objects.requireNonNull(key);
-        String encoded = (String)map.get(key);
+        final String encoded = getString(key);
         return encoded == null ? null : Instant.from(ISO_INSTANT.parse(encoded));
     }
 
-    /**
-     * Get the value with the specified key, as an Object
-     *
-     * @param key the key to lookup
-     * @return the value
-     */
-    public Object getValue(String key) {
+    private <T> T getOrDefault(String key, Function<String, T> supplier, T def) {
         Objects.requireNonNull(key);
-        Object val = map.get(key);
-        if (val instanceof Map) {
-            val = new BsonObject((Map<String, Object>)val);
-        } else if (val instanceof List) {
-            val = new BsonArray((List)val);
-        }
-        return val;
+        if (map.containsKey(key))
+            return supplier.apply(key);
+        else
+            return def;
     }
 
     /**
@@ -288,9 +215,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public String getString(String key, String def) {
-        Objects.requireNonNull(key);
-        CharSequence cs = (CharSequence)map.get(key);
-        return cs != null || map.containsKey(key) ? cs == null ? null : cs.toString() : def;
+        return getOrDefault(key, this::getString, def);
     }
 
     /**
@@ -301,19 +226,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public Integer getInteger(String key, Integer def) {
-        Objects.requireNonNull(key);
-        Number val = (Number)map.get(key);
-        if (val == null) {
-            if (map.containsKey(key)) {
-                return null;
-            } else {
-                return def;
-            }
-        } else if (val instanceof Integer) {
-            return (Integer)val;  // Avoids unnecessary unbox/box
-        } else {
-            return val.intValue();
-        }
+        return getOrDefault(key, this::getInteger, def);
     }
 
     /**
@@ -324,19 +237,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public Long getLong(String key, Long def) {
-        Objects.requireNonNull(key);
-        Number val = (Number)map.get(key);
-        if (val == null) {
-            if (map.containsKey(key)) {
-                return null;
-            } else {
-                return def;
-            }
-        } else if (val instanceof Long) {
-            return (Long)val;  // Avoids unnecessary unbox/box
-        } else {
-            return val.longValue();
-        }
+        return getOrDefault(key, this::getLong, def);
     }
 
     /**
@@ -347,19 +248,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public Double getDouble(String key, Double def) {
-        Objects.requireNonNull(key);
-        Number val = (Number)map.get(key);
-        if (val == null) {
-            if (map.containsKey(key)) {
-                return null;
-            } else {
-                return def;
-            }
-        } else if (val instanceof Double) {
-            return (Double)val;  // Avoids unnecessary unbox/box
-        } else {
-            return val.doubleValue();
-        }
+        return getOrDefault(key, this::getDouble, def);
     }
 
     /**
@@ -370,19 +259,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public Float getFloat(String key, Float def) {
-        Objects.requireNonNull(key);
-        Number val = (Number)map.get(key);
-        if (val == null) {
-            if (map.containsKey(key)) {
-                return null;
-            } else {
-                return def;
-            }
-        } else if (val instanceof Float) {
-            return (Float)val;  // Avoids unnecessary unbox/box
-        } else {
-            return val.floatValue();
-        }
+        return getOrDefault(key, this::getFloat, def);
     }
 
     /**
@@ -393,9 +270,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public Boolean getBoolean(String key, Boolean def) {
-        Objects.requireNonNull(key);
-        Object val = map.get(key);
-        return val != null || map.containsKey(key) ? (Boolean)val : def;
+        return getOrDefault(key, this::getBoolean, def);
     }
 
     /**
@@ -406,8 +281,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public BsonObject getBsonObject(String key, BsonObject def) {
-        BsonObject val = getBsonObject(key);
-        return val != null || map.containsKey(key) ? val : def;
+        return getOrDefault(key, this::getBsonObject, def);
     }
 
     /**
@@ -418,8 +292,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public BsonArray getBsonArray(String key, BsonArray def) {
-        BsonArray val = getBsonArray(key);
-        return val != null || map.containsKey(key) ? val : def;
+        return getOrDefault(key, this::getBsonArray, def);
     }
 
     /**
@@ -430,9 +303,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public byte[] getBinary(String key, byte[] def) {
-        Objects.requireNonNull(key);
-        Object val = map.get(key);
-        return val != null || map.containsKey(key) ? (val == null ? null : Base64.getDecoder().decode((String)val)) : def;
+        return getOrDefault(key, this::getBinary, def);
     }
 
     /**
@@ -443,23 +314,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return the value or {@code def} if no entry present
      */
     public Instant getInstant(String key, Instant def) {
-        Objects.requireNonNull(key);
-        Object val = map.get(key);
-        return val != null || map.containsKey(key) ?
-                (val == null ? null : Instant.from(ISO_INSTANT.parse((String)val))) : def;
-    }
-
-    /**
-     * Like {@link #getValue(String)} but specifying a default value to return if there is no entry.
-     *
-     * @param key the key to lookup
-     * @param def the default value to use if the entry is not present
-     * @return the value or {@code def} if no entry present
-     */
-    public Object getValue(String key, Object def) {
-        Objects.requireNonNull(key);
-        Object val = getValue(key);
-        return val != null || map.containsKey(key) ? val : def;
+        return getOrDefault(key, this::getInstant, def);
     }
 
     /**
@@ -494,7 +349,14 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Enum value) {
         Objects.requireNonNull(key);
-        map.put(key, value == null ? null : value.name());
+        final String string = value == null ? null : value.name();
+        map.put(key, BsonValue.of(string));
+        return this;
+    }
+
+    public BsonObject put(String key, BsonValue value) {
+        Objects.requireNonNull(key);
+        map.put(key, value);
         return this;
     }
 
@@ -508,7 +370,8 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
     public BsonObject put(String key, CharSequence value) {
 
         Objects.requireNonNull(key);
-        map.put(key, value == null ? null : value.toString());
+        final String string = value == null ? null : value.toString();
+        map.put(key, BsonValue.of(string));
         return this;
     }
 
@@ -521,7 +384,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, String value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -534,7 +397,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Integer value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -547,7 +410,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Long value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -560,7 +423,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Double value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -573,7 +436,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Float value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -586,7 +449,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Boolean value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -598,7 +461,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject putNull(String key) {
         Objects.requireNonNull(key);
-        map.put(key, null);
+        map.put(key, BsonValue.nullValue());
         return this;
     }
 
@@ -611,7 +474,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, BsonObject value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -624,7 +487,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, BsonArray value) {
         Objects.requireNonNull(key);
-        map.put(key, value);
+        map.put(key, BsonValue.of(value));
         return this;
     }
 
@@ -639,7 +502,8 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, byte[] value) {
         Objects.requireNonNull(key);
-        map.put(key, value == null ? null : Base64.getEncoder().encodeToString(value));
+        final String string = value == null ? null : Base64.getEncoder().encodeToString(value);
+        map.put(key, BsonValue.of(string));
         return this;
     }
 
@@ -654,31 +518,18 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      */
     public BsonObject put(String key, Instant value) {
         Objects.requireNonNull(key);
-        map.put(key, value == null ? null : ISO_INSTANT.format(value));
+        final String string = value == null ? null : ISO_INSTANT.format(value);
+        map.put(key, BsonValue.of(string));
         return this;
     }
 
     /**
-     * Put an Object into the JSON object with the specified key.
-     *
-     * @param key   the key
-     * @param value the value
-     * @return a reference to this, so the API can be used fluently
-     */
-    public BsonObject put(String key, Object value) {
-        Objects.requireNonNull(key);
-        value = Bson.checkAndCopy(value, false);
-        map.put(key, value);
-        return this;
-    }
-
-    /**
-     * Remove an entry from this object.
+     * Remove an entry of this object.
      *
      * @param key the key
      * @return the value that was removed, or null if none
      */
-    public Object remove(String key) {
+    public BsonValue remove(String key) {
         return map.remove(key);
     }
 
@@ -696,37 +547,14 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
     }
 
     /**
-     * Encode this JSON object as a string.
-     *
-     * @return the string encoding.
-     */
-    public void encode(OutputStream outputStream) {
-        Bson.encode(map, outputStream);
-    }
-
-    public Buffer encode() {
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Bson.encode(map, os);
-            os.flush();
-            return Buffer.buffer(os.toByteArray());
-        } catch (IOException e) {
-            throw new VertxException(e);
-        }
-    }
-
-
-    /**
      * Copy the JSON object
      *
      * @return a copy of the object
      */
     public BsonObject copy() {
-        Map<String, Object> copiedMap = new HashMap<>(map.size());
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            Object val = entry.getValue();
-            val = Bson.checkAndCopy(val, true);
-            copiedMap.put(entry.getKey(), val);
+        Map<String, BsonValue> copiedMap = new HashMap<>(map.size());
+        for (Map.Entry<String, BsonValue> entry : map.entrySet()) {
+            copiedMap.put(entry.getKey(), entry.getValue().copy());
         }
         return new BsonObject(copiedMap);
     }
@@ -736,7 +564,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      *
      * @return the underlying Map.
      */
-    public Map<String, Object> getMap() {
+    Map<String, BsonValue> getMap() {
         return map;
     }
 
@@ -745,7 +573,7 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      *
      * @return a stream of the entries.
      */
-    public Stream<Map.Entry<String, Object>> stream() {
+    public Stream<Map.Entry<String, BsonValue>> stream() {
         return Bson.asStream(iterator());
     }
 
@@ -762,8 +590,8 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
      * @return an Iterator of the entries
      */
     @Override
-    public Iterator<Map.Entry<String, Object>> iterator() {
-        return new Iter(map.entrySet().iterator());
+    public Iterator<Map.Entry<String, BsonValue>> iterator() {
+        return map.entrySet().iterator();
     }
 
     /**
@@ -783,40 +611,26 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
         return this;
     }
 
-    /**
-     * Encode this to a String
-     *
-     * @return the string form
-     */
-    public String encodeToString() {
-        return toJsonObject().encode();
-    }
-
-    /**
-     * Convert this to a JsonObject
-     *
-     * @return the equivalent JsonObject
-     */
-    public JsonObject toJsonObject() {
-        Map<String, Object> m = new HashMap<>(map.size());
-        for (Map.Entry<String, Object> entry: map.entrySet()) {
-            Object o = entry.getValue();
-            if (o instanceof BsonObject) {
-                BsonObject bo = (BsonObject)o;
-                m.put(entry.getKey(), bo.toJsonObject());
-            } else if (o instanceof BsonArray) {
-                BsonArray ba = (BsonArray)o;
-                m.put(entry.getKey(), ba.toJsonArray());
-            } else {
-                m.put(entry.getKey(), o);
-            }
-        }
-        return new JsonObject(m);
+    public static BsonObject from(Stream<KeyVal<String, BsonObject>> iterable) {
+        final BsonObject result = new BsonObject();
+        iterable.forEach(kv -> result.put(kv.getKey(), kv.getValue()));
+        return result;
     }
 
     @Override
     public String toString() {
-        return encodeToString();
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("BsonObject{");
+
+        final List<String> elements = new ArrayList<>();
+        for (Map.Entry<String, BsonValue> entry : map.entrySet()) {
+            elements.add(entry.getKey() + ": " + entry.getValue().toString());
+        }
+
+        stringBuilder.append(String.join(", ", elements));
+        stringBuilder.append("}");
+
+        return stringBuilder.toString();
     }
 
     /**
@@ -830,127 +644,15 @@ public class BsonObject implements Iterable<Map.Entry<String, Object>> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        return objectEquals(map, o);
-    }
-
-    static boolean objectEquals(Map<?, ?> m1, Object o2) {
-        Map<?, ?> m2;
-        if (o2 instanceof BsonObject) {
-            m2 = ((BsonObject)o2).map;
-        } else if (o2 instanceof Map<?, ?>) {
-            m2 = (Map<?, ?>)o2;
-        } else {
-            return false;
-        }
-        if (m1.size() != m2.size())
-            return false;
-        for (Map.Entry<?, ?> entry : m1.entrySet()) {
-            Object val = entry.getValue();
-            if (val == null) {
-                if (m2.get(entry.getKey()) != null) {
-                    return false;
-                }
-            } else {
-                if (!equals(entry.getValue(), m2.get(entry.getKey()))) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    static boolean equals(Object o1, Object o2) {
-        if (o1 == o2)
-            return true;
-        if (o1 instanceof BsonObject) {
-            return objectEquals(((BsonObject)o1).map, o2);
-        }
-        if (o1 instanceof Map<?, ?>) {
-            return objectEquals((Map<?, ?>)o1, o2);
-        }
-        if (o1 instanceof BsonArray) {
-            return BsonArray.arrayEquals(((BsonArray)o1).getList(), o2);
-        }
-        if (o1 instanceof List<?>) {
-            return BsonArray.arrayEquals((List<?>)o1, o2);
-        }
-        if (o1 instanceof Number && o2 instanceof Number && o1.getClass() != o2.getClass()) {
-            Number n1 = (Number)o1;
-            Number n2 = (Number)o2;
-            if (o1 instanceof Float || o1 instanceof Double || o2 instanceof Float || o2 instanceof Double) {
-                return n1.doubleValue() == n2.doubleValue();
-            } else {
-                return n1.longValue() == n2.longValue();
-            }
-        }
-        return o1.equals(o2);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BsonObject entries = (BsonObject) o;
+        return Objects.equals(map, entries.map);
     }
 
     @Override
     public int hashCode() {
-        return map.hashCode();
+        return Objects.hash(map);
     }
 
-    private void fromBson(InputStream inputStream) {
-        map = (Map<String, Object>) Bson.decodeValue(inputStream, Map.class);
-    }
-
-    private class Iter implements Iterator<Map.Entry<String, Object>> {
-
-        final Iterator<Map.Entry<String, Object>> mapIter;
-
-        Iter(Iterator<Map.Entry<String, Object>> mapIter) {
-            this.mapIter = mapIter;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return mapIter.hasNext();
-        }
-
-        @Override
-        public Map.Entry<String, Object> next() {
-            Map.Entry<String, Object> entry = mapIter.next();
-            if (entry.getValue() instanceof Map) {
-                return new Entry(entry.getKey(), new BsonObject((Map)entry.getValue()));
-            } else if (entry.getValue() instanceof List) {
-                return new Entry(entry.getKey(), new BsonArray((List)entry.getValue()));
-            }
-            return entry;
-        }
-
-        @Override
-        public void remove() {
-            mapIter.remove();
-        }
-    }
-
-    private static final class Entry implements Map.Entry<String, Object> {
-        final String key;
-        final Object value;
-
-        public Entry(String key, Object value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        @Override
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public Object getValue() {
-            return value;
-        }
-
-        @Override
-        public Object setValue(Object value) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }

@@ -2,10 +2,9 @@ package io.mewbase.binders.impl.lmdb;
 
 import io.mewbase.binders.KeyVal;
 import io.mewbase.binders.impl.StreamableBinder;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.binders.Binder;
-
-import io.vertx.core.buffer.Buffer;
 
 import org.lmdbjava.*;
 import org.slf4j.Logger;
@@ -67,10 +66,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
                 ByteBuffer key = makeKeyBuffer(id);
                 final ByteBuffer found = dbi.get(txn, key);
                 if (found != null) {
-                    // copy to local Vert.x buffer from the LMDB mem managed array
-                    Buffer buffer = Buffer.buffer(txn.val().remaining());
-                    buffer.setBytes( 0 , txn.val() );
-                    BsonObject doc = new BsonObject(buffer);
+                    BsonObject doc = BsonCodec.bsonBytesToBsonObject(txn.val().array());
                     return doc;
                 } else {
                     return null;
@@ -85,7 +81,7 @@ public class LmdbBinder extends StreamableBinder implements Binder {
     public CompletableFuture<Boolean> put(final String id, final BsonObject doc) {
         CompletableFuture<Boolean> fut = CompletableFuture.supplyAsync( () -> {
             ByteBuffer key = makeKeyBuffer(id);
-            byte[] valBytes = doc.encode().getBytes();
+            byte[] valBytes = BsonCodec.bsonObjectToBsonBytes(doc);
             final ByteBuffer val = allocateDirect(valBytes.length);
             val.put(valBytes).flip();
             synchronized (this) {
@@ -133,15 +129,11 @@ public class LmdbBinder extends StreamableBinder implements Binder {
                 while (hasNext) {
                     txn.renew();
                     final CursorIterator.KeyVal<ByteBuffer> rawKV = itr.next();
-                    // Copy bytes from LMDB managed memory to vert.x buffers
-                    final Buffer keyBuffer = Buffer.buffer(rawKV.key().remaining());
-                    keyBuffer.setBytes(0, rawKV.key());
-                    final Buffer valueBuffer = Buffer.buffer(rawKV.val().remaining());
-                    valueBuffer.setBytes(0, rawKV.val());
+                    final String id = new String(rawKV.key().array());
+                    final BsonObject doc = BsonCodec.bsonBytesToBsonObject(rawKV.val().array());
                     hasNext = itr.hasNext(); // iterator makes reference to the txn
                     txn.reset(); // got data so release the txn
-                    final String id = new String(keyBuffer.getBytes());
-                    final BsonObject doc = new BsonObject(valueBuffer);
+
                     KeyVal<String,BsonObject> entry = KeyVal.create(id, doc);
                     if (filter.test(entry)) resultSet.add(entry);
                 }

@@ -10,7 +10,7 @@ import java.util.stream.Stream;
  * ProjectionFactory can be used to get projection builders and wires them to the enclosed
  * event source and binder store
  */
-public interface ProjectionManager {
+public interface ProjectionManager extends AutoCloseable {
 
     /**
      * Factory method for Projection Manager.
@@ -51,4 +51,9 @@ public interface ProjectionManager {
      * Stops all of the current projections within this manager.
      */
     void stopAll();
+
+    @Override
+    default void close() throws Exception {
+        stopAll();
+    }
 }

@@ -1,13 +1,16 @@
 package io.mewbase.eventsource.impl.http;
 
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.eventsource.EventHandler;
 import io.mewbase.eventsource.Subscription;
 
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 
 import io.vertx.core.http.WebSocket;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +58,7 @@ public class HttpEventSubscription implements Subscription {
                     future.completeExceptionally(exp);
                     }
                 });
-            }).end(subsRequest.toBson().encode());
+            }).end(Buffer.buffer(BsonCodec.bsonObjectToBsonBytes(subsRequest.toBson())));
     }
 
 

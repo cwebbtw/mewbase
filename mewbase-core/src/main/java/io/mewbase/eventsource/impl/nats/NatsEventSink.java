@@ -3,6 +3,7 @@ package io.mewbase.eventsource.impl.nats;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.EventSink;
 
@@ -58,7 +59,7 @@ public class NatsEventSink implements EventSink {
     @Override
     public Long publishSync(String channelName, BsonObject event) {
         try {
-            nats.publish(channelName, event.encode().getBytes());
+            nats.publish(channelName, BsonCodec.bsonObjectToBsonBytes(event));
         } catch (Exception exp) {
             logger.error("Error sending event " + event, exp);
         }
@@ -70,7 +71,7 @@ public class NatsEventSink implements EventSink {
     public CompletableFuture<Long> publishAsync(final String channelName, final BsonObject event) {
         CompletableFuture<Long> fut = new CompletableFuture<>();
         try {
-            nats.publish(channelName, event.encode().getBytes(), (String ackedNuid, Exception err) -> {
+            nats.publish(channelName, BsonCodec.bsonObjectToBsonBytes(event), (String ackedNuid, Exception err) -> {
                 if (err != null) {
                     fut.completeExceptionally(err);
                 } else {

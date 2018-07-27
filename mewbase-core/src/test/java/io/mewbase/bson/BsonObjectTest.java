@@ -20,13 +20,9 @@ package io.mewbase.bson;
 
 import io.mewbase.TestUtils;
 
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -46,21 +42,6 @@ public class BsonObjectTest {
     public void setUp() throws Exception {
         bsonObject = new BsonObject();
     }
-
-
-    // answering #144
-    @Test
-    public void shouldInstantiateBsonObjectfromJsonObject() throws IOException {
-        final String key = "event_type";
-        final String value = "manually_typed_address_merged";
-        final String jsonStr = "{\""+key+"\":\""+value+"\"}";
-        final JsonObject jsonObject = new JsonObject(jsonStr);
-        final BsonObject bsonObject = new BsonObject(jsonObject);
-        assertNotNull(bsonObject);
-        assertEquals(bsonObject.getString(key),value);
-    }
-
-
 
     @Test
     public void testGetInteger() {
@@ -148,11 +129,11 @@ public class BsonObjectTest {
         }
         // Put as different Number types
         bsonObject.put("foo", 123);
-        assertEquals(Long.valueOf(123l), bsonObject.getLong("foo"));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo"));
         bsonObject.put("foo", 123d);
-        assertEquals(Long.valueOf(123l), bsonObject.getLong("foo"));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo"));
         bsonObject.put("foo", 123f);
-        assertEquals(Long.valueOf(123l), bsonObject.getLong("foo"));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo"));
         bsonObject.put("foo", Long.MAX_VALUE);
         assertEquals(Long.valueOf(Long.MAX_VALUE), bsonObject.getLong("foo"));
 
@@ -258,7 +239,7 @@ public class BsonObjectTest {
         assertEquals(Float.valueOf(123f), bsonObject.getFloat("foo", 321f));
         bsonObject.put("foo", 123d);
         assertEquals(Float.valueOf(123f), bsonObject.getFloat("foo", 321f));
-        bsonObject.put("foo", 123l);
+        bsonObject.put("foo", 123L);
         assertEquals(Float.valueOf(123f), bsonObject.getFloat("foo", 321f));
 
         // Null and absent values
@@ -327,7 +308,7 @@ public class BsonObjectTest {
         assertEquals(Double.valueOf(123d), bsonObject.getDouble("foo", 321d));
         bsonObject.put("foo", 123f);
         assertEquals(Double.valueOf(123d), bsonObject.getDouble("foo", 321d));
-        bsonObject.put("foo", 123l);
+        bsonObject.put("foo", 123L);
         assertEquals(Double.valueOf(123d), bsonObject.getDouble("foo", 321d));
 
         // Null and absent values
@@ -705,89 +686,74 @@ public class BsonObjectTest {
     @Test
     public void testGetValue() {
         bsonObject.put("foo", 123);
-        assertEquals(123, bsonObject.getValue("foo"));
-        bsonObject.put("foo", 123l);
-        assertEquals(123l, bsonObject.getValue("foo"));
+        assertEquals(Integer.valueOf(123), bsonObject.getInteger("foo"));
+        bsonObject.put("foo", 123L);
+        assertEquals(Long.valueOf(123), bsonObject.getLong("foo"));
         bsonObject.put("foo", 123f);
-        assertEquals(123f, bsonObject.getValue("foo"));
+        assertEquals(Float.valueOf(123), bsonObject.getFloat("foo"));
         bsonObject.put("foo", 123d);
-        assertEquals(123d, bsonObject.getValue("foo"));
+        assertEquals(Double.valueOf(123), bsonObject.getDouble("foo"));
         bsonObject.put("foo", false);
-        assertEquals(false, bsonObject.getValue("foo"));
+        assertEquals(false, bsonObject.getBoolean("foo"));
         bsonObject.put("foo", true);
-        assertEquals(true, bsonObject.getValue("foo"));
+        assertEquals(true, bsonObject.getBoolean("foo"));
         bsonObject.put("foo", "bar");
-        assertEquals("bar", bsonObject.getValue("foo"));
+        assertEquals("bar", bsonObject.getString("foo"));
         BsonObject obj = new BsonObject().put("blah", "wibble");
         bsonObject.put("foo", obj);
-        assertEquals(obj, bsonObject.getValue("foo"));
+        assertEquals(obj, bsonObject.getBsonObject("foo"));
         BsonArray arr = new BsonArray().add("blah").add("wibble");
         bsonObject.put("foo", arr);
-        assertEquals(arr, bsonObject.getValue("foo"));
+        assertEquals(arr, bsonObject.getBsonArray("foo"));
         byte[] bytes = TestUtils.randomByteArray(100);
         bsonObject.put("foo", bytes);
-        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)bsonObject.getValue("foo"))));
+        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)bsonObject.getString("foo"))));
         bsonObject.putNull("foo");
-        assertNull(bsonObject.getValue("foo"));
-        assertNull(bsonObject.getValue("absent"));
-        // BsonObject with inner Map
-        Map<String, Object> map = new HashMap<>();
-        Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("blah", "wibble");
-        map.put("foo", innerMap);
-        bsonObject = new BsonObject(map);
-        obj = (BsonObject)bsonObject.getValue("foo");
-        assertEquals("wibble", obj.getString("blah"));
-        // BsonObject with inner List
-        map = new HashMap<>();
-        List<Object> innerList = new ArrayList<>();
-        innerList.add("blah");
-        map.put("foo", innerList);
-        bsonObject = new BsonObject(map);
-        arr = (BsonArray)bsonObject.getValue("foo");
-        assertEquals("blah", arr.getString(0));
+        assertTrue(bsonObject.isNull("foo"));
+        assertFalse(bsonObject.isAbsent("foo"));
+        assertTrue(bsonObject.isAbsent("absent"));
     }
 
     @Test
     public void testGetValueDefault() {
         bsonObject.put("foo", 123);
-        assertEquals(123, bsonObject.getValue("foo", "blah"));
-        assertEquals(123, bsonObject.getValue("foo", null));
-        bsonObject.put("foo", 123l);
-        assertEquals(123l, bsonObject.getValue("foo", "blah"));
-        assertEquals(123l, bsonObject.getValue("foo", null));
+        assertEquals(Integer.valueOf(123), bsonObject.getInteger("foo", 1));
+        assertEquals(Integer.valueOf(123), bsonObject.getInteger("foo", null));
+        bsonObject.put("foo", 123L);
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo", 1L));
+        assertEquals(Long.valueOf(123L), bsonObject.getLong("foo", null));
         bsonObject.put("foo", 123f);
-        assertEquals(123f, bsonObject.getValue("foo", "blah"));
-        assertEquals(123f, bsonObject.getValue("foo", null));
+        assertEquals(Float.valueOf(123f), bsonObject.getFloat("foo", 1f));
+        assertEquals(Float.valueOf(123f), bsonObject.getFloat("foo", null));
         bsonObject.put("foo", 123d);
-        assertEquals(123d, bsonObject.getValue("foo", "blah"));
-        assertEquals(123d, bsonObject.getValue("foo", null));
+        assertEquals(Double.valueOf(123d), bsonObject.getDouble("foo", 1d));
+        assertEquals(Double.valueOf(123d), bsonObject.getDouble("foo", null));
         bsonObject.put("foo", false);
-        assertEquals(false, bsonObject.getValue("foo", "blah"));
-        assertEquals(false, bsonObject.getValue("foo", null));
+        assertEquals(false, bsonObject.getBoolean("foo", true));
+        assertEquals(false, bsonObject.getBoolean("foo", null));
         bsonObject.put("foo", true);
-        assertEquals(true, bsonObject.getValue("foo", "blah"));
-        assertEquals(true, bsonObject.getValue("foo", null));
+        assertEquals(true, bsonObject.getBoolean("foo", false));
+        assertEquals(true, bsonObject.getBoolean("foo", null));
         bsonObject.put("foo", "bar");
-        assertEquals("bar", bsonObject.getValue("foo", "blah"));
-        assertEquals("bar", bsonObject.getValue("foo", null));
+        assertEquals("bar", bsonObject.getString("foo", "blah"));
+        assertEquals("bar", bsonObject.getString("foo", null));
         BsonObject obj = new BsonObject().put("blah", "wibble");
         bsonObject.put("foo", obj);
-        assertEquals(obj, bsonObject.getValue("foo", "blah"));
-        assertEquals(obj, bsonObject.getValue("foo", null));
+        assertEquals(obj, bsonObject.getBsonObject("foo", new BsonObject()));
+        assertEquals(obj, bsonObject.getBsonObject("foo", null));
         BsonArray arr = new BsonArray().add("blah").add("wibble");
         bsonObject.put("foo", arr);
-        assertEquals(arr, bsonObject.getValue("foo", "blah"));
-        assertEquals(arr, bsonObject.getValue("foo", null));
+        assertEquals(arr, bsonObject.getBsonArray("foo", new BsonArray()));
+        assertEquals(arr, bsonObject.getBsonArray("foo", null));
         byte[] bytes = TestUtils.randomByteArray(100);
         bsonObject.put("foo", bytes);
-        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)bsonObject.getValue("foo", "blah"))));
-        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)bsonObject.getValue("foo", null))));
+        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode(bsonObject.getString("foo", "blah"))));
+        assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode(bsonObject.getString("foo", null))));
         bsonObject.putNull("foo");
-        assertNull(bsonObject.getValue("foo", "blah"));
-        assertNull(bsonObject.getValue("foo", null));
-        assertEquals("blah", bsonObject.getValue("absent", "blah"));
-        assertNull(bsonObject.getValue("absent", null));
+        assertNull(bsonObject.getString("foo", "blah"));
+        assertNull(bsonObject.getString("foo", null));
+        assertEquals("blah", bsonObject.getString("absent", "blah"));
+        assertNull(bsonObject.getString("absent", null));
     }
 
     @Test
@@ -1096,20 +1062,20 @@ public class BsonObjectTest {
 
     @Test
     public void testPutValue() {
-        bsonObject.put("str", (Object)"bar");
-        bsonObject.put("int", (Object)(Integer.valueOf(123)));
-        bsonObject.put("long", (Object)(Long.valueOf(123l)));
-        bsonObject.put("float", (Object)(Float.valueOf(1.23f)));
-        bsonObject.put("double", (Object)(Double.valueOf(1.23d)));
-        bsonObject.put("boolean", (Object)true);
+        bsonObject.put("str", "bar");
+        bsonObject.put("int", Integer.valueOf(123));
+        bsonObject.put("long", Long.valueOf(123l));
+        bsonObject.put("float", Float.valueOf(1.23f));
+        bsonObject.put("double", Double.valueOf(1.23d));
+        bsonObject.put("boolean", true);
         byte[] bytes = TestUtils.randomByteArray(10);
-        bsonObject.put("binary", (Object)(bytes));
+        bsonObject.put("binary", bytes);
         Instant now = Instant.now();
         bsonObject.put("instant", now);
         BsonObject obj = new BsonObject().put("foo", "blah");
         BsonArray arr = new BsonArray().add("quux");
-        bsonObject.put("obj", (Object)obj);
-        bsonObject.put("arr", (Object)arr);
+        bsonObject.put("obj", obj);
+        bsonObject.put("arr", arr);
         assertEquals("bar", bsonObject.getString("str"));
         assertEquals(Integer.valueOf(123), bsonObject.getInteger("int"));
         assertEquals(Long.valueOf(123l), bsonObject.getLong("long"));
@@ -1119,24 +1085,6 @@ public class BsonObjectTest {
         assertEquals(now, bsonObject.getInstant("instant"));
         assertEquals(obj, bsonObject.getBsonObject("obj"));
         assertEquals(arr, bsonObject.getBsonArray("arr"));
-        try {
-            bsonObject.put("inv", new SomeClass());
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-        try {
-            bsonObject.put("inv", new BigDecimal(123));
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-        try {
-            bsonObject.put("inv", new Date());
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
 
     }
 
@@ -1164,90 +1112,14 @@ public class BsonObjectTest {
     }
 
     @Test
-    public void testEncode() throws Exception {
-        bsonObject.put("mystr", "foo");
-        bsonObject.put("mycharsequence", new StringBuilder("oob"));
-        bsonObject.put("myint", 123);
-        bsonObject.put("mylong", 1234l);
-        bsonObject.put("myfloat", 1.23f);
-        bsonObject.put("mydouble", 2.34d);
-        bsonObject.put("myboolean", true);
-        byte[] bytes = TestUtils.randomByteArray(10);
-        bsonObject.put("mybinary", bytes);
-        Instant now = Instant.now();
-        bsonObject.put("myinstant", now);
-        bsonObject.putNull("mynull");
-        bsonObject.put("myobj", new BsonObject().put("foo", "bar"));
-        bsonObject.put("myarr", new BsonArray().add("foo").add(123));
-        Buffer encoded = bsonObject.encode();
-        BsonObject obj = new BsonObject(encoded);
-        assertEquals("foo", obj.getString("mystr"));
-        assertEquals("oob", obj.getString("mycharsequence"));
-        assertEquals(Integer.valueOf(123), obj.getInteger("myint"));
-        assertEquals(Long.valueOf(1234), obj.getLong("mylong"));
-        assertEquals(Float.valueOf(1.23f), obj.getFloat("myfloat"));
-        assertEquals(Double.valueOf(2.34d), obj.getDouble("mydouble"));
-        assertTrue(obj.getBoolean("myboolean"));
-        assertTrue(TestUtils.byteArraysEqual(bytes, obj.getBinary("mybinary")));
-        assertEquals(now, obj.getInstant("myinstant"));
-        assertTrue(obj.containsKey("mynull"));
-        BsonObject nestedObj = obj.getBsonObject("myobj");
-        assertEquals("bar", nestedObj.getString("foo"));
-        BsonArray nestedArr = obj.getBsonArray("myarr");
-        assertEquals("foo", nestedArr.getString(0));
-        assertEquals(Integer.valueOf(123), Integer.valueOf(nestedArr.getInteger(1)));
-    }
-
-    @Test
-    public void testEncodeToString() throws Exception {
-        bsonObject.put("mystr", "foo");
-        bsonObject.put("mycharsequence", new StringBuilder("oob"));
-        bsonObject.put("myint", 123);
-        bsonObject.put("mylong", 1234l);
-        bsonObject.put("myfloat", 1.23f);
-        bsonObject.put("mydouble", 2.34d);
-        bsonObject.put("myboolean", true);
-        byte[] bytes = new byte[] {4, 7, 89, 32, 24};
-        bsonObject.put("mybinary", bytes);
-        Instant now = Instant.ofEpochMilli(16235126312635L);
-        bsonObject.put("myinstant", now);
-        bsonObject.putNull("mynull");
-        bsonObject.put("myobj", new BsonObject().put("foo", "bar"));
-        bsonObject.put("myarr", new BsonArray().add("foo").add(123));
-        String str = bsonObject.encodeToString();
-        assertEquals("{\"myboolean\":true,\"myfloat\":1.23,\"myobj\":{\"foo\":\"bar\"},\"mylong\":1234,\"mydou" +
-                "ble\":2.34,\"mycharsequence\":\"oob\",\"mybinary\":\"BAdZIBg=\",\"myinstant\":\"2484-06-20T13:18:32.63" +
-                "5Z\",\"myint\":123,\"mystr\":\"foo\",\"myarr\":[\"foo\",123],\"mynull\":null}", str);
-    }
-
-    @Test
-    public void testEncodeSize() throws Exception {
-        bsonObject.put("foo", "bar");
-        Buffer encoded = bsonObject.encode();
-        int length = encoded.getIntLE(0);
-        assertEquals(encoded.length(), length);
-    }
-
-    @Test
-    public void testInvalidJson() {
-        Buffer invalid = Buffer.buffer(TestUtils.randomByteArray(100));
-        try {
-            new BsonObject(invalid);
-            fail();
-        } catch (Exception e) {
-            // OK
-        }
-    }
-
-    @Test
     public void testClear() {
         bsonObject.put("foo", "bar");
         bsonObject.put("quux", 123);
         assertEquals(2, bsonObject.size());
         bsonObject.clear();
         assertEquals(0, bsonObject.size());
-        assertNull(bsonObject.getValue("foo"));
-        assertNull(bsonObject.getValue("quux"));
+        assertTrue(bsonObject.isAbsent("foo"));
+        assertTrue(bsonObject.isAbsent("quux"));
     }
 
     @Test
@@ -1264,10 +1136,10 @@ public class BsonObjectTest {
     public void testRemove() {
         bsonObject.put("mystr", "bar");
         bsonObject.put("myint", 123);
-        assertEquals("bar", bsonObject.remove("mystr"));
-        assertNull(bsonObject.getValue("mystr"));
-        assertEquals(123, bsonObject.remove("myint"));
-        assertNull(bsonObject.getValue("myint"));
+        assertEquals(BsonValue.of("bar"), bsonObject.remove("mystr"));
+        assertTrue(bsonObject.isAbsent("mystr"));
+        assertEquals(BsonValue.of(123), bsonObject.remove("myint"));
+        assertTrue(bsonObject.isAbsent("myint"));
         assertTrue(bsonObject.isEmpty());
     }
 
@@ -1277,19 +1149,19 @@ public class BsonObjectTest {
         bsonObject.put("quux", 123);
         BsonObject obj = createBsonObject();
         bsonObject.put("wibble", obj);
-        Iterator<Map.Entry<String, Object>> iter = bsonObject.iterator();
+        Iterator<Map.Entry<String, BsonValue>> iter = bsonObject.iterator();
         assertTrue(iter.hasNext());
-        Map.Entry<String, Object> entry = iter.next();
+        Map.Entry<String, BsonValue> entry = iter.next();
         assertEquals("foo", entry.getKey());
-        assertEquals("bar", entry.getValue());
+        assertEquals(BsonValue.of("bar"), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("quux", entry.getKey());
-        assertEquals(123, entry.getValue());
+        assertEquals(BsonValue.of(123), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("wibble", entry.getKey());
-        assertEquals(obj, entry.getValue());
+        assertEquals(BsonValue.of(obj), entry.getValue());
         assertFalse(iter.hasNext());
         iter.remove();
         assertFalse(obj.containsKey("wibble"));
@@ -1298,21 +1170,21 @@ public class BsonObjectTest {
 
     @Test
     public void testIteratorDoesntChangeObject() {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("nestedMap", new HashMap<>());
-        map.put("nestedList", new ArrayList<>());
+        Map<String, BsonValue> map = new LinkedHashMap<>();
+        map.put("nestedMap", BsonValue.of(new HashMap<>()));
+        map.put("nestedList", BsonValue.of(new ArrayList<>()));
         BsonObject obj = new BsonObject(map);
-        Iterator<Map.Entry<String, Object>> iter = obj.iterator();
-        Map.Entry<String, Object> entry1 = iter.next();
+        Iterator<Map.Entry<String, BsonValue>> iter = obj.iterator();
+        Map.Entry<String, BsonValue> entry1 = iter.next();
         assertEquals("nestedMap", entry1.getKey());
-        Object val1 = entry1.getValue();
-        assertTrue(val1 instanceof BsonObject);
-        Map.Entry<String, Object> entry2 = iter.next();
+        BsonValue val1 = entry1.getValue();
+        assertTrue(val1 instanceof BsonValue.BsonObjectBsonValue);
+        Map.Entry<String, BsonValue> entry2 = iter.next();
         assertEquals("nestedList", entry2.getKey());
-        Object val2 = entry2.getValue();
-        assertTrue(val2 instanceof BsonArray);
-        assertTrue(map.get("nestedMap") instanceof HashMap);
-        assertTrue(map.get("nestedList") instanceof ArrayList);
+        BsonValue val2 = entry2.getValue();
+        assertTrue(val2 instanceof BsonValue.BsonArrayBsonValue);
+        assertTrue(map.get("nestedMap") instanceof BsonValue.BsonObjectBsonValue);
+        assertTrue(map.get("nestedList") instanceof BsonValue.BsonArrayBsonValue);
     }
 
     @Test
@@ -1321,20 +1193,20 @@ public class BsonObjectTest {
         bsonObject.put("quux", 123);
         BsonObject obj = createBsonObject();
         bsonObject.put("wibble", obj);
-        List<Map.Entry<String, Object>> list = bsonObject.stream().collect(Collectors.toList());
-        Iterator<Map.Entry<String, Object>> iter = list.iterator();
+        List<Map.Entry<String, BsonValue>> list = bsonObject.stream().collect(Collectors.toList());
+        Iterator<Map.Entry<String, BsonValue>> iter = list.iterator();
         assertTrue(iter.hasNext());
-        Map.Entry<String, Object> entry = iter.next();
+        Map.Entry<String, BsonValue> entry = iter.next();
         assertEquals("foo", entry.getKey());
-        assertEquals("bar", entry.getValue());
+        assertEquals(BsonValue.of("bar"), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("quux", entry.getKey());
-        assertEquals(123, entry.getValue());
+        assertEquals(BsonValue.of(123), entry.getValue());
         assertTrue(iter.hasNext());
         entry = iter.next();
         assertEquals("wibble", entry.getKey());
-        assertEquals(obj, entry.getValue());
+        assertEquals(BsonValue.of(obj), entry.getValue());
         assertFalse(iter.hasNext());
     }
 
@@ -1366,74 +1238,28 @@ public class BsonObjectTest {
     }
 
     @Test
-    public void testInvalidValsOnCopy1() {
-        Map<String, Object> invalid = new HashMap<>();
-        invalid.put("foo", new SomeClass());
-        BsonObject object = new BsonObject(invalid);
-        try {
-            object.copy();
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testInvalidValsOnCopy2() {
-        Map<String, Object> invalid = new HashMap<>();
-        Map<String, Object> invalid2 = new HashMap<>();
-        invalid2.put("foo", new SomeClass());
-        invalid.put("bar", invalid2);
-        BsonObject object = new BsonObject(invalid);
-        try {
-            object.copy();
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testInvalidValsOnCopy3() {
-        Map<String, Object> invalid = new HashMap<>();
-        List<Object> invalid2 = new ArrayList<>();
-        invalid2.add(new SomeClass());
-        invalid.put("bar", invalid2);
-        BsonObject object = new BsonObject(invalid);
-        try {
-            object.copy();
-            fail();
-        } catch (IllegalStateException e) {
-            // OK
-        }
-    }
-
-    class SomeClass {
-    }
-
-    @Test
     public void testGetMap() {
         bsonObject.put("foo", "bar");
         bsonObject.put("quux", 123);
         BsonObject obj = createBsonObject();
         bsonObject.put("wibble", obj);
-        Map<String, Object> map = bsonObject.getMap();
+        Map<String, BsonValue> map = bsonObject.getMap();
         map.remove("foo");
         assertFalse(bsonObject.containsKey("foo"));
-        map.put("bleep", "flarp");
+        map.put("bleep", BsonValue.of("flarp"));
         assertTrue(bsonObject.containsKey("bleep"));
         bsonObject.remove("quux");
         assertFalse(map.containsKey("quux"));
         bsonObject.put("wooble", "plink");
         assertTrue(map.containsKey("wooble"));
-        assertSame(obj, map.get("wibble"));
+        assertEquals(BsonValue.of(obj), map.get("wibble"));
     }
 
     @Test
     public void testCreateFromMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("foo", "bar");
-        map.put("quux", 123);
+        Map<String, BsonValue> map = new HashMap<>();
+        map.put("foo", BsonValue.of("bar"));
+        map.put("quux", BsonValue.of(123));
         BsonObject obj = new BsonObject(map);
         assertEquals("bar", obj.getString("foo"));
         assertEquals(Integer.valueOf(123), obj.getInteger("quux"));
@@ -1442,10 +1268,10 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapCharSequence() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("foo", "bar");
-        map.put("quux", 123);
-        map.put("eeek", new StringBuilder("blah"));
+        Map<String, BsonValue> map = new HashMap<>();
+        map.put("foo", BsonValue.of("bar"));
+        map.put("quux", BsonValue.of(123));
+        map.put("eeek", BsonValue.of(new StringBuilder("blah")));
         BsonObject obj = new BsonObject(map);
         assertEquals("bar", obj.getString("foo"));
         assertEquals(Integer.valueOf(123), obj.getInteger("quux"));
@@ -1455,9 +1281,9 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedBsonObject() {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, BsonValue> map = new HashMap<>();
         BsonObject nestedObj = new BsonObject().put("foo", "bar");
-        map.put("nested", nestedObj);
+        map.put("nested", BsonValue.of(nestedObj));
         BsonObject obj = new BsonObject(map);
         BsonObject nestedRetrieved = obj.getBsonObject("nested");
         assertEquals("bar", nestedRetrieved.getString("foo"));
@@ -1465,10 +1291,10 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedMap() {
-        Map<String, Object> map = new HashMap<>();
-        Map<String, Object> nestedMap = new HashMap<>();
-        nestedMap.put("foo", "bar");
-        map.put("nested", nestedMap);
+        Map<String, BsonValue> map = new HashMap<>();
+        Map<String, BsonValue> nestedMap = new HashMap<>();
+        nestedMap.put("foo", BsonValue.of("bar"));
+        map.put("nested", BsonValue.of(nestedMap));
         BsonObject obj = new BsonObject(map);
         BsonObject nestedRetrieved = obj.getBsonObject("nested");
         assertEquals("bar", nestedRetrieved.getString("foo"));
@@ -1476,9 +1302,9 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedBsonArray() {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, BsonValue> map = new HashMap<>();
         BsonArray nestedArr = new BsonArray().add("foo");
-        map.put("nested", nestedArr);
+        map.put("nested", BsonValue.of(nestedArr));
         BsonObject obj = new BsonObject(map);
         BsonArray nestedRetrieved = obj.getBsonArray("nested");
         assertEquals("foo", nestedRetrieved.getString(0));
@@ -1486,9 +1312,9 @@ public class BsonObjectTest {
 
     @Test
     public void testCreateFromMapNestedList() {
-        Map<String, Object> map = new HashMap<>();
-        List<String> nestedArr = Arrays.asList("foo");
-        map.put("nested", nestedArr);
+        Map<String, BsonValue> map = new HashMap<>();
+        List<BsonValue> nestedArr = Arrays.asList(BsonValue.of("foo"));
+        map.put("nested", BsonValue.of(nestedArr));
         BsonObject obj = new BsonObject(map);
         BsonArray nestedRetrieved = obj.getBsonArray("nested");
         assertEquals("foo", nestedRetrieved.getString(0));
@@ -1497,7 +1323,6 @@ public class BsonObjectTest {
     @Test
     public void testNumberEquality() {
         assertNumberEquals(4, 4);
-        assertNumberEquals(4, (long)4);
         assertNumberEquals(4, 4f);
         assertNumberEquals(4, 4D);
         assertNumberEquals((long)4, (long)4);
@@ -1524,15 +1349,56 @@ public class BsonObjectTest {
         assertNumberNotEquals(4D, 5D);
     }
 
+    private void tryPut(BsonObject object, String key, Number value) {
+        if (value instanceof Integer) {
+            object.put(key, (Integer) value);
+        }
+        else if (value instanceof Long) {
+            object.put(key, (Long) value);
+        }
+        else if (value instanceof Double) {
+            object.put(key, (Double) value);
+        }
+        else if (value instanceof Float) {
+            object.put(key, (Float) value);
+        }
+        else {
+            throw new IllegalArgumentException("Unable to put " + value.getClass().getSimpleName() + " into BsonObject");
+        }
+    }
+
+    private void tryAdd(BsonArray array, Number value) {
+        if (value instanceof Integer) {
+            array.add((Integer) value);
+        }
+        else if (value instanceof Long) {
+            array.add((Long) value);
+        }
+        else if (value instanceof Double) {
+            array.add((Double) value);
+        }
+        else if (value instanceof Float) {
+            array.add((Float) value);
+        }
+        else {
+            throw new IllegalArgumentException("Unable to add " + value.getClass().getSimpleName() + " into BsonArray");
+        }
+    }
+
     private void assertNumberEquals(Number value1, Number value2) {
-        BsonObject o1 = new BsonObject().put("key", value1);
-        BsonObject o2 = new BsonObject().put("key", value2);
+        BsonObject o1 = new BsonObject();
+        tryPut(o1, "key", value1);
+        BsonObject o2 = new BsonObject();
+        tryPut(o2, "key", value2);
+
         if (!o1.equals(o2)) {
             fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
                     value2.getClass().getSimpleName() + ":" + value2);
         }
-        BsonArray a1 = new BsonArray().add(value1);
-        BsonArray a2 = new BsonArray().add(value2);
+        BsonArray a1 = new BsonArray();
+        tryAdd(a1, value1);
+        BsonArray a2 = new BsonArray();
+        tryAdd(a2, value2);
         if (!a1.equals(a2)) {
             fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
                     value2.getClass().getSimpleName() + ":" + value2);
@@ -1540,8 +1406,10 @@ public class BsonObjectTest {
     }
 
     private void assertNumberNotEquals(Number value1, Number value2) {
-        BsonObject o1 = new BsonObject().put("key", value1);
-        BsonObject o2 = new BsonObject().put("key", value2);
+        BsonObject o1 = new BsonObject();
+        tryPut(o1, "key", value1);
+        BsonObject o2 = new BsonObject();
+        tryPut(o2, "key", value2);
         if (o1.equals(o2)) {
             fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " != " +
                     value2.getClass().getSimpleName() + ":" + value2);
@@ -1550,46 +1418,38 @@ public class BsonObjectTest {
 
     @Test
     public void testBsonObjectEquality() {
-        BsonObject obj = new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3)));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3))));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3L))));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", new BsonObject().put("def", 3))));
-        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", new BsonObject().put("def", 3L))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 4))));
-        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", new BsonObject().put("def", 4))));
-        BsonArray array = new BsonArray(Collections.singletonList(Collections.singletonMap("def", 3)));
-        assertEquals(array, new BsonArray(Collections.singletonList(Collections.singletonMap("def", 3))));
-        assertEquals(array, new BsonArray(Collections.singletonList(Collections.singletonMap("def", 3L))));
-        assertEquals(array, new BsonArray(Collections.singletonList(new BsonObject().put("def", 3))));
-        assertEquals(array, new BsonArray(Collections.singletonList(new BsonObject().put("def", 3L))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(Collections.singletonMap("def", 4))));
-        assertNotEquals(array, new BsonArray(Collections.singletonList(new BsonObject().put("def", 4))));
+        BsonObject obj = new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3)))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3))))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3)))));
+        assertEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 3L)))));
+        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(Collections.singletonMap("def", BsonValue.of(4))))));
+        assertNotEquals(obj, new BsonObject(Collections.singletonMap("abc", BsonValue.of(new BsonObject().put("def", 4)))));
+
+        BsonArray array = new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3)))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3))))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(3L))))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3)))));
+        assertEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 3L)))));
+        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(Collections.singletonMap("def", BsonValue.of(4))))));
+        assertNotEquals(array, new BsonArray(Collections.singletonList(BsonValue.of(new BsonObject().put("def", 4)))));
     }
 
     @Test
     public void testBsonObjectEquality2() {
         BsonObject obj1 = new BsonObject().put("arr", new BsonArray().add("x"));
-        List<Object> list = new ArrayList<>();
-        list.add("x");
-        Map<String, Object> map = new HashMap<>();
-        map.put("arr", list);
+        List<BsonValue> list = new ArrayList<>();
+        list.add(BsonValue.of("x"));
+        Map<String, BsonValue> map = new HashMap<>();
+        map.put("arr", BsonValue.of(list));
         BsonObject obj2 = new BsonObject(map);
-        Iterator<Map.Entry<String, Object>> iter = obj2.iterator();
+        Iterator<Map.Entry<String, BsonValue>> iter = obj2.iterator();
         // There was a bug where iteration of entries caused the underlying object to change resulting in a
         // subsequent equals changing
         while (iter.hasNext()) {
-            Map.Entry<String, Object> entry = iter.next();
+            Map.Entry<String, BsonValue> entry = iter.next();
         }
         assertEquals(obj2, obj1);
-    }
-
-    @Test
-    public void testPutInstantAsObject() {
-        Object instant = Instant.now();
-        BsonObject BsonObject = new BsonObject();
-        BsonObject.put("instant", instant);
-        // assert data is stored as String
-        assertTrue(BsonObject.getValue("instant") instanceof String);
     }
 
     @Test
@@ -1612,24 +1472,15 @@ public class BsonObjectTest {
         assertNull(removed);
 
         removed = obj.remove("simple");
-        assertTrue(removed instanceof String);
+        assertTrue(removed instanceof BsonValue.StringBsonValue);
 
         removed = obj.remove("object");
-        assertTrue(removed instanceof BsonObject);
-        assertEquals(((BsonObject)removed).getString("name"), "vert.x");
+        assertTrue(removed instanceof BsonValue.BsonObjectBsonValue);
+        assertEquals(((BsonValue.BsonObjectBsonValue)removed).getValue().getString("name"), "vert.x");
 
         removed = obj.remove("array");
-        assertTrue(removed instanceof BsonArray);
-        assertEquals(((BsonArray)removed).getDouble(0), 1.0, 0.0);
-    }
-
-    @Test
-    public void testJsonObjectConversion() {
-        JsonObject jsonObject = createJsonObject();
-        BsonObject bsonObject = new BsonObject(jsonObject);
-        assertEquals(jsonObject.getMap(), bsonObject.getMap());
-        JsonObject jsonObject2 = bsonObject.toJsonObject();
-        assertEquals(jsonObject, jsonObject2);
+        assertTrue(removed instanceof BsonValue.BsonArrayBsonValue);
+        assertEquals(((BsonValue.BsonArrayBsonValue)removed).getValue().getDouble(0), 1.0, 0.0);
     }
 
     private void testStreamCorrectTypes(BsonObject object) {
@@ -1637,25 +1488,12 @@ public class BsonObjectTest {
             String key = entry.getKey();
             Object val = entry.getValue();
             assertEquals("object1", key);
-            assertTrue("Expecting BsonObject, found: " + val.getClass().getCanonicalName(), val instanceof BsonObject);
+            assertTrue("Expecting BsonObject, found: " + val.getClass().getCanonicalName(), val instanceof BsonValue.BsonObjectBsonValue);
         });
     }
 
     private BsonObject createBsonObject() {
         BsonObject obj = new BsonObject();
-        obj.put("mystr", "bar");
-        obj.put("myint", Integer.MAX_VALUE);
-        obj.put("mylong", Long.MAX_VALUE);
-        obj.put("myfloat", Float.MAX_VALUE);
-        obj.put("mydouble", Double.MAX_VALUE);
-        obj.put("myboolean", true);
-        obj.put("mybinary", TestUtils.randomByteArray(100));
-        obj.put("myinstant", Instant.now());
-        return obj;
-    }
-
-    private JsonObject createJsonObject() {
-        JsonObject obj = new JsonObject();
         obj.put("mystr", "bar");
         obj.put("myint", Integer.MAX_VALUE);
         obj.put("mylong", Long.MAX_VALUE);

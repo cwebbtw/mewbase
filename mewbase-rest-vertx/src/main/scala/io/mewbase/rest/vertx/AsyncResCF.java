@@ -1,13 +1,10 @@
-package io.mewbase.rest.impl;
+package io.mewbase.rest.vertx;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Created by tim on 12/10/16.
- */
 class AsyncResCF<T> extends CompletableFuture<T> implements Handler<AsyncResult<T>> {
 
     @Override

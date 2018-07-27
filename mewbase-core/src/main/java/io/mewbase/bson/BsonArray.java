@@ -18,14 +18,8 @@
 
 package io.mewbase.bson;
 
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
-
-import java.io.*;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -43,24 +37,15 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BsonArray implements Iterable<Object> {
+public class BsonArray implements Iterable<BsonValue> {
 
-    private List<Object> list;
-
-    /**
-     * Create an instance from a buffer
-     *
-     * @param bson the buffer containing the BSON
-     */
-    public BsonArray(Buffer bson) {
-        fromBson(new ByteArrayInputStream(bson.getBytes()));
-    }
+    private List<BsonValue> list;
 
     /**
      * Create an empty instance
      */
     public BsonArray() {
-        list = new ArrayList<Object>();
+        list = new ArrayList<>();
     }
 
     /**
@@ -68,17 +53,12 @@ public class BsonArray implements Iterable<Object> {
      *
      * @param list
      */
-    public BsonArray(List<Object> list) {
+    BsonArray(List<BsonValue> list) {
         this.list = list;
     }
 
-    /**
-     * Create an instance from a JsonArray
-     *
-     * @param jsonArray the JsonArray to create the BsonArray from
-     */
-    public BsonArray(JsonArray jsonArray) {
-        this.list = jsonArray.getList();
+    public BsonValue getBsonValue(int pos) {
+        return list.get(pos);
     }
 
     /**
@@ -89,8 +69,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to String
      */
     public String getString(int pos) {
-        CharSequence cs = (CharSequence)list.get(pos);
-        return cs == null ? null : cs.toString();
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.stringVisitor);
     }
 
     /**
@@ -101,7 +80,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to Integer
      */
     public Integer getInteger(int pos) {
-        return getNumber(pos, Integer.class, Number::intValue);
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.integerVisitor);
     }
 
     /**
@@ -112,7 +91,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to Long
      */
     public Long getLong(int pos) {
-        return getNumber(pos, Long.class, Number::longValue);
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.longVisitor);
     }
 
     /**
@@ -123,7 +102,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to Double
      */
     public Double getDouble(int pos) {
-        return getNumber(pos, Double.class, Number::doubleValue);
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.doubleVisitor);
     }
 
     /**
@@ -134,18 +113,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to Float
      */
     public Float getFloat(int pos) {
-        return getNumber(pos, Float.class, Number::floatValue);
-    }
-
-    private <T> T getNumber(int pos, Class<T> clazz, Function<Number, T> conversion) {
-        Object element = list.get(pos);
-        if (element == null) {
-            return null;
-        }
-        if (clazz.isInstance(element)) {
-            return clazz.cast(element); // Avoids unnecessary object creation
-        }
-        return conversion.apply((Number)element);
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.floatVisitor);
     }
 
     /**
@@ -156,7 +124,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to Integer
      */
     public Boolean getBoolean(int pos) {
-        return (Boolean)list.get(pos);
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.booleanVisitor);
     }
 
     /**
@@ -167,11 +135,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to BsonObject
      */
     public BsonObject getBsonObject(int pos) {
-        Object val = list.get(pos);
-        if (val instanceof Map) {
-            val = new BsonObject((Map)val);
-        }
-        return (BsonObject)val;
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.bsonObjectVisitor);
     }
 
     /**
@@ -182,11 +146,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to BsonArray
      */
     public BsonArray getBsonArray(int pos) {
-        Object val = list.get(pos);
-        if (val instanceof List) {
-            val = new BsonArray((List<Object>)val);
-        }
-        return (BsonArray)val;
+        return getBsonValue(pos).visit(ClassCastExceptionBsonValueVisitor.bsonArrayVisitor);
     }
 
     /**
@@ -202,7 +162,7 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to String
      */
     public byte[] getBinary(int pos) {
-        String val = (String)list.get(pos);
+        final String val = getString(pos);
         if (val == null) {
             return null;
         } else {
@@ -223,28 +183,12 @@ public class BsonArray implements Iterable<Object> {
      * @throws ClassCastException if the value cannot be converted to String
      */
     public Instant getInstant(int pos) {
-        String val = (String)list.get(pos);
+        final String val = getString(pos);
         if (val == null) {
             return null;
         } else {
             return Instant.from(ISO_INSTANT.parse(val));
         }
-    }
-
-    /**
-     * Get the Object value at position {@code pos} in the array.
-     *
-     * @param pos the position in the array
-     * @return the Integer, or null if a null value present
-     */
-    public Object getValue(int pos) {
-        Object val = list.get(pos);
-        if (val instanceof Map) {
-            val = new BsonObject((Map<String,Object>)val);
-        } else if (val instanceof List) {
-            val = new BsonArray((List<Object>)val);
-        }
-        return val;
     }
 
     /**
@@ -254,7 +198,13 @@ public class BsonArray implements Iterable<Object> {
      * @return true if null value present, false otherwise
      */
     public boolean hasNull(int pos) {
-        return list.get(pos) == null;
+        return getBsonValue(pos).isNull();
+    }
+
+    public BsonArray add(BsonValue value) {
+        Objects.requireNonNull(value);
+        list.add(value);
+        return this;
     }
 
     /**
@@ -268,7 +218,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Enum value) {
         Objects.requireNonNull(value);
-        list.add(value.name());
+        list.add(BsonValue.of(value.name()));
         return this;
     }
 
@@ -280,7 +230,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(CharSequence value) {
         Objects.requireNonNull(value);
-        list.add(value.toString());
+        list.add(BsonValue.of(value.toString()));
         return this;
     }
 
@@ -292,7 +242,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(String value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -304,7 +254,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Integer value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -316,7 +266,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Long value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -328,7 +278,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Double value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -340,7 +290,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Float value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -352,7 +302,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Boolean value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -362,7 +312,7 @@ public class BsonArray implements Iterable<Object> {
      * @return a reference to this, so the API can be used fluently
      */
     public BsonArray addNull() {
-        list.add(null);
+        list.add(BsonValue.nullValue());
         return this;
     }
 
@@ -374,7 +324,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(BsonObject value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -386,7 +336,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(BsonArray value) {
         Objects.requireNonNull(value);
-        list.add(value);
+        list.add(BsonValue.of(value));
         return this;
     }
 
@@ -400,7 +350,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(byte[] value) {
         Objects.requireNonNull(value);
-        list.add(Base64.getEncoder().encodeToString(value));
+        list.add(BsonValue.of(Base64.getEncoder().encodeToString(value)));
         return this;
     }
 
@@ -414,20 +364,7 @@ public class BsonArray implements Iterable<Object> {
      */
     public BsonArray add(Instant value) {
         Objects.requireNonNull(value);
-        list.add(ISO_INSTANT.format(value));
-        return this;
-    }
-
-    /**
-     * Add an Object to the JSON array.
-     *
-     * @param value the value
-     * @return a reference to this, so the API can be used fluently
-     */
-    public BsonArray add(Object value) {
-        Objects.requireNonNull(value);
-        value = Bson.checkAndCopy(value, false);
-        list.add(value);
+        list.add(BsonValue.of(ISO_INSTANT.format(value)));
         return this;
     }
 
@@ -450,7 +387,7 @@ public class BsonArray implements Iterable<Object> {
      * @param value the value
      * @return true if it contains the value, false if not
      */
-    public boolean contains(Object value) {
+    public boolean contains(BsonValue value) {
         return list.contains(value);
     }
 
@@ -461,7 +398,7 @@ public class BsonArray implements Iterable<Object> {
      * @param value the value to remove
      * @return true if it removed it, false if not found
      */
-    public boolean remove(Object value) {
+    public boolean remove(BsonValue value) {
         return list.remove(value);
     }
 
@@ -472,14 +409,8 @@ public class BsonArray implements Iterable<Object> {
      * @return the removed value if removed, null otherwise. If the value is a Map, a {@link BsonObject} is built from
      * this Map and returned. It the value is a List, a {@link BsonArray} is built form this List and returned.
      */
-    public Object remove(int pos) {
-        Object removed = list.remove(pos);
-        if (removed instanceof Map) {
-            return new BsonObject((Map)removed);
-        } else if (removed instanceof ArrayList) {
-            return new BsonArray((List)removed);
-        }
-        return removed;
+    public BsonValue remove(int pos) {
+        return list.remove(pos);
     }
 
     /**
@@ -505,7 +436,7 @@ public class BsonArray implements Iterable<Object> {
      *
      * @return the underlying List
      */
-    public List<Object> getList() {
+    List<BsonValue> getList() {
         return list;
     }
 
@@ -525,71 +456,30 @@ public class BsonArray implements Iterable<Object> {
      * @return an iterator
      */
     @Override
-    public Iterator<Object> iterator() {
-        return new Iter(list.iterator());
+    public Iterator<BsonValue> iterator() {
+        return list.iterator();
     }
 
-    /**
-     * Encode the BSON object as a buffer
-     *
-     * @return the buffer
-     */
-    public Buffer encode() {
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Bson.encode(list, os);
-            os.flush();
-            return Buffer.buffer(os.toByteArray());
-        } catch (IOException e) {
-            throw new VertxException(e);
-        }
+    public static BsonArray from(Stream<String> stringStream) {
+        final BsonArray result = new BsonArray();
+        stringStream.forEach(result::add);
+        return result;
     }
-
-    /**
-     * Encode this BSON object in an output stream
-     *
-     * @return the string encoding.
-     */
-    public void encode(OutputStream outputStream) {
-        Bson.encode(list, outputStream);
-    }
-
-    /**
-     * Encode this to a String
-     *
-     * @return the string form
-     */
-    public String encodeToString() {
-        return toJsonArray().encode();
-    }
-
-    /**
-     * Convert this into a JsonArray
-     *
-     * @return the equivalent JsonArray
-     */
-    public JsonArray toJsonArray() {
-        List<Object> l = new ArrayList<>();
-        for (Object o: list) {
-            if (o instanceof BsonObject) {
-                BsonObject bo = (BsonObject)o;
-                l.add(bo.toJsonObject());
-            } else if (o instanceof BsonArray) {
-                BsonArray ba = (BsonArray)o;
-                l.add(ba.toJsonArray());
-            } else {
-                l.add(o);
-            }
-        }
-        return new JsonArray(l);
-    }
-
 
     @Override
     public String toString() {
-        return encodeToString();
-    }
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("BsonArray{");
 
+        final List<String> elements = new ArrayList<>();
+        for (BsonValue value : list) {
+            elements.add(value.toString());
+        }
+
+        stringBuilder.append(String.join(", ", elements));
+        stringBuilder.append("}");
+        return stringBuilder.toString();
+    }
 
     /**
      * Make a copy of the JSON array
@@ -597,10 +487,9 @@ public class BsonArray implements Iterable<Object> {
      * @return a copy
      */
     public BsonArray copy() {
-        List<Object> copiedList = new ArrayList<>(list.size());
-        for (Object val : list) {
-            val = Bson.checkAndCopy(val, true);
-            copiedList.add(val);
+        List<BsonValue> copiedList = new ArrayList<>(list.size());
+        for (BsonValue val : list) {
+            copiedList.add(val.copy());
         }
         return new BsonArray(copiedList);
     }
@@ -610,82 +499,20 @@ public class BsonArray implements Iterable<Object> {
      *
      * @return a Stream
      */
-    public Stream<Object> stream() {
+    public Stream<BsonValue> stream() {
         return Bson.asStream(iterator());
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        return arrayEquals(list, o);
-    }
-
-    static boolean arrayEquals(List<?> l1, Object o2) {
-        List<?> l2;
-        if (o2 instanceof BsonArray) {
-            l2 = ((BsonArray)o2).list;
-        } else if (o2 instanceof List<?>) {
-            l2 = (List<?>)o2;
-        } else {
-            return false;
-        }
-        if (l1.size() != l2.size())
-            return false;
-        Iterator<?> iter = l2.iterator();
-        for (Object entry : l1) {
-            Object other = iter.next();
-            if (entry == null) {
-                if (other != null) {
-                    return false;
-                }
-            } else if (!BsonObject.equals(entry, other)) {
-                return false;
-            }
-        }
-        return true;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BsonArray that = (BsonArray) o;
+        return Objects.equals(list, that.list);
     }
 
     @Override
     public int hashCode() {
-        return list.hashCode();
+        return Objects.hash(list);
     }
-
-    private void fromBson(InputStream bson) {
-        list = Bson.decodeValue(bson, List.class);
-    }
-
-    private class Iter implements Iterator<Object> {
-
-        final Iterator<Object> listIter;
-
-        Iter(Iterator<Object> listIter) {
-            this.listIter = listIter;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return listIter.hasNext();
-        }
-
-        @Override
-        public Object next() {
-            Object val = listIter.next();
-            if (val instanceof Map) {
-                val = new BsonObject((Map)val);
-            } else if (val instanceof List) {
-                val = new BsonArray((List)val);
-            }
-            return val;
-        }
-
-        @Override
-        public void remove() {
-            listIter.remove();
-        }
-    }
-
-
 }

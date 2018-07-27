@@ -1,6 +1,7 @@
 package io.mewbase.eventsource.impl.jms;
 
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 
 import javax.jms.*;
@@ -33,7 +34,7 @@ public class JmsEventCollector {
                     ((BytesMessage) message).readBytes(body);
 
                     // Store the event for test purposes
-                    list.add(new BsonObject(body));
+                    list.add(BsonCodec.bsonBytesToBsonObject(body));
                 } catch(Exception exp ) {
                     System.out.println("Boom " + exp.toString());
                 }

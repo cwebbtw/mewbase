@@ -1,5 +1,6 @@
 package io.mewbase.eventsource.impl.file;
 
+import io.mewbase.bson.BsonCodec;
 import io.mewbase.bson.BsonObject;
 import io.mewbase.eventsource.Event;
 import io.netty.buffer.ByteBuf;
@@ -25,7 +26,7 @@ public class FileEvent implements Event {
 
     @Override
     public BsonObject getBson() {
-        if (event == null) event = new BsonObject(eventBuf.array());
+        if (event == null) event = BsonCodec.bsonBytesToBsonObject(eventBuf.array());
         return event;
     }
 
