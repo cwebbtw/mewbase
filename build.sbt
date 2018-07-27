@@ -124,7 +124,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       slf4j, slf4jAPI, lbConfig, micrometer, // logging, config, metrics
       nats, artemis, kafka, hbaseCommon, hbaseClient, hadoop, // EventSource and/or Sink implementations
       postgres, lmdb  ,   // Binder implementations
-      vertx, vertxAuth, vertxWeb // REST frameworks
+      vertx, vertxAuth, vertxWeb, // REST frameworks
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
       vertx, // REST frameworks,
