@@ -1,6 +1,6 @@
 package example.gettingstarted.commandrest
 
-import cats.effect.{Effect, IO}
+import cats.effect.IO
 import io.mewbase.bson.syntax._
 import fs2.StreamApp
 import io.circe.Json
@@ -61,11 +61,11 @@ object Main extends StreamApp[IO] {
         .named("buy")
         .emittingTo("purchase_events")
         .as { params =>
-          Seq(
+          bsonObject(
             "product" -> params.getOrBsonNull("product"),
             "quantity" -> params.getOrBsonNull("quantity"),
             "action" -> "BUY".bsonValue
-          ).bsonObject
+          )
         }
         .create()
 

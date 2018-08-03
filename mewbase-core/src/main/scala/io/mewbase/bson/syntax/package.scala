@@ -8,6 +8,21 @@ import scala.reflect.ClassTag
 
 package object syntax {
 
+  def bsonObject(fields: (String, BsonValue)*): BsonObject = {
+    val result = new BsonObject()
+    fields.foreach {
+      case (fieldName, fieldValue) =>
+        result.put(fieldName, fieldValue)
+    }
+    result
+  }
+
+  def bsonArray(values: BsonValue*): BsonArray = {
+    val result = new BsonArray()
+    values.foreach(result.add)
+    result
+  }
+
   implicit class BsonObjectSyntax(val bsonObject: BsonObject) {
 
     def getOrBsonNull(key: String): BsonValue =
@@ -34,31 +49,10 @@ package object syntax {
 
   }
 
-  implicit class FieldIterableSyntax(val fields: Iterable[(String, BsonValue)]) {
-
-    def bsonObject: BsonObject = {
-      val result = new BsonObject()
-      fields.foreach {
-        case (fieldName, fieldValue) =>
-          result.put(fieldName, fieldValue)
-      }
-      result
-    }
-
-  }
-
-  implicit class ValueIterableSyntax(val values: Iterable[BsonValue]) {
-
-    def bsonArray: BsonArray = {
-      val result = new BsonArray()
-      values.foreach(result.add)
-      result
-    }
-  }
-
   sealed trait LiftBsonValue[T] {
     def lift(value: T): BsonValue
   }
+
   object LiftBsonValue {
     def apply[T](f: T => BsonValue): LiftBsonValue[T] = new LiftBsonValue[T] {
       override def lift(value: T): BsonValue = f(value)

@@ -21,9 +21,10 @@ class BsonObjectSyntaxTest extends FunSuite with Matchers {
   }
 
   test("build bson object") {
-    val bsonObject =
-      Seq("hello" -> "world".bsonValue, "count" -> 1.bsonValue).bsonObject
-    bsonObject("hello").map(_.to[String]) shouldBe Some(Right("world"))
+    val obj =
+      bsonObject("hello" -> "world".bsonValue, "count" -> 1.bsonValue)
+
+    obj("hello").map(_.to[String]) shouldBe Some(Right("world"))
   }
 
 }
@@ -31,9 +32,8 @@ class BsonObjectSyntaxTest extends FunSuite with Matchers {
 class BsonArraySyntaxTest extends FunSuite with Matchers {
 
   test("build bson array") {
-    val bsonArray =
-      Seq(123.bsonValue, "hello".bsonValue).bsonArray
-    bsonArray(1) shouldBe Some("hello".bsonValue)
+    val arr = bsonArray(123.bsonValue, "hello".bsonValue)
+    arr(1) shouldBe Some("hello".bsonValue)
   }
 
   test("get index out of bounds") {

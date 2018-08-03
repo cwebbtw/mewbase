@@ -6,6 +6,8 @@ import io.mewbase.bson.{BsonArray, BsonCodec, BsonObject}
 import org.http4s.{EntityDecoder, EntityEncoder, MediaType}
 import org.http4s.headers.`Content-Type`
 
+import scala.language.higherKinds
+
 object BsonEntityCodec {
 
   implicit def BsonObjectEntityEncoder[F[_]](implicit F: Monad[F]): EntityEncoder[F, BsonObject] =
