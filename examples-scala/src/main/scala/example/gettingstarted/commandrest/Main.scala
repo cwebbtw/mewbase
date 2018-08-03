@@ -1,17 +1,17 @@
 package example.gettingstarted.commandrest
 
 import cats.effect.{Effect, IO}
-import com.typesafe.config.ConfigFactory
+import io.mewbase.bson.syntax._
 import fs2.StreamApp
 import io.circe.Json
 import io.mewbase.binders.BinderStore
 import io.mewbase.bson.BsonObject
-import io.mewbase.cqrs.CommandManager
+import io.mewbase.cqrs.{Command, CommandManager}
 import io.mewbase.eventsource.{EventSink, EventSource}
 import io.mewbase.projection.ProjectionManager
 import io.mewbase.rest._
-import io.mewbase.rest.http4s.{Http4sRestServiceActionVisitor, MewbaseSupport}
-import org.http4s.{HttpService, Response}
+import io.mewbase.rest.http4s.MewbaseSupport
+import org.http4s.HttpService
 import org.http4s.dsl.Http4sDsl
 import org.http4s.circe._
 import org.http4s.server.blaze.BlazeBuilder
@@ -55,20 +55,19 @@ object Main extends StreamApp[IO] {
   val projectionOutputChannel = "processed_purchase_events"
 
 
-  val buyCommand =
+  val buyCommand: Command =
     commandManager
         .commandBuilder()
         .named("buy")
         .emittingTo("purchase_events")
         .as { params =>
-          val event = new BsonObject
-          event.put("product", params.getString("product")) // product copied from incoming HTTP post
-          event.put("quantity", params.getInteger("quantity")) // quantity copied from incoming HTTP post
-          event.put("action", "BUY") // action is always BUY
-          event
+          Seq(
+            "product" -> params.getOrBsonNull("product"),
+            "quantity" -> params.getOrBsonNull("quantity"),
+            "action" -> "BUY".bsonValue
+          ).bsonObject
         }
         .create()
-
 
   projectionManager
     .builder()
