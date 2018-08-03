@@ -9,9 +9,9 @@ import io.mewbase.bson.BsonObject
 import io.mewbase.cqrs.CommandManager
 import io.mewbase.eventsource.{EventSink, EventSource}
 import io.mewbase.projection.ProjectionManager
-import io.mewbase.rest.{RestServiceAction, RestServiceAdaptor}
-import io.mewbase.rest.http4s.Http4sRestServiceActionVisitor
-import org.http4s.HttpService
+import io.mewbase.rest._
+import io.mewbase.rest.http4s.{Http4sRestServiceActionVisitor, MewbaseSupport}
+import org.http4s.{HttpService, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.circe._
 import org.http4s.server.blaze.BlazeBuilder
@@ -23,10 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 This example shows how to use a expose a mewbase component (CommandManager) through an
 existing http4s service
  */
-
-class HelloWorldService(commandManager: CommandManager) extends Http4sDsl[IO] {
-
-  val actionVisitor = new Http4sRestServiceActionVisitor[IO]
+class HelloWorldService(commandManager: CommandManager) extends Http4sDsl[IO] with MewbaseSupport {
 
   val helloWorldService: HttpService[IO] = HttpService[IO] {
 
@@ -35,14 +32,14 @@ class HelloWorldService(commandManager: CommandManager) extends Http4sDsl[IO] {
 
     case req@POST -> Root / "buy" =>
       req.as[BsonObject].flatMap { body =>
-        actionVisitor.visit(RestServiceAction.executeCommand(commandManager, Main.buyCommand.getName, body))
+        ExecuteCommand(commandManager, Main.buyCommand.getName, body)
       }
 
     case GET -> Root / "purchase" =>
-      actionVisitor.visit(RestServiceAction.listDocumentIds(Main.binderStore, Main.projectionOutputChannel))
+      ListDocumentIds(Main.binderStore, Main.projectionOutputChannel)
 
     case GET -> Root / "purchase" / purchaseNumber =>
-      actionVisitor.visit(RestServiceAction.retrieveSingleDocument(Main.binderStore, Main.projectionOutputChannel, purchaseNumber))
+      RetrieveSingleDocument(Main.binderStore, Main.projectionOutputChannel, purchaseNumber)
 
   }
 
