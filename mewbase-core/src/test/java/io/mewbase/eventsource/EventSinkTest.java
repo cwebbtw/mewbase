@@ -6,7 +6,6 @@ import io.mewbase.MewbaseTestBase;
 import io.mewbase.bson.BsonObject;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Test;
@@ -24,7 +23,7 @@ import java.util.stream.LongStream;
 
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
 import static org.junit.Assert.fail;
 
 /**

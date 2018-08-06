@@ -41,6 +41,9 @@ object Dependencies {
   val nats        = "io.nats" % "java-nats-streaming" % "0.4.1"
   val artemis     = "org.apache.activemq" % "artemis-jms-client" % "2.4.0"
   val kafka       = "org.apache.kafka" % "kafka-clients" % "1.0.0"
+  val hbaseCommon = "org.apache.hbase" % "hbase-common" % "2.0.1"
+  val hbaseClient = "org.apache.hbase" % "hbase-client" % "2.0.1"
+  val hadoop      = "org.apache.hadoop" % "hadoop-common" % "2.2.0"
 
   // Binder implementations
   val lmdb        = "org.lmdbjava" % "lmdbjava" % "0.6.0"

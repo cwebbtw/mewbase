@@ -8,7 +8,7 @@ import io.netty.buffer.ByteBuf;
 import java.time.Instant;
 
 
-class FileEvent implements Event {
+public class FileEvent implements Event {
 
     final long eventNumber;
     final long epochMillis;

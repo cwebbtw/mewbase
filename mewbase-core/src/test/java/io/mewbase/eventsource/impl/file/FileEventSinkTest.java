@@ -27,7 +27,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * Created by Nige on 10/1/2018.
  */
-//@RunWith(VertxUnitRunner.class)
+
 public class FileEventSinkTest extends MewbaseTestBase {
 
 

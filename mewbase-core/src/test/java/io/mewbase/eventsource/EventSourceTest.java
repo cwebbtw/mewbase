@@ -201,6 +201,7 @@ public class EventSourceTest extends MewbaseTestBase {
         latch.await();
         // Todo check that the nums contains expected.
 
+        sub.close();
         source.close();
         sink.close();
     }
@@ -245,11 +246,12 @@ public class EventSourceTest extends MewbaseTestBase {
        // will throw if the subscription doesnt set up in the given time
        final Subscription sub = subFut.get(SUBSCRIPTION_SETUP_MAX_TIMEOUT, TimeUnit.SECONDS);
 
-        latch.await();
+       latch.await();
         // Todo - Check the numbers in order
 
-        source.close();
-        sink.close();
+       sub.close();
+       source.close();
+       sink.close();
     }
 
 
