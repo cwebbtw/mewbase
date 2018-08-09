@@ -3,14 +3,14 @@ package io.mewbase.bson
 import java.math.BigDecimal
 
 import io.mewbase.bson.syntax._
-import monocle.{Optional, Prism}
-import monocle.function.{Index, IndexFunctions}
+import monocle.{Lens, Optional, Prism}
+import monocle.function.{At, AtFunctions, Index, IndexFunctions}
 
 import scala.{BigDecimal => _}
 
-trait BsonPrisms extends IndexFunctions {
+trait BsonPrisms extends IndexFunctions with AtFunctions {
 
-  private [this] val stringVisitor = new BsonValue.Visitor[Option[String]] {
+  private[this] val stringVisitor = new BsonValue.Visitor[Option[String]] {
     override def visit(nullValue: BsonValue.NullBsonValue): Option[String] = None
 
     override def visit(value: BsonValue.StringBsonValue): Option[String] = Some(value.getValue)
@@ -94,40 +94,21 @@ trait BsonPrisms extends IndexFunctions {
     (index: Int) =>
       Optional[BsonArray, BsonValue](_.apply(index))(value => in => in.copy().set(index, value))
 
+
+  implicit val BsonObjectAt: At[BsonObject, String, Option[BsonValue]] =
+    (fieldName: String) => Lens[BsonObject, Option[BsonValue]](obj =>
+      obj(fieldName)
+    ) { valueOpt => in =>
+        val value = valueOpt.getOrElse(BsonValue.nullValue())
+        in.copy().put(fieldName, value)
+    }
+
+  implicit val BsonArrayAt: At[BsonArray, Int, Option[BsonValue]] =
+    (index: Int) => Lens[BsonArray, Option[BsonValue]] { arr =>
+      arr(index)
+    } { valueOpt => in =>
+        val value = valueOpt.getOrElse(BsonValue.nullValue())
+        in.copy().set(index, value)
+    }
 }
 
-object Example extends App with BsonPrisms {
-   val bson =
-     bsonObject(
-       "first_name" -> "John".bsonValue,
-       "last_name" -> "Doe".bsonValue,
-       "age" -> 28.bsonValue,
-       "siblings" ->
-          bsonArray(
-            bsonObject(
-              "first_name" -> "Elia".bsonValue,
-              "age" -> 23.bsonValue
-            ).bsonValue,
-            bsonObject(
-              "first_name" -> "Robert".bsonValue,
-              "age" -> 25.bsonValue
-            ).bsonValue
-          ).bsonValue
-     ).bsonValue
-
-  println(bsonNumberPrism.getOption("plop".bsonValue))
-  println(bsonNumberPrism.getOption(123.bsonValue))
-
-  println((bsonObjectPrism composeOptional index("age") composePrism bsonNumberPrism).getOption(bson))
-
-  val firstNameOfSecondSibling =
-    (bsonObjectPrism composeOptional index("siblings")
-                composePrism bsonArrayPrism
-                composeOptional index(1)
-                composePrism bsonObjectPrism
-                composeOptional index("first_name")
-                composePrism bsonStringPrism)
-
-  firstNameOfSecondSibling.set("Robert Jr.")(bson)
-  println(bson)
-}

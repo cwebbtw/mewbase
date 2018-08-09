@@ -1,52 +1,17 @@
 package example.gettingstarted.commandrest
 
-import cats.effect.IO
 import io.mewbase.bson.syntax._
-import fs2.StreamApp
-import io.circe.Json
 import io.mewbase.binders.BinderStore
-import io.mewbase.bson.BsonObject
+import io.mewbase.bson.{BsonObject, BsonPrisms, BsonValue}
 import io.mewbase.cqrs.{Command, CommandManager}
 import io.mewbase.eventsource.{EventSink, EventSource}
 import io.mewbase.projection.ProjectionManager
 import io.mewbase.rest._
-import io.mewbase.rest.http4s.MewbaseSupport
-import org.http4s.HttpService
-import org.http4s.dsl.Http4sDsl
-import org.http4s.circe._
-import org.http4s.server.blaze.BlazeBuilder
-import io.mewbase.rest.http4s.BsonEntityCodec._
+import monocle.Prism
 
-import scala.concurrent.ExecutionContext.Implicits.global
+object Main extends App with BsonPrisms {
 
-/*
-This example shows how to use a expose a mewbase component (CommandManager) through an
-existing http4s service
- */
-class HelloWorldService(commandManager: CommandManager) extends Http4sDsl[IO] with MewbaseSupport {
-
-  val helloWorldService: HttpService[IO] = HttpService[IO] {
-
-    case GET -> Root / "hello" / name =>
-      Ok(Json.obj("message" -> Json.fromString(s"hello $name")))
-
-    case req@POST -> Root / "buy" =>
-      req.as[BsonObject].flatMap { body =>
-        ExecuteCommand(commandManager, Main.buyCommand.getName, body)
-      }
-
-    case GET -> Root / "purchase" =>
-      ListDocumentIds(Main.binderStore, Main.projectionOutputChannel)
-
-    case GET -> Root / "purchase" / purchaseNumber =>
-      RetrieveSingleDocument(Main.binderStore, Main.projectionOutputChannel, purchaseNumber)
-
-  }
-
-}
-
-object Main extends StreamApp[IO] {
-
+  val restServiceAdaptor: RestServiceAdaptor = RestServiceAdaptor.instance()
   val binderStore: BinderStore = BinderStore.instance()
   val eventSink: EventSink = EventSink.instance()
   val commandManager: CommandManager = CommandManager.instance(eventSink)
@@ -54,37 +19,64 @@ object Main extends StreamApp[IO] {
   val projectionManager: ProjectionManager = ProjectionManager.instance(eventSource, binderStore)
   val projectionOutputChannel = "processed_purchase_events"
 
+  private val quantityLens = (Prism.id[BsonObject]
+    composeOptional index("body")
+    composePrism bsonObjectPrism
+    composeOptional index("quantity")
+    composePrism bsonNumberPrism)
+
+  private val productLens = (Prism.id[BsonObject]
+    composeOptional index("body")
+    composePrism bsonObjectPrism
+    composeOptional index("product")
+    composePrism bsonStringPrism)
+
+  def productAndQuantity(request: BsonObject): (BsonValue, BsonValue) = {
+    val product =
+      productLens.getOption(request)
+        .fold(BsonValue.nullValue())(BsonValue.of)
+
+    val quantity =
+      quantityLens.getOption(request)
+        .fold(BsonValue.nullValue())(BsonValue.of)
+
+    (product, quantity)
+  }
 
   val buyCommand: Command =
     commandManager
         .commandBuilder()
         .named("buy")
-        .emittingTo("purchase_events")
         .as { params =>
+          val (product, quantity) = productAndQuantity(params)
+
           bsonObject(
-            "product" -> params.getOrBsonNull("product"),
-            "quantity" -> params.getOrBsonNull("quantity"),
+            "product" -> product,
+            "quantity" -> quantity,
             "action" -> "BUY".bsonValue
           )
         }
+        .emittingTo("purchase_events")
         .create()
 
-  projectionManager
-    .builder()
-    .named("projection1")
-    .projecting(buyCommand.getOutputChannel)
-    .onto(projectionOutputChannel)
-    .filteredBy(event => event.getBson.containsKey("action"))
-    .identifiedBy(event => event.getEventNumber.toString)
-    .as((current, event) => {
-      event.getBson
-    })
-    .create().get()
+  val refundCommand: Command =
+    commandManager
+        .commandBuilder()
+        .named("refund")
+        .as { params =>
+          val (product, quantity) = productAndQuantity(params)
 
+          bsonObject(
+            "product" -> product,
+            "quantity" -> quantity,
+            "action" -> "REFUND".bsonValue
+          )
+        }
+        .emittingTo("purchase_events")
+        .create()
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] =
-    BlazeBuilder[IO]
-        .bindHttp(8080, "0.0.0.0")
-        .mountService(new HelloWorldService(commandManager).helloWorldService, "/")
-        .serve
+  restServiceAdaptor.exposeCommand(commandManager, buyCommand.getName)
+  restServiceAdaptor.exposeCommand(commandManager, refundCommand.getName)
+
+  restServiceAdaptor.start()
 }

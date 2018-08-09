@@ -71,6 +71,8 @@ package object syntax {
 
   implicit val LiftBsonArrayBsonValue: LiftBsonValue[BsonArray] = LiftBsonValue[BsonArray](BsonValue.of)
 
+  implicit val LiftBigDecimalBsonValue: LiftBsonValue[java.math.BigDecimal] = LiftBsonValue[java.math.BigDecimal](BsonValue.of)
+
   implicit def LiftOptionBsonValue[T](implicit liftDefined: LiftBsonValue[T]): LiftBsonValue[Option[T]] =
     new LiftBsonValue[Option[T]] {
       override def lift(value: Option[T]): BsonValue =

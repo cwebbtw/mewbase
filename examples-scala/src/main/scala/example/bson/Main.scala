@@ -1,8 +1,9 @@
 package example.bson
 
-import io.mewbase.bson.BsonPrisms
+import io.mewbase.bson.{BsonObject, BsonPrisms}
 import io.mewbase.bson.syntax._
-import monocle.function.EachFunctions
+import monocle.Prism
+import monocle.syntax.apply._
 
 /*
 This example shows Mewbase's Scala DSL for BSON objects
@@ -57,5 +58,12 @@ object Main extends App with BsonPrisms {
   Some(BsonObjectBsonValue{value=BsonObject{name: StringBsonValue{value='Frank'}, age: BigDecimalBsonValue{value=51}}})
  */
   println(frankPrism.getOption(olderFrank.bsonValue))
+
+
+
+  /*
+  BsonObject{a: StringBsonValue{value='hello'}, b: BigDecimalBsonValue{value=123}}
+   */
+  println(bsonObject() applyLens at("a") set Some("hello".bsonValue) applyLens at("b") set Some(123.bsonValue))
 
 }
