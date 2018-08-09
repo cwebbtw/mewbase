@@ -125,6 +125,7 @@ lazy val mewbaseCore = Project("mewbase-core", file("mewbase-core"))
       nats, artemis, kafka , // EventSource and/or Sink implementations
       postgres , lmdb  ,   // Binder implementations
       vertx, // REST frameworks,
+      monocle,
     ),
     libraryDependencies ++= Dependencies.test(
       junit, junitIntf, vertxUnit, restAssured

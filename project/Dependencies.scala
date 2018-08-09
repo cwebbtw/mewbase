@@ -26,6 +26,8 @@ object Dependencies {
   val http4sDsl = "org.http4s"      %% "http4s-dsl"          % Http4sVersion
   val http4sClient = "org.http4s"      %% "http4s-client"        % Http4sVersion
 
+  val monocle = "com.github.julien-truffaut"  %%  "monocle-core"  % "1.5.0"
+
   val circeParser = "io.circe" %% "circe-parser" % CirceVersion
 
   val http4s = Seq(http4sBlazeServer, http4sDsl, http4sClient)

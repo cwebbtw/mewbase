@@ -89,6 +89,8 @@ public abstract class BsonValue {
         return of(new BsonArray(value));
     }
 
+    public static BsonValue of(BigDecimal bigDecimal) { return new BigDecimalBsonValue(bigDecimal); }
+
     public static final class BigDecimalBsonValue extends BsonValue {
 
         private final BigDecimal value;

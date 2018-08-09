@@ -61,6 +61,11 @@ public class BsonArray implements Iterable<BsonValue> {
         return list.get(pos);
     }
 
+    public BsonArray set(int index, BsonValue bsonValue) {
+        list.set(index, bsonValue);
+        return this;
+    }
+
     /**
      * Get the String at position {@code pos} in the array,
      *
