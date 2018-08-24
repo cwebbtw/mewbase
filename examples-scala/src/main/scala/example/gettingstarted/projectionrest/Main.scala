@@ -17,6 +17,11 @@ object Main extends StreamApp[IO] with Http4sDsl[IO] with MewbaseSupport {
   val config: Config = ConfigFactory.load(resourceBasename)
   val binderStore: BinderStore = BinderStore.instance(config)
 
+  /*
+  A standard Http4s REST service with a GET endpoint exposing /summary/<product>/<date>
+  Mewbase is used to respond with the document stored in the `sales_summary_projection` binder
+  with an index derived from the supplied product and date
+   */
   val service: HttpService[IO] = HttpService[IO] {
     case GET -> Root / "summary" / product / date =>
       RetrieveSingleDocument(binderStore, "sales_summary_projection", s"${product}_$date")

@@ -25,8 +25,23 @@ object Main extends App {
   val eventSource: EventSource = EventSource.instance()
   val binderStore: BinderStore = BinderStore.instance()
 
+  /*
+  Builds a sales summary projection
+  A projection listens to a stream of events:
+  * filters out unintereting events
+  * classifies them into an identifier of an aggregation
+  * modifies the aggregation
+   */
   val salesSummary =
     projection("sales_summary")
+      /*
+      returns an Option[String] for each event:
+      None =>
+        if we are _not_ interested in this event
+      Some(identifier) =>
+        if we are interested in the event, and it should be applied to the aggregation with the
+        provided identifier
+       */
       .classify { event =>
         for {
           product <- productLens.getOption(event.getBson)
@@ -34,13 +49,25 @@ object Main extends App {
         }
           yield s"${product}_${utcDate(event.getInstant)}"
       }
+      /*
+      returns the new value of the aggregation after the event has been applied to it
+       */
       .project { (document, event) =>
+        /*
+        values from aggregation
+         */
         val buys = buysLens.getOption(document).getOrElse(BigDecimal.ZERO)
         val refunds = refundsLens.getOption(document).getOrElse(BigDecimal.ZERO)
 
+        /*
+        values from incoming events
+         */
         val action = actionLens.getOption(event.getBson)
         val quantity = quantityLens.getOption(event.getBson).getOrElse(BigDecimal.ZERO)
 
+      /*
+      new values after buy or refund applied
+       */
         val newBuys =
           action match {
             case Some("BUY") => buys.add(quantity)
@@ -53,12 +80,22 @@ object Main extends App {
             case _              => refunds
           }
 
+      /*
+      modify buys / refunds / total field in the aggregation
+       */
         (document
           applyLens at("buys") set Some(newBuys.bsonValue)
           applyLens at("refunds") set Some(newRefunds.bsonValue)
           applyLens at("total") set Some(newBuys.subtract(newRefunds).bsonValue))
       }
 
+  /*
+  the projection manager runs projections over the lifetime of the application
+  It is configured for a single source of incoming events, and writes aggregations to a single binder store
+  each projection is specified along with the:
+    source channel in the event source: `purchase_events` in this case
+    destination binder in binder store: `sales_summary_projection` in this case
+   */
   projectionManager(eventSource, binderStore, "purchase_events" -> salesSummary -> "sales_summary_projection")
 
   private def utcDate(timestamp: Instant): String = {

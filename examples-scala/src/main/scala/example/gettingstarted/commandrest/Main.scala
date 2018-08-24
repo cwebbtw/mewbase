@@ -34,14 +34,26 @@ object Main extends StreamApp[IO] with Http4sDsl[IO] with BsonPrisms with Mewbas
   val config: Config = ConfigFactory.load("example.gettingstarted.commandrest/configuration.conf")
   val eventSink: EventSink = EventSink.instance(config)
 
+  /*
+  Used to extract the value of the `quantity` field
+  of a BsonObject as a BigDecimal
+   */
   private val quantityLens = (Prism.id[BsonObject]
     composeOptional index("quantity")
     composePrism bsonNumberPrism)
 
+  /*
+  Used to extract the value of the `product` field
+  of a BsonObject as a String
+ */
   private val productLens = (Prism.id[BsonObject]
     composeOptional index("product")
     composePrism bsonStringPrism)
 
+  /*
+  A command produces an event based on a set of parameters
+  The event is a `BsonObject` and the presence of the parameters is validated
+   */
   private val buy =
     command("buy") { params =>
       for {
@@ -70,9 +82,21 @@ object Main extends StreamApp[IO] with Http4sDsl[IO] with BsonPrisms with Mewbas
           )
     }
 
+  /*
+  A command manager is associated with a sink event sink (somewhere event can be written to)
+  Each command registered with the command manager routes events to a specified channel on the
+  event sink (in this case, `purchase_events`).
+   */
   val commands: CommandManager =
     commandManager(eventSink, buy -> "purchase_events", refund -> "purchase_events")
 
+  /*
+  A standard Http4s service that exposes 2 POST endpoints: buy and refund
+  Mewbase is used to:
+  decode the (JSON) post body into BSON
+  execute commands with the POST body passed as parameters
+  this results in events being emitted to the event sink
+   */
   val service: HttpService[IO] = HttpService[IO] {
     case req@POST -> Root / "buy" =>
       req.as[BsonObject].flatMap { params =>
