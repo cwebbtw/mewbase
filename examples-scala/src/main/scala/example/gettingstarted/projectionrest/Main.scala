@@ -19,7 +19,7 @@ object Main extends StreamApp[IO] with Http4sDsl[IO] with MewbaseSupport {
 
   val service: HttpService[IO] = HttpService[IO] {
     case GET -> Root / "summary" / product / date =>
-      RetrieveSingleDocument(binderStore, "sales_summary", s"${product}_$date")
+      RetrieveSingleDocument(binderStore, "sales_summary_projection", s"${product}_$date")
   }
 
   override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] =

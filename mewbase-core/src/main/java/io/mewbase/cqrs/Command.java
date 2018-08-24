@@ -1,7 +1,6 @@
 package io.mewbase.cqrs;
 
 import io.mewbase.bson.BsonObject;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 

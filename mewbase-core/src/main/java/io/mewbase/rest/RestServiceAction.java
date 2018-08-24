@@ -103,7 +103,7 @@ public abstract class RestServiceAction<Res> {
 
     }
 
-    public static final class RetrieveSingleDocument extends RestServiceAction<CompletableFuture<BsonObject>> {
+    public static final class RetrieveSingleDocument extends RestServiceAction<CompletableFuture<Optional<BsonObject>>> {
         private final BinderStore binderStore;
         private final String binderName;
         private final String documentId;
@@ -132,9 +132,9 @@ public abstract class RestServiceAction<Res> {
         }
 
         @Override
-        public CompletableFuture<BsonObject> perform() {
+        public CompletableFuture<Optional<BsonObject>> perform() {
             final Binder binder = getBinderStore().open(getBinderName());
-            return binder.get(getDocumentId());
+            return binder.get(getDocumentId()).thenApply(Optional::ofNullable);
         }
     }
 

@@ -37,13 +37,22 @@ public class VertxRestServiceActionVisitor implements RestServiceAction.Visitor<
 
     @Override
     public Void visit(RestServiceAction.RetrieveSingleDocument retrieveSingleDocument) {
-        final CompletableFuture<BsonObject> documentFuture = retrieveSingleDocument.perform();
-        final BsonObject document;
+        final CompletableFuture<Optional<BsonObject>> documentFuture = retrieveSingleDocument.perform();
+        final Optional<BsonObject> document;
         try {
             document = documentFuture.get();
-            rc.response()
-                    .putHeader("content-type", "application/json")
-                    .end(BsonCodec.bsonObjectToJsonObject(document).toString());
+
+            if (document.isPresent()) {
+                rc.response()
+                        .putHeader("content-type", "application/json")
+                        .end(BsonCodec.bsonObjectToJsonObject(document.get()).toString());
+            }
+            else {
+                rc.response()
+                        .setStatusCode(404)
+                        .setStatusMessage("Not Found")
+                        .end("Document not found");
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
