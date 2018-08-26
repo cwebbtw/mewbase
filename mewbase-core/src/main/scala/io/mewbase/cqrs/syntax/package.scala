@@ -1,11 +1,10 @@
 package io.mewbase.cqrs
 
+import io.mewbase.Result
 import io.mewbase.bson.BsonObject
 import io.mewbase.eventsource.EventSink
 
 package object syntax {
-
-  type Result[T] = Either[String, T]
 
   case class CommandNameAndProcessor(name: String, processor: BsonObject => Result[BsonObject])
   case class CommandName(name: String) {

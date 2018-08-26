@@ -15,6 +15,8 @@ import io.mewbase.projection.syntax._
 import scala.{BigDecimal => _}
 import java.math.BigDecimal
 
+import example.gettingstarted.Action
+
 object Main extends App {
 
   import Lenses._
@@ -44,8 +46,9 @@ object Main extends App {
        */
       .classify { event =>
         for {
-          product <- productLens.getOption(event.getBson)
-          action <- actionLens.getOption(event.getBson) if Set("BUY", "REFUND").contains(action)
+          product <- productLens.getOption(event.getBson).toRight("Could not extract product")
+          actionString <- actionLens.getOption(event.getBson).toRight("Could not extract action")
+          _ <- Action(actionString)
         }
           yield s"${product}_${utcDate(event.getInstant)}"
       }
@@ -83,7 +86,7 @@ object Main extends App {
       /*
       modify buys / refunds / total field in the aggregation
        */
-        (document
+        Right(document
           applyLens at("buys") set Some(newBuys.bsonValue)
           applyLens at("refunds") set Some(newRefunds.bsonValue)
           applyLens at("total") set Some(newBuys.subtract(newRefunds).bsonValue))

@@ -1,7 +1,7 @@
 package io.mewbase.bson
 
 import io.mewbase
-import io.mewbase.bson
+import io.mewbase.{Result, bson}
 import io.mewbase.bson.BsonValue.StringBsonValue
 
 import scala.reflect.ClassTag
@@ -36,6 +36,9 @@ package object syntax {
       else
         Some(value)
     }
+
+    def at(key: String): Result[BsonValue] =
+      apply(key).toRight(s"Missing field '$key'")
 
   }
 
@@ -88,8 +91,6 @@ package object syntax {
       liftBsonValue.lift(value)
 
   }
-
-  type Result[A] = Either[String, A]
 
   sealed trait BsonValueDecoder[T] {
     def decode(value: BsonValue): Result[T]
